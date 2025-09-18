@@ -1,0 +1,23 @@
+server:
+  port: ${GATEWAY_PORT}
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: http://${SERVER_HOST}:${USER_PORT}
+          predicates:
+            - Path=/api/user-service/**
+          filters:
+            - RewritePath=/api/user-service/(?<path>.*), /api/v1/user-service/$\{path}
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
