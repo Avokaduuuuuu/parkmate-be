@@ -1,0 +1,7 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${SERVER_HOST}:${EUREKA_PORT}/eureka/
+
+  instance:
+    prefer-ip-address: true

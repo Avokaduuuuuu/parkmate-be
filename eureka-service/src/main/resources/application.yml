@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: eureka-service
+
+  config:
+    import: configserver:http://${SERVER_HOST}:${CONFIG_PORT}
+
+  cloud:
+    config:
+      fail-fast: true
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
