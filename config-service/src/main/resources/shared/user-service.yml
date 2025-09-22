@@ -6,7 +6,3 @@ spring:
     url: jdbc:postgresql://${DATABASE_HOST:localhost}:5432/${USER_DATABASE:USER_DATABASE}
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
-  jpa:
-    hibernate:
-      ddl-auto: update
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
