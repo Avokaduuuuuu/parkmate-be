@@ -22,14 +22,18 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "*"
+            allowedOriginPatterns: "*"  # Use this instead of allowedOrigins
             allowedMethods:
               - GET
               - POST
               - PUT
               - DELETE
               - OPTIONS
+              - PATCH
             allowedHeaders: "*"
+            allowCredentials: false
+            exposedHeaders:
+              - "*"
 
 springdoc:
   swagger-ui:
