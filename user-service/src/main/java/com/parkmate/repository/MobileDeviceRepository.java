@@ -1,0 +1,9 @@
+package com.parkmate.repository;
+
+import com.parkmate.entity.MobileDevice;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.UUID;
+
+public interface MobileDeviceRepository extends JpaRepository<MobileDevice, UUID> {
+}
