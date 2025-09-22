@@ -18,6 +18,7 @@ public interface MobileDeviceMapper {
     MobileDevice toEntity(CreateMobileDeviceRequest request);
 
     @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "user.fullName", source = "user.fullName")
     MobileDeviceResponse toDTO(MobileDevice mobileDevice);
 
     @Mapping(target = "id", ignore = true)

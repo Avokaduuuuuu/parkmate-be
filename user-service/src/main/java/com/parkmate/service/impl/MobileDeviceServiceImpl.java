@@ -5,7 +5,8 @@ import com.parkmate.dto.request.UpdateMobileDeviceRequest;
 import com.parkmate.dto.response.MobileDeviceResponse;
 import com.parkmate.entity.MobileDevice;
 import com.parkmate.entity.User;
-import com.parkmate.exception.NotFoundException;
+import com.parkmate.exception.AppException;
+import com.parkmate.exception.ErrorCode;
 import com.parkmate.mapper.MobileDeviceMapper;
 import com.parkmate.repository.MobileDeviceRepository;
 import com.parkmate.repository.UserRepository;
@@ -37,7 +38,7 @@ public class MobileDeviceServiceImpl implements MobileDeviceService {
     public MobileDeviceResponse createMobileDevice(CreateMobileDeviceRequest request) {
 
         User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + request.userId()));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, request.userId()));
 
         MobileDevice mobileDevice = mobileDeviceMapper.toEntity(request);
         mobileDevice.setUser(user);
@@ -50,7 +51,7 @@ public class MobileDeviceServiceImpl implements MobileDeviceService {
     public MobileDeviceResponse update(UUID id, UpdateMobileDeviceRequest request) {
 
         MobileDevice mobileDevice = mobileDeviceRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Mobile device not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND, id));
 
         mobileDeviceMapper.updateEntityFromDTO(request, mobileDevice);
         MobileDevice savedMobileDevice = mobileDeviceRepository.save(mobileDevice);
@@ -61,7 +62,7 @@ public class MobileDeviceServiceImpl implements MobileDeviceService {
     @Override
     public MobileDeviceResponse findById(UUID id) {
         MobileDevice mobileDevice = mobileDeviceRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Mobile device not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND, id));
 
         return mobileDeviceMapper.toDTO(mobileDevice);
     }
@@ -78,7 +79,7 @@ public class MobileDeviceServiceImpl implements MobileDeviceService {
     @Override
     public void delete(UUID id) {
         MobileDevice mobileDevice = mobileDeviceRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Mobile device not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND, id));
         mobileDevice.setIsActive(false);
         mobileDeviceRepository.save(mobileDevice);
     }
