@@ -1,5 +1,6 @@
 server:
   port: ${GATEWAY_PORT}
+
 spring:
   cloud:
     gateway:
@@ -10,6 +11,14 @@ spring:
             - Path=/api/user-service/**
           filters:
             - RewritePath=/api/user-service/(?<path>.*), /api/v1/user-service/$\{path}
+
+        - id: user-swagger
+          uri: http://${SERVER_HOST}:${USER_PORT}
+          predicates:
+            - Path=/aggregate/user-service/v3/api-docs
+          filters:
+            - SetPath=/api-docs
+
       globalcors:
         cors-configurations:
           '[/**]':
@@ -21,3 +30,19 @@ spring:
               - DELETE
               - OPTIONS
             allowedHeaders: "*"
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: User Service
+        url: /aggregate/user-service/v3/api-docs
+
+  api-docs:
+    path: /api-docs
+
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web: DEBUG
