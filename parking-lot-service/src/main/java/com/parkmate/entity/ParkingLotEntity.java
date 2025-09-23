@@ -1,11 +1,15 @@
 package com.parkmate.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.entity.enums.ParkingLotStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.LocalTime;
+import java.util.List;
 
 @Builder
 @EqualsAndHashCode(callSuper = true)
@@ -20,7 +24,7 @@ public class ParkingLotEntity extends BaseEntity {
     @Column(name = "partner_id")
     Long partnerId;
 
-    @Column(name = "name", length = 255)
+    @Column(name = "name")
     String name;
 
     @Column(name = "street_address")
@@ -42,14 +46,16 @@ public class ParkingLotEntity extends BaseEntity {
     Integer totalFloors;
 
     @Column(name = "operating_hours_start")
+    @JsonFormat(pattern = "HH:mm:ss")
     LocalTime operatingHoursStart;
 
     @Column(name = "operating_hours_end")
+    @JsonFormat(pattern = "HH:mm:ss")
     LocalTime operatingHoursEnd;
 
-    @Column(name = "is_24_hours")
+    @Column(name = "is_24_hour")
     @Builder.Default
-    Boolean is24Hours = false;
+    Boolean is24Hour = false;
 
     @Column(name = "boundary_top_left_x")
     Double boundaryTopLeftX;
@@ -65,6 +71,10 @@ public class ParkingLotEntity extends BaseEntity {
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     ParkingLotStatus status;
+
+    @OneToMany(mappedBy = "parkingLot")
+    List<ParkingFloorEntity> parkingFloors;
 
 }

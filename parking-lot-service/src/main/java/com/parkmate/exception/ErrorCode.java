@@ -9,7 +9,11 @@ public enum ErrorCode {
     // General errors
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     VALIDATION_ERROR(1001, "Validation failed", HttpStatus.BAD_REQUEST),
-    INVALID_REQUEST(1002, "Invalid request", HttpStatus.BAD_REQUEST);
+    INVALID_REQUEST(1002, "Invalid request", HttpStatus.BAD_REQUEST),
+
+    // ParkingLot errors
+    PARKING_NOT_FOUND(1003, "Parking Lot not found", HttpStatus.NOT_FOUND),
+    INVALID_PARKING_LOT_STATUS_TRANSITION(1004, "PENDING Parking Lot can not be deleted", HttpStatus.CONFLICT);
 
     private final int code;
     private final String message;
