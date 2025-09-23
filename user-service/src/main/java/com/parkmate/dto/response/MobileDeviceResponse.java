@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.entity.enums.DeviceOs;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -36,11 +35,11 @@ public record MobileDeviceResponse(
 
         @Schema(description = "Last time device was active", example = "2024-01-15T10:30:00")
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-        Instant lastActiveAt,
+        LocalDateTime lastActiveAt,
 
         @Schema(description = "Device creation timestamp", example = "2024-01-10T09:15:00")
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-        Instant createdAt
+        LocalDateTime createdAt
 ) {
     @Schema(description = "Basic user information")
     public record UserInfo(
@@ -48,10 +47,8 @@ public record MobileDeviceResponse(
             Long id,
 
             @Schema(description = "User full name", example = "John Doe")
-            String fullName,
+            String fullName
 
-            @Schema(description = "User email", example = "john.doe@example.com")
-            String email
     ) {
     }
 

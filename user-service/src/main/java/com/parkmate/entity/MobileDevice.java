@@ -1,12 +1,15 @@
 package com.parkmate.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.parkmate.entity.enums.DeviceOs;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -41,6 +44,7 @@ public class MobileDevice {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "device_os", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private DeviceOs deviceOs;
 
     @Column(name = "push_token", length = 500)
@@ -50,10 +54,12 @@ public class MobileDevice {
     private Boolean isActive = true;
 
     @Column(name = "last_active_at")
-    private Instant lastActiveAt;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime lastActiveAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @CreationTimestamp
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
 }

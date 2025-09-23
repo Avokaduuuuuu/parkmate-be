@@ -1,5 +1,6 @@
 package com.parkmate.service.impl;
 
+import com.parkmate.dto.criteria.MobileDeviceSearchCriteria;
 import com.parkmate.dto.request.CreateMobileDeviceRequest;
 import com.parkmate.dto.request.UpdateMobileDeviceRequest;
 import com.parkmate.dto.response.MobileDeviceResponse;
@@ -11,19 +12,25 @@ import com.parkmate.mapper.MobileDeviceMapper;
 import com.parkmate.repository.MobileDeviceRepository;
 import com.parkmate.repository.UserRepository;
 import com.parkmate.service.MobileDeviceService;
+import com.parkmate.specification.MobileDeviceSpecification;
 import com.parkmate.util.PaginationUtil;
+import com.querydsl.core.types.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MobileDeviceServiceImpl implements MobileDeviceService {
+
 
     private static final Set<String> VALID_SORT_FIELDS = Set.of(
             "id", "deviceName", "deviceId", "deviceOs", "isActive", "lastActiveAt", "createdAt"
@@ -32,7 +39,22 @@ public class MobileDeviceServiceImpl implements MobileDeviceService {
     private final MobileDeviceMapper mobileDeviceMapper;
     private final MobileDeviceRepository mobileDeviceRepository;
     private final UserRepository userRepository;
-
+    @Override
+    public Page<MobileDeviceResponse> searchDevices(MobileDeviceSearchCriteria criteria, Pageable pageable) {
+        Predicate predicate = MobileDeviceSpecification.buildPredicate(criteria);
+        Page<MobileDevice> devicePage = mobileDeviceRepository.findAll(predicate, pageable);
+        return devicePage.map(mobileDeviceMapper::toDTO);
+    }
+    @Override
+    public List<MobileDeviceResponse> searchDevices(MobileDeviceSearchCriteria criteria) {
+        Predicate predicate = MobileDeviceSpecification.buildPredicate(criteria);
+        Iterable<MobileDevice> devices = mobileDeviceRepository.findAll(predicate);
+        List<MobileDevice> deviceList = new ArrayList<>();
+        devices.forEach(deviceList::add);
+        return deviceList.stream()
+                .map(mobileDeviceMapper::toDTO)
+                .collect(Collectors.toList());
+    }
 
     @Override
     public MobileDeviceResponse createMobileDevice(CreateMobileDeviceRequest request) {

@@ -1,16 +1,21 @@
 package com.parkmate.controller;
 
+import com.parkmate.dto.criteria.MobileDeviceSearchCriteria;
 import com.parkmate.dto.request.CreateMobileDeviceRequest;
+import com.parkmate.dto.request.MobileDeviceSearchRequest;
 import com.parkmate.dto.request.UpdateMobileDeviceRequest;
 import com.parkmate.dto.response.ApiResponse;
 import com.parkmate.dto.response.MobileDeviceResponse;
 import com.parkmate.service.impl.MobileDeviceServiceImpl;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @RestController
@@ -20,21 +25,28 @@ public class MobileDeviceController {
 
     private final MobileDeviceServiceImpl mobileDeviceService;
 
+    @GetMapping()
+    @Schema(description = "Search mobile devices with optional filters and pagination")
+    public ResponseEntity<ApiResponse<Page<MobileDeviceResponse>>> getMobileDevices(
+            @ModelAttribute MobileDeviceSearchRequest request,
+            Pageable pageable) {
+
+        MobileDeviceSearchCriteria criteria = request.toCriteria();
+        Page<MobileDeviceResponse> result = mobileDeviceService.searchDevices(criteria, pageable);
+
+        return ResponseEntity.ok(ApiResponse.<Page<MobileDeviceResponse>>builder()
+                .success(true)
+                .message("Mobile devices searched successfully")
+                .data(result)
+                .timestamp(LocalDateTime.now())
+                .build());
+    }
+
     @GetMapping("/{id}")
+    @Schema(description = "Get mobile device details by ID")
     public ResponseEntity<ApiResponse<MobileDeviceResponse>> getMobileDevice(@PathVariable UUID id) {
         MobileDeviceResponse response = mobileDeviceService.findById(id);
         return ResponseEntity.ok(ApiResponse.success("Mobile device fetched successfully", response));
-    }
-
-    @GetMapping
-    public ResponseEntity<ApiResponse<Page<MobileDeviceResponse>>> getMobileDevices(
-            @RequestParam(required = false) Long userId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id,asc") String sort
-    ) {
-        Page<MobileDeviceResponse> mobileDeviceResponse = mobileDeviceService.findAll(page, size, sort);
-        return ResponseEntity.ok(ApiResponse.success("Mobile devices fetched successfully", mobileDeviceResponse));
     }
 
     @PostMapping

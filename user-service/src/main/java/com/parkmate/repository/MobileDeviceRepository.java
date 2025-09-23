@@ -2,8 +2,9 @@ package com.parkmate.repository;
 
 import com.parkmate.entity.MobileDevice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 
 import java.util.UUID;
 
-public interface MobileDeviceRepository extends JpaRepository<MobileDevice, UUID> {
+public interface MobileDeviceRepository extends JpaRepository<MobileDevice, UUID>, QuerydslPredicateExecutor<MobileDevice> {
 }
