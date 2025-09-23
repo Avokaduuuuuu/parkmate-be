@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: parking-lot-service
+
+  config:
+    import: configserver:http://${SERVER_HOST}:${CONFIG_PORT}
