@@ -1,13 +1,16 @@
 package com.parkmate.exception;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.parkmate.dto.resp.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,5 +83,34 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        log.warn("Message not readable error: {}", ex.getMessage());
+
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(
+                        ApiResponse.error(
+                                ErrorCode.INVALID_ENUM.name(),
+                                extractEnumErrorMessage(ex.getMessage())
+                        )
+                );
+    }
+
+    private String extractEnumErrorMessage(String originalMessage) {
+        // Extract the part after "from String" and before any additional context
+        // Pattern: "from String \"VALUE\": MESSAGE"
+        if (originalMessage != null && originalMessage.contains("from String")) {
+            int fromStringIndex = originalMessage.indexOf("from String");
+            if (fromStringIndex != -1) {
+                // This will give us: "\"CAR_4_SEATSsss\": not one of the values accepted for Enum class: [...]"
+                return originalMessage.substring(fromStringIndex + "from String ".length());
+            }
+        }
+
+        // Fallback to original message if pattern doesn't match
+        return originalMessage;
     }
 }

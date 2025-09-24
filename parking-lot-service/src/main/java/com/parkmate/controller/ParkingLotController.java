@@ -21,6 +21,7 @@ public class ParkingLotController {
 
     @GetMapping
     public ResponseEntity<?> findAll(
+
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false, defaultValue = "id") String sortBy,

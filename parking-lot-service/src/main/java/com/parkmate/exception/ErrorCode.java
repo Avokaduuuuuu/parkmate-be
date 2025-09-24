@@ -10,10 +10,15 @@ public enum ErrorCode {
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     VALIDATION_ERROR(1001, "Validation failed", HttpStatus.BAD_REQUEST),
     INVALID_REQUEST(1002, "Invalid request", HttpStatus.BAD_REQUEST),
+    INVALID_ENUM(1003, "Invalid enum", HttpStatus.BAD_REQUEST),
 
     // ParkingLot errors
-    PARKING_NOT_FOUND(1003, "Parking Lot not found", HttpStatus.NOT_FOUND),
-    INVALID_PARKING_LOT_STATUS_TRANSITION(1004, "PENDING Parking Lot can not be deleted", HttpStatus.CONFLICT);
+    PARKING_NOT_FOUND(3101, "Parking Lot not found", HttpStatus.NOT_FOUND),
+    INVALID_PARKING_LOT_STATUS_TRANSITION(3102, "PENDING Parking Lot can not be deleted", HttpStatus.CONFLICT),
+
+    // ParkingFloor errors
+    PARKING_FLOOR_NOT_FOUND(3201, "Parking Floor not found", HttpStatus.NOT_FOUND),
+    INVALID_PARKING_FLOOR_STATUS_TRANSITION(3202, "Parking Floor is disable", HttpStatus.CONFLICT);
 
     private final int code;
     private final String message;

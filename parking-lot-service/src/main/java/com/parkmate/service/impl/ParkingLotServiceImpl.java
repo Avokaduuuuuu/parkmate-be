@@ -10,6 +10,7 @@ import com.parkmate.exception.ErrorCode;
 import com.parkmate.mapper.ParkingLotMapper;
 import com.parkmate.repository.ParkingLotRepository;
 import com.parkmate.service.ParkingLotService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -48,6 +49,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     }
 
     @Override
+    @Transactional
     public ParkingLotResponse addParkingLot(ParkingLotCreateRequest request) {
         ParkingLotEntity parkingLotEntity = ParkingLotMapper.INSTANCE.toEntity(request);
         parkingLotEntity.setStatus(ParkingLotStatus.PENDING);
@@ -55,6 +57,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     }
 
     @Override
+    @Transactional
     public ParkingLotResponse updateParkingLot(Long id, ParkingLotUpdateRequest request) {
         ParkingLotEntity parkingLotEntity = parkingLotRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND));
