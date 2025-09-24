@@ -77,4 +77,7 @@ public class ParkingLotEntity extends BaseEntity {
     @OneToMany(mappedBy = "parkingLot")
     List<ParkingFloorEntity> parkingFloors;
 
+    @OneToMany(mappedBy = "parkingLot")
+    List<PricingRuleEntity> pricingRules;
+
 }

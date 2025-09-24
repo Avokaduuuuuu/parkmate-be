@@ -14,5 +14,6 @@ public class ParkingFloorResponse {
     Long id;
     Integer floorNumber;
     String floorName;
+    Boolean isActive;
     List<ParkingFloorCapacityResponse> parkingFloorCapacity;
 }

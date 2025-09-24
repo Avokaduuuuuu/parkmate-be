@@ -18,7 +18,13 @@ public enum ErrorCode {
 
     // ParkingFloor errors
     PARKING_FLOOR_NOT_FOUND(3201, "Parking Floor not found", HttpStatus.NOT_FOUND),
-    INVALID_PARKING_FLOOR_STATUS_TRANSITION(3202, "Parking Floor is disable", HttpStatus.CONFLICT);
+    INVALID_PARKING_FLOOR_STATUS_TRANSITION(3202, "Parking Floor is disable", HttpStatus.CONFLICT),
+
+    // ParkingArea errors
+    PARKING_AREA_NOT_FOUND(3301, "Parking Area not found", HttpStatus.NOT_FOUND),
+
+    // PricingRule errors
+    PRICING_RULE_NOT_FOUND(3401, "Pricing Rule not found", HttpStatus.NOT_FOUND);
 
     private final int code;
     private final String message;
