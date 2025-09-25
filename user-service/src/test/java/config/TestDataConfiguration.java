@@ -1,8 +1,8 @@
 package config;
 
-import com.parkmate.entity.MobileDevice;
-import com.parkmate.entity.enums.DeviceOs;
-import com.parkmate.repository.MobileDeviceRepository;
+import com.parkmate.mobileDevice.MobileDevice;
+import com.parkmate.mobileDevice.DeviceOs;
+import com.parkmate.mobileDevice.MobileDeviceRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
