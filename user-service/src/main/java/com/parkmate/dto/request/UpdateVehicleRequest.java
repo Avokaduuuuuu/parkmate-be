@@ -8,6 +8,7 @@ public record UpdateVehicleRequest(
         String vehicleBrand,
         String vehicleModel,
         String vehicleColor,
+        boolean isElectric,
         boolean active
 ) {
 }

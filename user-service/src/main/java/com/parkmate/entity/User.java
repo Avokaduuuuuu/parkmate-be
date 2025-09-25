@@ -1,36 +1,33 @@
 package com.parkmate.entity;
 
-import com.parkmate.entity.enums.UserRole;
-import com.parkmate.entity.enums.UserStatus;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Setter
 @Getter
-@Table(name = "user")
+@Table(name = "\"user\"")
 @Entity
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @Column(name = "phone", unique = true, nullable = false, length = 12)
     private String phone;
-
-    @Column(name = "email", unique = true, nullable = false)
-    private String email;
-
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
 
     @Column(name = "first_name", length = 100)
     private String firstName;
@@ -53,7 +50,10 @@ public class User {
     @Column(name = "issue_place")
     private String issuePlace;
 
+    @Column(name = "issue_date", length = 10)
     private LocalDate issueDate;
+
+    @Column(name = "expiry_date", length = 10)
     private LocalDate expiryDate;
 
     @Column(name = "front_photo_path", length = 500)
@@ -62,25 +62,15 @@ public class User {
     @Column(name = "back_photo_path", length = 500)
     private String backPhotoPath;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserRole role;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserStatus status = UserStatus.PENDING;
-
-    private boolean emailVerified = false;
-
-    private boolean phoneVerified = false;
-
-    private Instant lastLoginAt;
-
     @CreationTimestamp
-    private Instant createdAt;
+    @Column(name = "created_at", updatable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    private Instant updatedAt;
+    @Column(name = "updated_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updatedAt;
 
     public String getFullName() {
         if (firstName == null && lastName == null) {
@@ -94,4 +84,13 @@ public class User {
         }
         return (firstName.trim() + " " + lastName.trim()).trim();
     }
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id", nullable = false, unique = true)
+    Account account;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<Vehicle> vehicles;
+
+
 }

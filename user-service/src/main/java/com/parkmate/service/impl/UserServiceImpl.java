@@ -26,10 +26,6 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse register(CreateUserRequest request) {
 
-        if (userRepository.existsByEmail(request.email())) {
-            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS, request.email());
-        }
-
         if (userRepository.existsByPhone(request.phone())) {
             throw new AppException(ErrorCode.PHONE_ALREADY_EXISTS, request.phone());
         }

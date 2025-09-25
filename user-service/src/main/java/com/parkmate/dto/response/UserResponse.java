@@ -1,19 +1,19 @@
 package com.parkmate.dto.response;
 
-import com.parkmate.entity.enums.UserRole;
-import com.parkmate.entity.enums.UserStatus;
+import org.springframework.format.annotation.DateTimeFormat;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
+
+
 
 public record UserResponse(
         Long id,
-        String email,
         String phone,
         String firstName,
         String lastName,
-        UserStatus status,
-        UserRole role,
-        Instant createdAt,
-        Instant updatedAt
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+        LocalDateTime createdAt,
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+        LocalDateTime updatedAt
 ) {
 }

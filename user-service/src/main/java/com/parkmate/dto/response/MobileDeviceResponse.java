@@ -48,7 +48,6 @@ public record MobileDeviceResponse(
 
             @Schema(description = "User full name", example = "John Doe")
             String fullName
-
     ) {
     }
 

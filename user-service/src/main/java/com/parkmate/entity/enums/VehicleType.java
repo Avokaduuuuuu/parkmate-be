@@ -2,9 +2,11 @@ package com.parkmate.entity.enums;
 
 public enum VehicleType {
 
-    CAR,
+    BIKE,
     MOTORBIKE,
-    TRUCK,
-    BIKE
+    CAR_4_SEATS,
+    CAR_7_SEATS,
+    CAR_9_SEATS,
+    OTHER
 
 }

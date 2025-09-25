@@ -7,7 +7,8 @@ import com.parkmate.dto.request.UpdateMobileDeviceRequest;
 import com.parkmate.dto.response.ApiResponse;
 import com.parkmate.dto.response.MobileDeviceResponse;
 import com.parkmate.service.impl.MobileDeviceServiceImpl;
-import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,12 +22,16 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/user-service/mobile-device")
 @RequiredArgsConstructor
+@Tag(name = "Mobile Device Management", description = "APIs for managing mobile devices")
 public class MobileDeviceController {
 
     private final MobileDeviceServiceImpl mobileDeviceService;
 
     @GetMapping()
-    @Schema(description = "Search mobile devices with optional filters and pagination")
+    @Operation(
+            summary = "Search Mobile Devices",
+            description = "Retrieve a paginated list of mobile devices with optional filtering criteria."
+    )
     public ResponseEntity<ApiResponse<Page<MobileDeviceResponse>>> getMobileDevices(
             @ModelAttribute MobileDeviceSearchRequest request,
             Pageable pageable) {
@@ -42,13 +47,21 @@ public class MobileDeviceController {
                 .build());
     }
 
+
     @GetMapping("/{id}")
-    @Schema(description = "Get mobile device details by ID")
+    @Operation(
+            summary = "Get Mobile Device by ID",
+            description = "Retrieve detailed information about a specific mobile device using its unique identifier."
+    )
     public ResponseEntity<ApiResponse<MobileDeviceResponse>> getMobileDevice(@PathVariable UUID id) {
         MobileDeviceResponse response = mobileDeviceService.findById(id);
         return ResponseEntity.ok(ApiResponse.success("Mobile device fetched successfully", response));
     }
 
+    @Operation(
+            summary = "Create Mobile Device",
+            description = "Add a new mobile device to the system."
+    )
     @PostMapping
     public ResponseEntity<ApiResponse<MobileDeviceResponse>> addMobileDevice(@RequestBody CreateMobileDeviceRequest req) {
         MobileDeviceResponse mobileDeviceResponse = mobileDeviceService.createMobileDevice(req);
@@ -56,6 +69,11 @@ public class MobileDeviceController {
                 .body(ApiResponse.success("Mobile device created successfully", mobileDeviceResponse));
     }
 
+
+    @Operation(
+            summary = "Update Mobile Device",
+            description = "Update the details of an existing mobile device."
+    )
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<MobileDeviceResponse>> updateMobileDevice(
             @PathVariable UUID id,
@@ -64,6 +82,10 @@ public class MobileDeviceController {
         return ResponseEntity.ok(ApiResponse.success("Mobile device updated successfully", mobileDeviceResponse));
     }
 
+    @Operation(
+            summary = "Delete Mobile Device",
+            description = "Remove a mobile device from the system using its unique identifier."
+    )
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteMobileDevice(@PathVariable UUID id) {
         mobileDeviceService.delete(id);

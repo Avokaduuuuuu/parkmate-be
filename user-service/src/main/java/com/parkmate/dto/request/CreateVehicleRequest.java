@@ -12,7 +12,7 @@ public record CreateVehicleRequest(
         @NotNull String vehicleModel,
         @NotNull String vehicleColor,
         @NotNull VehicleType vehicleType,
-        String licenseImage,
-        boolean active
+        @NotNull boolean isElectric,
+        String licenseImage
 ) {
 }

@@ -1,13 +1,14 @@
 package com.parkmate.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.parkmate.entity.enums.VehicleType;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -45,7 +46,7 @@ public class Vehicle {
     @Column(name = "license_plate", length = 20, nullable = false, unique = true)
     private String licensePlate;
 
-    @Column(name = "license_image", length = 255)
+    @Column(name = "license_image")
     private String licenseImage;
 
     @Column(name = "vehicle_brand", length = 100)
@@ -58,13 +59,22 @@ public class Vehicle {
     private String vehicleColor;
 
     @Column(name = "is_active")
+    @Builder.Default
     private boolean isActive = true;
 
-    @CreationTimestamp
-    private Instant createdAt;
+    @Column(name = "is_electric")
+    private boolean isElectric;
 
-    @UpdateTimestamp
-    private Instant updatedAt;
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updatedAt;
+
 
 }
 

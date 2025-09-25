@@ -1,5 +1,6 @@
 package com.parkmate.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.entity.enums.ReservationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -36,9 +37,11 @@ public class Reservation {
     private String lotId;
 
     @Column(name = "reserved_from", nullable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime reservedFrom;
 
     @Column(name = "reserved_until", nullable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime reservedUntil;
 
     @Column(name = "reservation_fee", precision = 10, scale = 2)
@@ -50,10 +53,12 @@ public class Reservation {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     @UpdateTimestamp
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
 
     // Helper methods

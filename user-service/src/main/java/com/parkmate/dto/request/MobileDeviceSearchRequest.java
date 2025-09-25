@@ -20,10 +20,11 @@ public class MobileDeviceSearchRequest {
     private String userIds;
     private String deviceOsList;
 
+
     // Single fields
     private String deviceId;
-    private String deviceName;
     private Boolean isActive;
+    private String deviceName;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastActiveAfter;
@@ -55,8 +56,8 @@ public class MobileDeviceSearchRequest {
         }
 
         builder.deviceId(this.deviceId)
-                .deviceName(this.deviceName)
                 .isActive(this.isActive)
+                .deviceName(this.deviceName)
                 .lastActiveAfter(this.lastActiveAfter)
                 .lastActiveBefore(this.lastActiveBefore);
         return builder.build();
