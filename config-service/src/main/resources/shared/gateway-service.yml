@@ -19,17 +19,33 @@ spring:
           filters:
             - SetPath=/api-docs
 
+        - id: parking-lot-service
+          uri: http://${SERVER_HOST}:${PARKING_LOT_PORT}
+          predicates:
+            - Path=/api/parking-lot-service/**
+          filters:
+              - RewritePath=/api/parking-lot-service/(?<path>.*), /api/v1/parking-lot-service/$\{path}
+        - id: parking-lot-swagger
+          uri: http://${SERVER_HOST}:${PARKING_LOT_PORT}
+          predicates:
+            - Path=/aggregate/parking-lot-service/v3/api-docs
+          filters:
+            - SetPath=/api-docs
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "*"
+            allowedOriginPatterns: "*"  # Use this instead of allowedOrigins
             allowedMethods:
               - GET
               - POST
               - PUT
               - DELETE
               - OPTIONS
+              - PATCH
             allowedHeaders: "*"
+            allowCredentials: false
+            exposedHeaders:
+              - "*"
 
 springdoc:
   swagger-ui:
@@ -37,6 +53,8 @@ springdoc:
     urls:
       - name: User Service
         url: /aggregate/user-service/v3/api-docs
+      - name: Parking Lot Service
+        url: /aggregate/parking-lot-service/v3/api-docs
 
   api-docs:
     path: /api-docs

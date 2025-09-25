@@ -1,0 +1,17 @@
+server:
+  port: ${PARKING_LOT_PORT}
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DATABASE_HOST:localhost}:5432/${PARKING_DATABASE:PARKING_DATABASE}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  show-actuator: true
