@@ -1,7 +1,6 @@
 package com.parkmate.exception;
 
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.parkmate.dto.resp.ApiResponse;
+import com.parkmate.common.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,7 +9,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
