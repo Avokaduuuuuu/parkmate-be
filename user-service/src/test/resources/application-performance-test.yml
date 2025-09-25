@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: user-service
+
+  config:
+    import: configserver:http://${SERVER_HOST:localhost}:${CONFIG_PORT}
+
+  cloud:
+    config:
+      fail-fast: true
