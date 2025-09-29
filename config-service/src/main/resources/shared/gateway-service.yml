@@ -1,40 +1,57 @@
 server:
-  port: ${GATEWAY_PORT}
+  port: ${GATEWAY_PORT:8080}
 
 spring:
+  application:
+    name: gateway-service
+
   cloud:
     gateway:
       routes:
-        - id: user-service
-          uri: http://${SERVER_HOST}:${USER_PORT}
+        # Auth routes - forward to User Service (no JWT needed)
+        - id: auth-routes
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/auth/**
+          filters:
+            - StripPrefix=0
+
+        # User service protected routes (JWT required)
+        - id: user-service-protected
+          uri: lb://user-service
           predicates:
             - Path=/api/user-service/**
           filters:
-            - RewritePath=/api/user-service/(?<path>.*), /api/v1/user-service/$\{path}
+            - StripPrefix=0
 
+        # User swagger
         - id: user-swagger
-          uri: http://${SERVER_HOST}:${USER_PORT}
+          uri: lb://user-service
           predicates:
             - Path=/aggregate/user-service/v3/api-docs
           filters:
             - SetPath=/api-docs
 
-        - id: parking-lot-service
-          uri: http://${SERVER_HOST}:${PARKING_LOT_PORT}
+        # Parking lot service protected routes (JWT required)
+        - id: parking-lot-service-protected
+          uri: lb://parking-lot-service
           predicates:
-            - Path=/api/parking-lot-service/**
+            - Path=/api/v1/parking-lot-service/**
           filters:
-              - RewritePath=/api/parking-lot-service/(?<path>.*), /api/v1/parking-lot-service/$\{path}
+            - StripPrefix=0
+
+        # Parking lot swagger
         - id: parking-lot-swagger
-          uri: http://${SERVER_HOST}:${PARKING_LOT_PORT}
+          uri: lb://parking-lot-service
           predicates:
             - Path=/aggregate/parking-lot-service/v3/api-docs
           filters:
             - SetPath=/api-docs
+
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOriginPatterns: "*"  # Use this instead of allowedOrigins
+            allowedOriginPatterns: "*"
             allowedMethods:
               - GET
               - POST
@@ -43,10 +60,19 @@ spring:
               - OPTIONS
               - PATCH
             allowedHeaders: "*"
-            allowCredentials: false
-            exposedHeaders:
-              - "*"
+            allowCredentials: true
 
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:parkmate-super-secret-key-that-must-be-at-least-32-characters-long}
+
+# Eureka
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:9999/eureka
+
+# Swagger
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -56,11 +82,10 @@ springdoc:
       - name: Parking Lot Service
         url: /aggregate/parking-lot-service/v3/api-docs
 
-  api-docs:
-    path: /api-docs
-
-
+# Logging
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
-    org.springframework.web: DEBUG
+    org.springframework.security: TRACE
+    org.springframework.security.oauth2.jwt: TRACE
+    com.parkmate: DEBUG

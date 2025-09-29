@@ -31,7 +31,12 @@ public enum ErrorCode {
     // Partner errors 14
     PARTNER_NOT_FOUND(2401, "Partner not found", HttpStatus.NOT_FOUND),
     PARTNER_ALREADY_EXISTS(2402, "Partner with name '{0}' already exists", HttpStatus.CONFLICT),
-    PARTNER_INACTIVE(2403, "Partner is inactive", HttpStatus.BAD_REQUEST);
+    PARTNER_INACTIVE(2403, "Partner is inactive", HttpStatus.BAD_REQUEST),
+
+    // Account errors 15
+    ACCOUNT_NOT_FOUND(2501, "Account not found", HttpStatus.NOT_FOUND),
+    ACCOUNT_ALREADY_EXISTS(2502, "Account with email '{0}' already exists", HttpStatus.CONFLICT),
+    ACCOUNT_INACTIVE(2503, "Account is inactive", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;
