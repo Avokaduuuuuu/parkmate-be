@@ -24,7 +24,11 @@ public enum ErrorCode {
     PARKING_AREA_NOT_FOUND(3301, "Parking Area not found", HttpStatus.NOT_FOUND),
 
     // PricingRule errors
-    PRICING_RULE_NOT_FOUND(3401, "Pricing Rule not found", HttpStatus.NOT_FOUND);
+    PRICING_RULE_NOT_FOUND(3401, "Pricing Rule not found", HttpStatus.NOT_FOUND),
+
+    // Spot errors
+    SPOT_NOT_FOUND(3501, "Spot not found", HttpStatus.NOT_FOUND),
+    SPOT_COUNT_MISS_MATCH(3502, "Spot count mismatch", HttpStatus.CONFLICT);
 
     private final int code;
     private final String message;

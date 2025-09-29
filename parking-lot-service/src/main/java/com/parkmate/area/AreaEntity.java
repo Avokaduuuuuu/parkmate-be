@@ -31,8 +31,8 @@ public class AreaEntity extends BaseEntity {
     @JdbcType(PostgreSQLEnumJdbcType.class)
     VehicleType vehicleType;
 
-    @Column(name = "total_lot")
-    Integer totalLots;
+    @Column(name = "total_spots")
+    Integer totalSpots;
 
     @Column(name = "area_top_left_x")
     Double areaTopLeftX;
@@ -47,7 +47,8 @@ public class AreaEntity extends BaseEntity {
     Double areaHeight;
 
     @Column(name = "is_active")
-    Boolean isActive;
+    @Builder.Default
+    Boolean isActive = true;
 
     @Column(name = "support_electric_vehicle")
     Boolean supportElectricVehicle;
@@ -56,7 +57,7 @@ public class AreaEntity extends BaseEntity {
     @JoinColumn(name = "floor_id")
     FloorEntity parkingFloor;
 
-    @OneToMany(mappedBy = "parkingArea")
+    @OneToMany(mappedBy = "parkingArea", cascade = CascadeType.ALL)
     List<SpotEntity> spots;
 
     @OneToOne(mappedBy = "parkingArea")

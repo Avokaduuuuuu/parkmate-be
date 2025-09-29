@@ -1,17 +1,13 @@
 package com.parkmate.area.dto.req;
 
 import com.parkmate.common.enums.VehicleType;
-import com.parkmate.spot.dto.req.SpotCreateRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
-import java.util.List;
-
-@Schema(description = "Request body for creating a new parking area with individual parking spots")
-public record AreaCreateRequest(
+@Schema(description = "Request body for updating parking area")
+public record AreaUpdateRequest(
         @Schema(
                 description = "Name of the parking area (e.g., 'Zone A', 'VIP Section')",
                 example = "Zone A - Ground Floor",
@@ -73,21 +69,6 @@ public record AreaCreateRequest(
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         @NotNull(message = "Must define electric vehicle allowance")
-        Boolean supportElectricVehicle,
-
-        @Schema(
-                description = "Total spots of an area",
-                example = "100",
-                requiredMode = Schema.RequiredMode.REQUIRED
-        )
-        @NotNull(message = "Must define total spots of an area")
-        Integer totalSpots,
-
-        @Schema(
-                description = "List of individual parking spots to create within this area. Can be null or empty if spots are created later.",
-                requiredMode = Schema.RequiredMode.REQUIRED
-        )
-        @Valid
-        List<SpotCreateRequest> spotRequests
+        Boolean supportElectricVehicle
 ) {
 }

@@ -49,6 +49,7 @@ public class FloorController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(
                         ApiResponse.success(
+                                "Fetch floors successfully",
                                 floorService.findAll(
                                         page, size, sortBy, sortOrder, params
                                 )
