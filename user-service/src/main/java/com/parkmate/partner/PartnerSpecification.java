@@ -1,7 +1,6 @@
 package com.parkmate.partner;
 
 import com.parkmate.partner.dto.PartnerSearchCriteria;
-import com.parkmate.entity.QPartner;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Predicate;
 import org.springframework.stereotype.Component;

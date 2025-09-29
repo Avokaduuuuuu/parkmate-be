@@ -2,7 +2,6 @@ package com.parkmate.mobileDevice;
 
 
 import com.parkmate.mobileDevice.dto.MobileDeviceSearchCriteria;
-import com.parkmate.entity.QMobileDevice;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Predicate;
 import org.springframework.stereotype.Component;

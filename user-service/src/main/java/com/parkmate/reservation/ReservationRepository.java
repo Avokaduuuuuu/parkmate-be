@@ -1,6 +1,5 @@
-package com.parkmate.repository;
+package com.parkmate.reservation;
 
-import com.parkmate.reservation.Reservation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

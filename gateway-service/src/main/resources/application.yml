@@ -3,10 +3,4 @@ spring:
     name: gateway-service
 
   config:
-    import: configserver:http://${SERVER_HOST}:${CONFIG_PORT}
-
-  cloud:
-    config:
-      fail-fast: true
-
-
+    import: configserver:http://${SERVER_HOST:localhost}:${CONFIG_PORT}

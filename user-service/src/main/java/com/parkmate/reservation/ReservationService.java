@@ -1,4 +1,4 @@
-package com.parkmate.service;
+package com.parkmate.reservation;
 
 public interface ReservationService {
 }
