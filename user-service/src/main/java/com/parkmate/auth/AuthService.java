@@ -7,6 +7,8 @@ import com.parkmate.auth.dto.LoginRequest;
 import com.parkmate.auth.dto.LogoutRequest;
 import com.parkmate.auth.dto.RefreshRequest;
 import com.parkmate.common.enums.AccountStatus;
+import com.parkmate.common.exception.AppException;
+import com.parkmate.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,38 +26,37 @@ import java.util.UUID;
 @Transactional
 public class AuthService {
 
+    public static final String TOKEN_TYPE = "Bearer";
+    public static final Long ACCESS_TOKEN_EXPIRATION = 172800L;
+    public static final Long REFRESH_TOKEN_EXPIRATION = 2592000L;
+
+
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RedisTokenService redisTokenService;
 
     public AuthResponse login(LoginRequest request) {
-        // 1. Find account
+
         Account account = accountRepository.findAccountByEmail(
                 request.email()
-        ).orElseThrow(() -> new RuntimeException("Account not found"));
+        ).orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Account not found"));
 
-        // 2. Check status
         if (account.getStatus() != AccountStatus.ACTIVE) {
-            throw new RuntimeException("Account is not active");
+            throw new AppException(ErrorCode.ACCOUNT_INACTIVE, "Account is not active");
         }
 
-        // 3. Verify password
         if (!passwordEncoder.matches(request.password(), account.getPassword())) {
-            throw new RuntimeException("Invalid password");
+            throw new AppException(ErrorCode.PASSWORD_MISMATCH, "Invalid password");
         }
 
-        // 4. Build JWT claims
         Map<String, Object> claims = buildClaims(account);
 
-        // 5. Generate tokens
         String accessToken = jwtUtil.generateToken(claims);
         String refreshToken = UUID.randomUUID().toString().replace("-", "");
 
-        // 6. Store refresh token in Redis (30 days)
-        redisTokenService.storeRefreshToken(refreshToken, claims, 2592000L);
+        redisTokenService.storeRefreshToken(refreshToken, claims, REFRESH_TOKEN_EXPIRATION);
 
-        // 7. Update last login
         account.setLastLoginAt(LocalDateTime.now());
         accountRepository.save(account);
 
@@ -64,8 +65,8 @@ public class AuthService {
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .tokenType("Bearer")
-                .expiresIn(172800L) // 48 hours
+                .tokenType(TOKEN_TYPE)
+                .expiresIn(ACCESS_TOKEN_EXPIRATION) // 48 hours
                 .build();
     }
 
@@ -85,8 +86,8 @@ public class AuthService {
         return AuthResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(request.refreshToken()) // Keep same refresh token
-                .tokenType("Bearer")
-                .expiresIn(172800L)
+                .tokenType(TOKEN_TYPE)
+                .expiresIn(ACCESS_TOKEN_EXPIRATION)
                 .build();
     }
 
