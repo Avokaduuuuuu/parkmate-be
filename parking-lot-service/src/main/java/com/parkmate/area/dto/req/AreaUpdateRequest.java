@@ -14,7 +14,6 @@ public record AreaUpdateRequest(
                 requiredMode = Schema.RequiredMode.REQUIRED,
                 maxLength = 100
         )
-        @NotNull(message = "Area name must not be null")
         @NotEmpty(message = "Area name must not be empty")
         String name,
 
@@ -24,7 +23,6 @@ public record AreaUpdateRequest(
                 allowableValues = {"BIKE", "MOTORBIKE", "CAR_4_SEATS", "CAR_7_SEATS", "CAR_9_SEATS", "OTHER"},
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        @NotNull(message = "Vehicle Type must not be null")
         VehicleType vehicleType,
 
         @Schema(
@@ -32,7 +30,6 @@ public record AreaUpdateRequest(
                 example = "10.5",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        @NotNull(message = "Area Top Left X must not be null")
         @Positive(message = "Area Top Left X must be positive")
         Double areaTopLeftX,
 
@@ -41,7 +38,6 @@ public record AreaUpdateRequest(
                 example = "20.0",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        @NotNull(message = "Area Top Left Y must not be null")
         @Positive(message = "Area Top Left Y must be positive")
         Double areaTopLeftY,
 
@@ -50,7 +46,6 @@ public record AreaUpdateRequest(
                 example = "50.0",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        @NotNull(message = "Area Width must not be null")
         @Positive(message = "Area Width must be positive")
         Double areaWidth,
 
@@ -59,7 +54,6 @@ public record AreaUpdateRequest(
                 example = "30.0",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        @NotNull(message = "Area Height must not be null")
         @Positive(message = "Area Height must be positive")
         Double areaHeight,
 
@@ -68,7 +62,6 @@ public record AreaUpdateRequest(
                 example = "true",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        @NotNull(message = "Must define electric vehicle allowance")
         Boolean supportElectricVehicle
 ) {
 }

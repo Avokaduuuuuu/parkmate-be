@@ -28,7 +28,9 @@ public enum ErrorCode {
 
     // Spot errors
     SPOT_NOT_FOUND(3501, "Spot not found", HttpStatus.NOT_FOUND),
-    SPOT_COUNT_MISS_MATCH(3502, "Spot count mismatch", HttpStatus.CONFLICT);
+    SPOT_COUNT_MISS_MATCH(3502, "Spot count mismatch", HttpStatus.CONFLICT),
+    VEHICLE_TYPE_MISS_MATCH(3503, "Spot can not be added to this area", HttpStatus.CONFLICT),
+    BLOCK_REASON_REQUIRED(3504, "Block Reason required", HttpStatus.BAD_REQUEST),;
 
     private final int code;
     private final String message;
