@@ -13,7 +13,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/parking-floors")
+@RequestMapping("/api/floors")
 @RequiredArgsConstructor
 @Tag(name = "Parking Floor API", description = "API for making and configuring Parking Floor")
 @Validated
