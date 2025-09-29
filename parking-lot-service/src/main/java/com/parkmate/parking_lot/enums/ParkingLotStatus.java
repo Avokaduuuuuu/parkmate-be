@@ -1,5 +1,5 @@
 package com.parkmate.parking_lot.enums;
 
 public enum ParkingLotStatus {
-    PENDING, INACTIVE, MAINTENANCE;
+    PENDING, UNDER_SURVEY,INACTIVE, MAINTENANCE, DENIED;
 }

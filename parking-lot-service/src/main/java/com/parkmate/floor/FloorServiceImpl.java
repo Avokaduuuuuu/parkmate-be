@@ -52,10 +52,10 @@ public class FloorServiceImpl implements FloorService {
     }
 
     @Override
-    public Page<FloorResponse> findAll(int page, int size, String sortBy, String sortOrder) {
+    public Page<FloorResponse> findAll(int page, int size, String sortBy, String sortOrder, FloorFilterParams params) {
         Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<FloorEntity> parkingFloorEntities = floorRepository.findAll(pageable);
+        Page<FloorEntity> parkingFloorEntities = floorRepository.findAll(params.getSpecification(), pageable);
         return parkingFloorEntities.map(FloorMapper.INSTANCE::toResponse);
     }
 

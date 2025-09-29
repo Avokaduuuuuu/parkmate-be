@@ -29,8 +29,8 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class PricingRuleEntity {
     @Id
-    @Column(name = "id", nullable = false, updatable = false)
-    UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
 
     @Column(name = "vehicle_type")
     @Enumerated(EnumType.STRING)
@@ -92,11 +92,4 @@ public class PricingRuleEntity {
     @JoinColumn(name = "area_id")
     AreaEntity parkingArea;
 
-
-    @PrePersist
-    private void initializeUUID() {
-        if (id == null) {
-            id = UuidCreator.getTimeOrderedEpoch();
-        }
-    }
 }

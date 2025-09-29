@@ -9,7 +9,7 @@ public interface FloorService {
     FloorResponse createFloor(Long parkingLotId, FloorCreateRequest request);
     FloorResponse getFloorById(Long parkingLotId);
 
-    Page<FloorResponse> findAll(int page, int size, String sortBy, String sortOrder);
+    Page<FloorResponse> findAll(int page, int size, String sortBy, String sortOrder, FloorFilterParams params);
     FloorResponse deleteFloor(Long id);
 
     FloorResponse updateFloor(Long id, FloorUpdateRequest request);
