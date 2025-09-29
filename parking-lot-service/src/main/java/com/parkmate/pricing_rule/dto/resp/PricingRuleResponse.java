@@ -14,7 +14,7 @@ import java.util.UUID;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PricingRuleResponse {
-    UUID id;
+    Long id;
     VehicleType vehicleType;
     String ruleName;
     Double baseRate;
