@@ -17,7 +17,8 @@ public class SecurityConfig {
             "/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
-            "/api/user-service/partners/**"
+            "/v3/api-docs/**",
+            "/api-docs/**",
     };
 
     // Internal endpoints - cho inter-service communication

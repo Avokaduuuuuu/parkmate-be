@@ -87,7 +87,7 @@ public class Partner {
     private LocalDateTime updatedAt;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "approval_registration_id", referencedColumnName = "id")
+    @JoinColumn(name = "approval_request_id", referencedColumnName = "id")
     private PartnerRegistration partnerRegistration;
 
     @OneToMany(mappedBy = "partner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

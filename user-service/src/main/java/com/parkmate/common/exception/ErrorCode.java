@@ -38,12 +38,16 @@ public enum ErrorCode {
     ACCOUNT_ALREADY_EXISTS(2502, "Account with email '{0}' already exists", HttpStatus.CONFLICT),
     ACCOUNT_INACTIVE(2503, "Account is inactive", HttpStatus.BAD_REQUEST),
 
-    // Auth error 26
-    PASSWORD_MISMATCH(26001, "Password does not match", HttpStatus.UNAUTHORIZED),
-    USER_INFO_NOT_FOUND(26002, "User information not found", HttpStatus.NOT_FOUND),
-    STORE_REFRESH_TOKEN_FAILED(26003, "Failed to store refresh token", HttpStatus.INTERNAL_SERVER_ERROR),
-    INVALID_REFRESH_TOKEN(26004, "Invalid refresh token", HttpStatus.UNAUTHORIZED);
+    // Partner Registration errors 27
+    TAX_NUMBER_ALREADY_EXISTS(2701, "A partner with the same tax number '{0}' already exists.", HttpStatus.CONFLICT),
+    PARTNER_REGISTRATION_NOT_FOUND(2702, "Partner registration request not found", HttpStatus.NOT_FOUND),
+    PARTNER_REGISTRATION_ALREADY_REVIEWED(2703, "This partner registration request has already been reviewed and cannot be modified.", HttpStatus.BAD_REQUEST),
 
+    // Auth error 26
+    PASSWORD_MISMATCH(2601, "Password does not match", HttpStatus.UNAUTHORIZED),
+    USER_INFO_NOT_FOUND(2602, "User information not found", HttpStatus.NOT_FOUND),
+    STORE_REFRESH_TOKEN_FAILED(2603, "Failed to store refresh token", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_REFRESH_TOKEN(2604, "Invalid refresh token", HttpStatus.UNAUTHORIZED);
     private final int code;
     private final String message;
     private final HttpStatus httpStatus;

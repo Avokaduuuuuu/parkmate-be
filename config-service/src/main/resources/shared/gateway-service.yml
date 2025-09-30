@@ -8,7 +8,9 @@ spring:
   cloud:
     gateway:
       routes:
-        # Auth routes - forward to User Service (no JWT needed)
+        # ============================================
+        # AUTH ROUTES - Public (no JWT)
+        # ============================================
         - id: auth-routes
           uri: lb://user-service
           predicates:
@@ -16,7 +18,35 @@ spring:
           filters:
             - StripPrefix=0
 
-        # User service protected routes (JWT required)
+        # ============================================
+        # USER SERVICE ROUTES - Protected
+        # ============================================
+
+        # Mobile Device Management
+        - id: mobile-device-routes
+          uri: lb://user-service
+          predicates:
+            - Path=/api/user-service/mobile-device/**
+          filters:
+            - StripPrefix=0
+
+        # Vehicle Management
+        - id: vehicle-routes
+          uri: lb://user-service
+          predicates:
+            - Path=/api/user-service/vehicle/**
+          filters:
+            - StripPrefix=0
+
+        # Partner Management (in user-service)
+        - id: user-service-partner-routes
+          uri: lb://user-service
+          predicates:
+            - Path=/api/user-service/partners/**
+          filters:
+            - StripPrefix=0
+
+        # Catch-all for other user-service routes
         - id: user-service-protected
           uri: lb://user-service
           predicates:
@@ -24,15 +54,35 @@ spring:
           filters:
             - StripPrefix=0
 
-        # User swagger
+        # User service swagger
         - id: user-swagger
           uri: lb://user-service
           predicates:
             - Path=/aggregate/user-service/v3/api-docs
           filters:
-            - SetPath=/api-docs
+            - SetPath=/v3/api-docs
 
-        # Parking lot service protected routes (JWT required)
+        # User service actuator
+        - id: user-actuator
+          uri: lb://user-service
+          predicates:
+            - Path=/actuator/**
+          filters:
+            - StripPrefix=0
+
+        # ============================================
+        # PARKING LOT SERVICE ROUTES - Protected
+        # ============================================
+
+        # Parking Lots
+        - id: parking-lot-routes
+          uri: lb://parking-lot-service
+          predicates:
+            - Path=/api/v1/parking-lots/**
+          filters:
+            - StripPrefix=0
+
+        # Catch-all for other parking-lot-service routes
         - id: parking-lot-service-protected
           uri: lb://parking-lot-service
           predicates:
@@ -46,8 +96,11 @@ spring:
           predicates:
             - Path=/aggregate/parking-lot-service/v3/api-docs
           filters:
-            - SetPath=/api-docs
+            - SetPath=/v3/api-docs
 
+      # ============================================
+      # GLOBAL CORS
+      # ============================================
       globalcors:
         cors-configurations:
           '[/**]':
@@ -61,16 +114,19 @@ spring:
               - PATCH
             allowedHeaders: "*"
             allowCredentials: true
+            maxAge: 3600
+        add-to-simple-url-handler-mapping: true
+
+      # ============================================
+      # DEFAULT FILTERS
+      # ============================================
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
 
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET:parkmate-super-secret-key-that-must-be-at-least-32-characters-long}
-
-# Eureka
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:9999/eureka
+  expiration: 86400000
 
 # Swagger
 springdoc:
@@ -81,11 +137,29 @@ springdoc:
         url: /aggregate/user-service/v3/api-docs
       - name: Parking Lot Service
         url: /aggregate/parking-lot-service/v3/api-docs
+    tryItOutEnabled: true
+    operationsSorter: method
+    tagsSorter: alpha
 
 # Logging
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
-    org.springframework.security: TRACE
-    org.springframework.security.oauth2.jwt: TRACE
+    org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: TRACE
+    org.springframework.security: DEBUG
+    org.springframework.web.cors: DEBUG
     com.parkmate: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Actuator for Gateway
+management:
+  endpoints:
+    web:
+      exposure:
+        include: gateway, health, info, mappings
+  endpoint:
+    gateway:
+      enabled: true
+    health:
+      show-details: always

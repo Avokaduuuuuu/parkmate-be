@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.common.enums.AccountRole;
 import com.parkmate.common.enums.AccountStatus;
 import com.parkmate.partner.Partner;
+import com.parkmate.partnerRegistration.PartnerRegistration;
 import com.parkmate.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -15,6 +16,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "account")
@@ -65,6 +67,9 @@ public class Account {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "partner_id")
     private Partner partner;
+
+    @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL)
+    private List<PartnerRegistration> partnerRegistrations;
 
     @OneToOne(mappedBy = "account", cascade = CascadeType.ALL)
     private User user;
