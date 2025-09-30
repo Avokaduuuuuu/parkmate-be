@@ -24,7 +24,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
-public class SecurityConfig {
+    public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/users/auth",
@@ -42,12 +42,14 @@ public class SecurityConfig {
 
     // Admin only endpoints
     public static final String[] ADMIN_ENDPOINTS = {
-            "/api/v1/admin/**"
+            "/api/v1/admin/**",
+            "/api/v1/partner-registrations/**"
     };
 
     // Partner only endpoints
     public static final String[] PARTNER_ENDPOINTS = {
-            "/api/v1/partner/**"
+            "/api/v1/partner/**",
+            "/api/v1/partner-registrations/**"
     };
 
     // Driver/Member only endpoints
@@ -65,11 +67,12 @@ public class SecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex
-                        .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .pathMatchers(ADMIN_ENDPOINTS).hasRole("ADMIN")
-                        .pathMatchers(PARTNER_ENDPOINTS).hasRole("PARTNER")
-                        .pathMatchers(MEMBER_ENDPOINTS).hasRole("MEMBER")
-                        .anyExchange().authenticated()
+//                        .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
+//                        .pathMatchers(ADMIN_ENDPOINTS).hasRole("ADMIN")
+//                        .pathMatchers(PARTNER_ENDPOINTS).hasRole("PARTNER")
+//                        .pathMatchers(MEMBER_ENDPOINTS).hasRole("MEMBER")
+//                        .anyExchange().authenticated()
+                                .anyExchange().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(grantedAuthoritiesExtractor())))

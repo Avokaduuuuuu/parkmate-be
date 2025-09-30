@@ -36,7 +36,12 @@ public enum ErrorCode {
     // Account errors 15
     ACCOUNT_NOT_FOUND(2501, "Account not found", HttpStatus.NOT_FOUND),
     ACCOUNT_ALREADY_EXISTS(2502, "Account with email '{0}' already exists", HttpStatus.CONFLICT),
-    ACCOUNT_INACTIVE(2503, "Account is inactive", HttpStatus.BAD_REQUEST);
+    ACCOUNT_INACTIVE(2503, "Account is inactive", HttpStatus.BAD_REQUEST),
+
+    // Partner Registration errors 26
+    TAX_NUMBER_ALREADY_EXISTS(2601, "A partner with the same tax number '{0}' already exists.", HttpStatus.CONFLICT),
+    PARTNER_REGISTRATION_NOT_FOUND(2602, "Partner registration request not found", HttpStatus.NOT_FOUND),
+    PARTNER_REGISTRATION_ALREADY_REVIEWED(2603, "This partner registration request has already been reviewed and cannot be modified.", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;
