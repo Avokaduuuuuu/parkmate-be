@@ -1,8 +1,8 @@
 package com.parkmate.partnerRegistration;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.parkmate.common.enums.RequestStatus;
 import com.parkmate.account.Account;
+import com.parkmate.common.enums.RequestStatus;
 import com.parkmate.partner.Partner;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
@@ -84,8 +84,8 @@ public class PartnerRegistration {
     @Schema(description = "Request submission timestamp", example = "2024-09-23 10:30:00")
     private LocalDateTime submittedAt = LocalDateTime.now();
 
-    @Column(name = "reviewed_by")
     @Schema(description = "ID of admin who reviewed this request", example = "456")
+    @Column(name = "reviewed_by")
     private Long reviewedBy;
 
     @Column(name = "reviewed_at")

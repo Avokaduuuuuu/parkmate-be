@@ -24,16 +24,16 @@ public class SpotEntity extends BaseEntity {
     String name;
 
     @Column(name = "spot_top_left_x")
-    Double lotTopLeftX;
+    Double spotTopLeftX;
 
     @Column(name = "spot_top_left_y")
-    Double lotTopLeftY;
+    Double spotTopLeftY;
 
     @Column(name = "spot_width")
-    Double lotWidth;
+    Double spotWidth;
 
     @Column(name = "spot_height")
-    Double lotHeight;
+    Double spotHeight;
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)

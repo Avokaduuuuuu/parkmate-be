@@ -1,5 +1,6 @@
 package com.parkmate.floor;
 
+import com.parkmate.floor.dto.resp.FloorDetailedResponse;
 import com.parkmate.floor_capacity.dto.req.FloorCapacityCreateRequest;
 import com.parkmate.floor.dto.req.FloorCreateRequest;
 import com.parkmate.floor.dto.req.FloorUpdateRequest;
@@ -44,18 +45,18 @@ public class FloorServiceImpl implements FloorService {
     }
 
     @Override
-    public FloorResponse getFloorById(Long parkingLotId) {
-        return FloorMapper.INSTANCE.toResponse(
+    public FloorDetailedResponse getFloorById(Long parkingLotId) {
+        return FloorMapper.INSTANCE.toResponseDetailed(
                 floorRepository.findById(parkingLotId)
                         .orElseThrow(() -> new AppException(ErrorCode.PARKING_FLOOR_NOT_FOUND))
         );
     }
 
     @Override
-    public Page<FloorResponse> findAll(int page, int size, String sortBy, String sortOrder) {
+    public Page<FloorResponse> findAll(int page, int size, String sortBy, String sortOrder, FloorFilterParams params) {
         Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<FloorEntity> parkingFloorEntities = floorRepository.findAll(pageable);
+        Page<FloorEntity> parkingFloorEntities = floorRepository.findAll(params.getSpecification(), pageable);
         return parkingFloorEntities.map(FloorMapper.INSTANCE::toResponse);
     }
 

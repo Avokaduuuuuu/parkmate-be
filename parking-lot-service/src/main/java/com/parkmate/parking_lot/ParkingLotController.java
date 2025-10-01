@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/parking-lots")
+@RequestMapping("/api/v1/parking-lots")
 @RequiredArgsConstructor
 @Tag(name = "Parking Lot API", description = "API requests for Parking Lot")
 public class ParkingLotController {
@@ -48,14 +48,16 @@ public class ParkingLotController {
                 );
     }
 
-    @PostMapping
-    public ResponseEntity<?> addParkingLot(@RequestBody @Valid ParkingLotCreateRequest request) {
+    @PostMapping("/{partnerId}")
+    public ResponseEntity<?> addParkingLot(
+            @PathVariable("partnerId") Long partnerId,
+            @RequestBody @Valid ParkingLotCreateRequest request) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(
                         ApiResponse.success(
                                 "Parking Lot created successfully",
-                                parkingLotService.addParkingLot(request)
+                                parkingLotService.addParkingLot(partnerId,request)
                         )
                 );
     }
