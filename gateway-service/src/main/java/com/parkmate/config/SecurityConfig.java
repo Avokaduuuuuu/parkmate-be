@@ -69,12 +69,12 @@ public class SecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex
-                                .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
-                                .pathMatchers(ADMIN_ENDPOINTS).hasRole("ADMIN")
-                                .pathMatchers(PARTNER_ENDPOINTS).hasRole("PARTNER")
-                                .pathMatchers(MEMBER_ENDPOINTS).hasRole("MEMBER")
-                                .anyExchange().authenticated()
-//                                .anyExchange().permitAll()
+//                                .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
+//                                .pathMatchers(ADMIN_ENDPOINTS).hasRole("ADMIN")
+//                                .pathMatchers(PARTNER_ENDPOINTS).hasRole("PARTNER")
+//                                .pathMatchers(MEMBER_ENDPOINTS).hasRole("MEMBER")
+//                                .anyExchange().authenticated()
+                        .anyExchange().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(grantedAuthoritiesExtractor())))

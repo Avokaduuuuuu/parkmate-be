@@ -27,46 +27,12 @@ spring:
             - StripPrefix=0
 
         # ============================================
-        # USER SERVICE ROUTES - Protected
+        # USER SERVICE ROUTES
         # ============================================
-
-        # Admin Routes
-        - id: admin-routes
+        - id: user-service-routes
           uri: lb://user-service
           predicates:
-            - Path=/api/v1/admin/**
-          filters:
-            - StripPrefix=0
-
-        # Mobile Device Management
-        - id: mobile-device-routes
-          uri: lb://user-service
-          predicates:
-            - Path=/api/v1/mobile-devices/**
-          filters:
-            - StripPrefix=0
-
-        # Vehicle Management
-        - id: vehicle-routes
-          uri: lb://user-service
-          predicates:
-            - Path=/api/v1/vehicles/**
-          filters:
-            - StripPrefix=0
-
-        # Partner Management
-        - id: partner-routes
-          uri: lb://user-service
-          predicates:
-            - Path=/api/v1/partners/**
-          filters:
-            - StripPrefix=0
-
-        # User Management
-        - id: user-routes
-          uri: lb://user-service
-          predicates:
-            - Path=/api/v1/users/**
+            - Path=/api/v1/**
           filters:
             - StripPrefix=0
 
