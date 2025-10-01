@@ -74,7 +74,7 @@ public class PartnerRegistrationController {
     )
     public ResponseEntity<ApiResponse<Void>> deletePartnerRegistration(@PathVariable Long id) {
         partnerRegistrationService.deletePartnerRegistration(id);
-        return ResponseEntity.ok(ApiResponse.success("Partner registration deleted successfully", null));
+        return ResponseEntity.ok(ApiResponse.success("Partner registration deleted successfully"));
     }
 
 }

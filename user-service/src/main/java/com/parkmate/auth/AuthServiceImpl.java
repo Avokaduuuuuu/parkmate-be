@@ -2,15 +2,15 @@ package com.parkmate.auth;
 
 import com.parkmate.account.Account;
 import com.parkmate.account.AccountRepository;
-import com.parkmate.auth.dto.AuthResponse;
-import com.parkmate.auth.dto.LoginRequest;
-import com.parkmate.auth.dto.LogoutRequest;
-import com.parkmate.auth.dto.RefreshRequest;
+import com.parkmate.auth.dto.*;
 import com.parkmate.common.enums.AccountRole;
 import com.parkmate.common.enums.AccountStatus;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.email.EmailService;
+import com.parkmate.user.User;
+import com.parkmate.user.UserMapper;
+import com.parkmate.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,6 +37,8 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtil jwtUtil;
     private final RedisTokenService redisTokenService;
     private final EmailService emailService;
+    private final UserMapper userMapper;
+    private final UserRepository userRepository;
 
     @Override
     public AuthResponse login(LoginRequest request) {
@@ -99,6 +101,80 @@ public class AuthServiceImpl implements AuthService {
     public void logout(LogoutRequest request) {
         redisTokenService.deleteRefreshToken(request.refreshToken());
         log.info("User logged out successfully");
+    }
+
+    @Override
+    public RegisterResponse register(RegisterRequest request) {
+
+        if (accountRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.ACCOUNT_ALREADY_EXISTS);
+        }
+
+        if (accountRepository.existsByUsername(request.getUsername())) {
+            throw new AppException(ErrorCode.USER_NAME_ALREADY_EXISTS);
+        }
+
+        // Create verification token
+        String verificationToken = UUID.randomUUID().toString();
+
+        // Create Account
+        Account account = Account.builder()
+                .email(request.getEmail())
+                .username(request.getUsername())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(AccountRole.MEMBER)
+                .status(AccountStatus.PENDING_VERIFICATION)
+                .emailVerified(false)
+                .phoneVerified(false)
+                .emailVerificationToken(verificationToken)
+                .build();
+
+        Account savedAccount = accountRepository.save(account);
+
+        // Create User
+        User user = User.builder()
+                .account(savedAccount)
+                .phone(request.getPhone())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .dateOfBirth(request.getDateOfBirth() != null ? request.getDateOfBirth().toLocalDate() : null)
+                .address(request.getAddress())
+                .idNumber(request.getIdNumber())
+                .frontPhotoPath(request.getFrontPhotoPath())
+                .backPhotoPath(request.getBackPhotoPath())
+                .build();
+
+        User savedUser = userRepository.save(user);
+
+        // Send verification email
+        try {
+            emailService.sendVerificationEmail(
+                    savedAccount.getEmail(),
+                    verificationToken,
+                    savedUser.getFullName() != null ? savedUser.getFullName() : savedAccount.getUsername()
+            );
+        } catch (Exception e) {
+            log.error("Failed to send verification email to: {}", savedAccount.getEmail(), e);
+        }
+
+        // Generate tokens
+        Map<String, Object> claims = buildClaims(savedAccount);
+        String accessToken = jwtUtil.generateToken(claims);
+        String refreshToken = UUID.randomUUID().toString().replace("-", "");
+
+        redisTokenService.storeRefreshToken(refreshToken, claims, REFRESH_TOKEN_EXPIRATION);
+
+        log.info("User registered successfully: {}", savedAccount.getEmail());
+
+        return RegisterResponse.builder()
+                .authResponse(AuthResponse.builder()
+                        .accessToken(accessToken)
+                        .refreshToken(refreshToken)
+                        .tokenType(TOKEN_TYPE)
+                        .expiresIn(ACCESS_TOKEN_EXPIRATION)
+                        .build())
+                .userResponse(userMapper.toResponse(savedUser))
+                .build();
     }
 
     private Map<String, Object> buildClaims(Account account) {

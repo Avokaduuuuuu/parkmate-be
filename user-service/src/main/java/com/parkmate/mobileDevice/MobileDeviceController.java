@@ -88,6 +88,6 @@ public class MobileDeviceController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteMobileDevice(@PathVariable UUID id) {
         mobileDeviceService.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Mobile device deleted successfully", null));
+        return ResponseEntity.ok(ApiResponse.success("Mobile device deleted successfully"));
     }
 }

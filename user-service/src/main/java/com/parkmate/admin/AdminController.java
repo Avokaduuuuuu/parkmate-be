@@ -22,7 +22,7 @@ public class AdminController {
             @Valid @RequestBody PartnerRegistrationApproveRequest request) {
 
         adminService.approvePartnerRegistration(reviewerId, partnerRegistrationId, request);
-        return ResponseEntity.ok(ApiResponse.success(null, "Partner registration approved successfully"));
+        return ResponseEntity.ok(ApiResponse.success("Partner registration approved successfully"));
     }
 
     @PutMapping("/{reviewerId}/partner-registration/{partnerRegistrationId}/reject")
@@ -32,7 +32,7 @@ public class AdminController {
             @Valid @RequestBody PartnerRegistrationRejectRequest request) {
 
         adminService.rejectPartnerRegistration(reviewerId, partnerRegistrationId, request);
-        return ResponseEntity.ok(ApiResponse.success(null, "Partner registration rejected"));
+        return ResponseEntity.ok(ApiResponse.success("Partner registration rejected"));
 
     }
 }
