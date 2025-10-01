@@ -3,7 +3,7 @@ spring:
     name: eureka-service
 
   config:
-    import: configserver:http://${SERVER_HOST}:${CONFIG_PORT}
+    import: configserver:http://${CONFIG_HOST:localhost}:${CONFIG_PORT}
 
   cloud:
     config:
