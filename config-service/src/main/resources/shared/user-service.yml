@@ -7,6 +7,31 @@ spring:
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:nguyenchauthanhbinh0808@gmail.com}
+    password: ${MAIL_PASSWORD:your-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+# Custom properties
+app:
+  mail:
+    from: ${MAIL_USERNAME:noreply@parkmate.com}
+    from-name: ParkMate System
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
+
+
 springdoc:
   api-docs:
     path: /v3/api-docs
@@ -23,4 +48,6 @@ springdoc:
   # Disable server generation from context
   use-management-port: false
   show-actuator: false
+
+
 

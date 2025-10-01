@@ -5,13 +5,11 @@ import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.user.dto.CreateUserRequest;
 import com.parkmate.user.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
     @Override
