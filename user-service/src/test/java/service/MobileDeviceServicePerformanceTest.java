@@ -1,18 +1,18 @@
 package service;
 
 import com.parkmate.UserApplication;
-import com.parkmate.mobileDevice.dto.MobileDeviceSearchCriteria;
-import com.parkmate.mobileDevice.dto.MobileDeviceResponse;
 import com.parkmate.account.Account;
-import com.parkmate.mobileDevice.MobileDevice;
-import com.parkmate.user.User;
+import com.parkmate.account.AccountRepository;
 import com.parkmate.common.enums.AccountRole;
 import com.parkmate.common.enums.AccountStatus;
 import com.parkmate.mobileDevice.DeviceOs;
-import com.parkmate.repository.AccountRepository;
+import com.parkmate.mobileDevice.MobileDevice;
 import com.parkmate.mobileDevice.MobileDeviceRepository;
-import com.parkmate.user.UserRepository;
 import com.parkmate.mobileDevice.MobileDeviceService;
+import com.parkmate.mobileDevice.dto.MobileDeviceResponse;
+import com.parkmate.mobileDevice.dto.MobileDeviceSearchCriteria;
+import com.parkmate.user.User;
+import com.parkmate.user.UserRepository;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

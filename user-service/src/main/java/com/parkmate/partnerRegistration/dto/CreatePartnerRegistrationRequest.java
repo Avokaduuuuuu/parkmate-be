@@ -20,6 +20,10 @@ public class CreatePartnerRegistrationRequest {
     @Schema(description = "Company name", example = "ABC Parking Solutions Ltd.")
     private String companyName;
 
+    @NotBlank(message = "Password is required")
+    @Schema()
+    private String password;
+
     @NotBlank(message = "Tax number is required")
     @Size(max = 50, message = "Tax number must not exceed 50 characters")
     @Schema(description = "Tax identification number", example = "0123456789")
