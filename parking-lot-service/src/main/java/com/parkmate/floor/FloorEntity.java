@@ -34,7 +34,7 @@ public class FloorEntity extends BaseEntity {
     ParkingLotEntity parkingLot;
 
     @OneToMany(mappedBy = "parkingFloor")
-    List<AreaEntity> parkingAreas;
+    List<AreaEntity> areas;
 
     @OneToMany(mappedBy = "parkingFloor", cascade = CascadeType.ALL)
     List<FloorCapacityEntity> parkingFloorCapacity;

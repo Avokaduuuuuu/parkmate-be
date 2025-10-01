@@ -1,25 +1,19 @@
 package com.parkmate.parking_lot.dto.req;
 
+import com.parkmate.lot_capacity.dto.req.LotCapacityCreateRequest;
+import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalTime;
+import java.util.List;
 
 @Schema(
         name = "ParkingLotCreateRequest",
         description = "Request payload for creating a new parking lot"
 )
 public record ParkingLotCreateRequest(
-
-        @Schema(
-                description = "ID of the partner who owns this parking lot",
-                example = "101",
-                requiredMode = Schema.RequiredMode.REQUIRED
-        )
-        @NotNull(message = "Partner Id must not be null")
-        @Min(value = 1, message = "Partner Id must be a positive number")
-        Long partnerId,
-
         @Schema(
                 description = "Name of the parking lot",
                 example = "Diamond Plaza Parking",
@@ -114,7 +108,13 @@ public record ParkingLotCreateRequest(
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         @NotNull(message = "Must define the close time")
-        LocalTime operatingHoursEnd
+        LocalTime operatingHoursEnd,
+
+        @Valid
+        List<LotCapacityCreateRequest> lotCapacityRequests,
+
+        @Valid
+        List<PricingRuleCreateRequest> pricingRuleCreateRequests
 ) {
 
         @Schema(hidden = true)
