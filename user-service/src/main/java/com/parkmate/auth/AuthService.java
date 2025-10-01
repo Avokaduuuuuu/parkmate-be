@@ -1,9 +1,6 @@
 package com.parkmate.auth;
 
-import com.parkmate.auth.dto.AuthResponse;
-import com.parkmate.auth.dto.LoginRequest;
-import com.parkmate.auth.dto.LogoutRequest;
-import com.parkmate.auth.dto.RefreshRequest;
+import com.parkmate.auth.dto.*;
 
 public interface AuthService {
 
@@ -12,6 +9,8 @@ public interface AuthService {
     AuthResponse refresh(RefreshRequest request);
 
     void logout(LogoutRequest request);
+
+    RegisterResponse register(RegisterRequest request);
 
     void verifyEmail(String token);
 

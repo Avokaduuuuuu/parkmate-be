@@ -18,6 +18,7 @@ public enum ErrorCode {
     USER_ALREADY_EXISTS(2102, "User already exists", HttpStatus.CONFLICT),
     EMAIL_ALREADY_EXISTS(2103, "Email '{0}' is already in use", HttpStatus.CONFLICT),
     PHONE_ALREADY_EXISTS(2104, "Phone number '{0}' is already in use", HttpStatus.CONFLICT),
+    USER_NAME_ALREADY_EXISTS(2105, "Username '{0}' is already in use", HttpStatus.CONFLICT),
 
     // Mobile device errors 22
     DEVICE_NOT_FOUND(2201, "Mobile device not found", HttpStatus.NOT_FOUND),

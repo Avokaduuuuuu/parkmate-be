@@ -64,7 +64,7 @@ public class PartnerController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable long id) {
         partnerService.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Partner deleted successfully", null));
+        return ResponseEntity.ok(ApiResponse.success("Partner deleted successfully"));
     }
 
 }
