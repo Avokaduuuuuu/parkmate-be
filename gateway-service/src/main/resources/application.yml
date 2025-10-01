@@ -3,4 +3,4 @@ spring:
     name: gateway-service
 
   config:
-    import: configserver:http://${SERVER_HOST:localhost}:${CONFIG_PORT}
+    import: configserver:http://${CONFIG_HOST:localhost}:${CONFIG_PORT:8888}
