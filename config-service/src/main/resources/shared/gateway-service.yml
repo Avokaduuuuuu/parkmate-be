@@ -86,7 +86,7 @@ spring:
         - id: parking-lot-service-protected
           uri: lb://parking-lot-service
           predicates:
-            - Path=/api/v1/parking-lot-service/**
+            - Path=/api/v1/**
           filters:
             - StripPrefix=0
 

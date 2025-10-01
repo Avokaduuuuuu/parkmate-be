@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/areas")
+@RequestMapping("/api/v1/areas")
 @RequiredArgsConstructor
 @Tag(name = "Area API", description = "API for making and configuring Area")
 public class AreaController {

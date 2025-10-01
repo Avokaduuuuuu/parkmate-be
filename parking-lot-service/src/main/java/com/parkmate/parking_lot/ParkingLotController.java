@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/parking-lots")
+@RequestMapping("/api/v1/parking-lots")
 @RequiredArgsConstructor
 @Tag(name = "Parking Lot API", description = "API requests for Parking Lot")
 public class ParkingLotController {
