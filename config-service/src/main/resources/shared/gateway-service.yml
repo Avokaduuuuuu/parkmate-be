@@ -18,15 +18,31 @@ spring:
           filters:
             - StripPrefix=0
 
+        # Partner Registration - Public
+        - id: partner-registration-routes
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/partner-registrations/**
+          filters:
+            - StripPrefix=0
+
         # ============================================
         # USER SERVICE ROUTES - Protected
         # ============================================
+
+        # Admin Routes
+        - id: admin-routes
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/admin/**
+          filters:
+            - StripPrefix=0
 
         # Mobile Device Management
         - id: mobile-device-routes
           uri: lb://user-service
           predicates:
-            - Path=/api/user-service/mobile-device/**
+            - Path=/api/v1/mobile-devices/**
           filters:
             - StripPrefix=0
 
@@ -34,23 +50,23 @@ spring:
         - id: vehicle-routes
           uri: lb://user-service
           predicates:
-            - Path=/api/user-service/vehicle/**
+            - Path=/api/v1/vehicles/**
           filters:
             - StripPrefix=0
 
-        # Partner Management (in user-service)
-        - id: user-service-partner-routes
+        # Partner Management
+        - id: partner-routes
           uri: lb://user-service
           predicates:
-            - Path=/api/user-service/partners/**
+            - Path=/api/v1/partners/**
           filters:
             - StripPrefix=0
 
-        # Catch-all for other user-service routes
-        - id: user-service-protected
+        # User Management
+        - id: user-routes
           uri: lb://user-service
           predicates:
-            - Path=/api/user-service/**
+            - Path=/api/v1/users/**
           filters:
             - StripPrefix=0
 

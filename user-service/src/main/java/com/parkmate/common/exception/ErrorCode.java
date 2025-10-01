@@ -37,6 +37,8 @@ public enum ErrorCode {
     ACCOUNT_NOT_FOUND(2501, "Account not found", HttpStatus.NOT_FOUND),
     ACCOUNT_ALREADY_EXISTS(2502, "Account with email '{0}' already exists", HttpStatus.CONFLICT),
     ACCOUNT_INACTIVE(2503, "Account is inactive", HttpStatus.BAD_REQUEST),
+    EMAIL_ALREADY_VERIFIED(2504, "Email has been verified before on this account", HttpStatus.CONFLICT),
+    EMAIL_RESEND_FAILED(2505, "Failed to resend verification email", HttpStatus.UNAUTHORIZED),
 
     // Partner Registration errors 27
     TAX_NUMBER_ALREADY_EXISTS(2701, "A partner with the same tax number '{0}' already exists.", HttpStatus.CONFLICT),
@@ -48,6 +50,8 @@ public enum ErrorCode {
     USER_INFO_NOT_FOUND(2602, "User information not found", HttpStatus.NOT_FOUND),
     STORE_REFRESH_TOKEN_FAILED(2603, "Failed to store refresh token", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_REFRESH_TOKEN(2604, "Invalid refresh token", HttpStatus.UNAUTHORIZED);
+
+
     private final int code;
     private final String message;
     private final HttpStatus httpStatus;

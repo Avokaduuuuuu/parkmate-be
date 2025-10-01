@@ -24,14 +24,18 @@ import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
-    public class SecurityConfig {
+public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/users/auth",
             "/api/v1/users/auth/**",
+            "/api/v1/partner-registrations/**",
             "/actuator/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
+            "/v3/api-docs/**",
+            "/aggregate/**",
+            "/webjars/**"
 
     };
 
@@ -42,14 +46,12 @@ import java.util.List;
 
     // Admin only endpoints
     public static final String[] ADMIN_ENDPOINTS = {
-            "/api/v1/admin/**",
-            "/api/v1/partner-registrations/**"
+            "/api/v1/admin/**"
     };
 
     // Partner only endpoints
     public static final String[] PARTNER_ENDPOINTS = {
-            "/api/v1/partner/**",
-            "/api/v1/partner-registrations/**"
+            "/api/v1/partner/**"
     };
 
     // Driver/Member only endpoints
@@ -67,12 +69,12 @@ import java.util.List;
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex
-//                        .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
-//                        .pathMatchers(ADMIN_ENDPOINTS).hasRole("ADMIN")
-//                        .pathMatchers(PARTNER_ENDPOINTS).hasRole("PARTNER")
-//                        .pathMatchers(MEMBER_ENDPOINTS).hasRole("MEMBER")
-//                        .anyExchange().authenticated()
-                                .anyExchange().permitAll()
+                                .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
+                                .pathMatchers(ADMIN_ENDPOINTS).hasRole("ADMIN")
+                                .pathMatchers(PARTNER_ENDPOINTS).hasRole("PARTNER")
+                                .pathMatchers(MEMBER_ENDPOINTS).hasRole("MEMBER")
+                                .anyExchange().authenticated()
+//                                .anyExchange().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(grantedAuthoritiesExtractor())))
@@ -86,8 +88,11 @@ import java.util.List;
         delegate.setJwtGrantedAuthoritiesConverter(jwt -> {
             // Example: roles in a custom "roles" claim
             String role = jwt.getClaimAsString("role");
+            System.out.println("JWT Claims: " + jwt.getClaims());
+            System.out.println("Extracted role: " + role);
             if (role == null) return List.of();
             String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+            System.out.println("Final authority: " + authority);
             return List.of(new SimpleGrantedAuthority(authority));
         });
         return new ReactiveJwtAuthenticationConverterAdapter(delegate);
@@ -95,9 +100,9 @@ import java.util.List;
 
     @Bean
     public ReactiveJwtDecoder jwtDecoder() {
-        SecretKey key = new SecretKeySpec(JWT_KEY.getBytes(), "HmacSHA512");
+        SecretKey key = new SecretKeySpec(JWT_KEY.getBytes(), "HmacSHA256");
         return NimbusReactiveJwtDecoder.withSecretKey(key)
-                .macAlgorithm(MacAlgorithm.HS512)
+                .macAlgorithm(MacAlgorithm.HS256)
                 .build();
     }
 

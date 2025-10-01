@@ -1,11 +1,7 @@
 package com.parkmate.partner;
 
-import com.parkmate.partner.dto.PartnerSearchCriteria;
-import com.parkmate.partner.dto.CreatePartnerRequest;
-import com.parkmate.partner.dto.PartnerSearchRequest;
-import com.parkmate.partner.dto.UpdatePartnerRequest;
 import com.parkmate.common.dto.ApiResponse;
-import com.parkmate.partner.dto.PartnerResponse;
+import com.parkmate.partner.dto.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/api/user-service/partners")
+@RequestMapping("/api/v1/partners")
 @RequiredArgsConstructor
 public class PartnerController {
 
