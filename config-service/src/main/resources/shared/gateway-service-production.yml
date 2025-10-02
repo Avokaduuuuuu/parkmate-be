@@ -14,7 +14,7 @@ spring:
         # USER SERVICE ROUTES
         # ============================================
         - id: user-service-routes
-          uri: lb://user-service
+          uri: lb://USER-SERVICE
           predicates:
             - Path=/api/v1/user-service/**
           filters:
@@ -22,7 +22,7 @@ spring:
 
         # User service swagger
         - id: user-swagger
-          uri: lb://user-service
+          uri: lb://USER-SERVICE
           predicates:
             - Path=/aggregate/user-service/v3/api-docs
           filters:
@@ -30,7 +30,7 @@ spring:
 
         # User service actuator
         - id: user-actuator
-          uri: lb://user-service
+          uri: lb://USER-SERVICE
           predicates:
             - Path=/actuator/**
           filters:
@@ -42,7 +42,7 @@ spring:
 
         # Catch-all for other parking-lot-service routes
         - id: parking-lot-service-protected
-          uri: lb://parking-lot-service
+          uri: lb://PARKING-LOT-SERVICE
           predicates:
             - Path=/api/v1/parking-service/**
           filters:
@@ -50,7 +50,7 @@ spring:
 
         # Parking lot swagger
         - id: parking-lot-swagger
-          uri: lb://parking-lot-service
+          uri: lb://PARKING-LOT-SERVICE
           predicates:
             - Path=/aggregate/parking-lot-service/v3/api-docs
           filters:

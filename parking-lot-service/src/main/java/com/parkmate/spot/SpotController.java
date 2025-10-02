@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/spots")
+@RequestMapping("/api/v1/parking-service/spots")
 @RequiredArgsConstructor
 @Tag(name = "Spot API", description = "APIs for managing individual parking spots within areas")
 public class SpotController {
