@@ -2,8 +2,8 @@ package com.parkmate.partner;
 
 import com.parkmate.common.config.MapStructConfig;
 import com.parkmate.partner.dto.CreatePartnerRequest;
-import com.parkmate.partner.dto.UpdatePartnerRequest;
 import com.parkmate.partner.dto.PartnerResponse;
+import com.parkmate.partner.dto.UpdatePartnerRequest;
 import org.mapstruct.*;
 
 @Mapper(config = MapStructConfig.class)

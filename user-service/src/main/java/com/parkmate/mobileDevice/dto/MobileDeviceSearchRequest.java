@@ -1,7 +1,7 @@
 package com.parkmate.mobileDevice.dto;
 
-import com.parkmate.mobileDevice.DeviceOs;
 import com.parkmate.common.util.ParseUtil;
+import com.parkmate.mobileDevice.DeviceOs;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigInteger;
 import java.time.LocalTime;
-import java.util.UUID;
 
 @Schema(description = "Request to create a new reservation")
 public record CreateReservationRequest(
@@ -19,7 +18,7 @@ public record CreateReservationRequest(
 
         @Schema(description = "Parking lot section ID", example = "789")
         @NotNull
-        UUID lotId,
+        Long lotId,
 
         @Schema(description = "Start time of the reservation", example = "2024-07-01T10:00:00")
         @NotNull

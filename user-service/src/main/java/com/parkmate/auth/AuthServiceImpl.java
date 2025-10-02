@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
 @Slf4j
@@ -148,7 +149,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Send verification email
         try {
-            emailService.sendVerificationEmail(
+            emailService.sendMemberVerificationEmail(
                     savedAccount.getEmail(),
                     verificationToken,
                     savedUser.getFullName() != null ? savedUser.getFullName() : savedAccount.getUsername()
@@ -188,21 +189,22 @@ public class AuthServiceImpl implements AuthService {
 
 
     @Override
-    public void verifyEmail(String token) {
+    public EmailVerificationResponse verifyEmail(String token) {
         Account account = accountRepository.findAccountByEmailVerificationToken(token)
-                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Account not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_VALIDATION_CODE));
 
         if (account.getEmailVerified()) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_VERIFIED);
         }
-
         account.setEmailVerified(true);
         account.setEmailVerificationToken(null);
-
         updateStatusAfterVerification(account);
-
         accountRepository.save(account);
         log.info("Email verified successfully for: {}", account.getEmail());
+        return EmailVerificationResponse.builder()
+                .isSuccess(true)
+                .message("Email verified for user: " + account.getEmail())
+                .build();
     }
 
     private void updateStatusAfterVerification(Account account) {
@@ -235,17 +237,28 @@ public class AuthServiceImpl implements AuthService {
             throw new AppException(ErrorCode.EMAIL_ALREADY_VERIFIED);
         }
 
-        String newToken = UUID.randomUUID().toString();
+        Random random = new Random();
+
+        String newToken = String.valueOf(100000 + random.nextInt(900000));
         account.setEmailVerificationToken(newToken);
         accountRepository.save(account);
 
         try {
 
-            emailService.sendVerificationEmail(
-                    account.getEmail(),
-                    newToken,
-                    account.getRole().equals(AccountRole.MEMBER) ? account.getUser().getFullName() : account.getPartner().getCompanyName()
-            );
+            if (account.getRole() == AccountRole.PARTNER_OWNER) {
+                emailService.sendPartnerVerificationEmail(
+                        account.getEmail(),
+                        newToken
+                );
+
+            } else {
+                emailService.sendMemberVerificationEmail(
+                        account.getEmail(),
+                        newToken,
+                        account.getRole().equals(AccountRole.MEMBER) ? account.getUser().getFullName() : account.getPartner().getCompanyName()
+                );
+            }
+
             log.info("Resent verification email to: {}", email);
         } catch (Exception e) {
             log.error("Failed to resend verification email to: {}", email, e);

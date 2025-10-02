@@ -2,12 +2,11 @@ package com.parkmate.partner;
 
 import com.parkmate.common.dto.ApiResponse;
 import com.parkmate.partner.dto.*;
-import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,19 +16,43 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/api/v1/user-service/partners")
 @RequiredArgsConstructor
+@Tag(name = "Partner Management", description = "APIs for managing parking lot partners")
 public class PartnerController {
 
     private final PartnerService partnerService;
 
     @GetMapping
-    @Schema(description = "Search Partners with pagination and filtering")
+    @Operation(
+            summary = "Search Partners with Pagination",
+            description = """
+                    Search and retrieve approved partners with pagination and filtering.
+
+                    **Search Criteria (PartnerSearchRequest):**
+                    - `companyName` (optional): Search by company name (partial match)
+                    - `taxNumber` (optional): Search by tax number
+                    - `status` (optional): Filter by partner status
+                    - `companyEmail` (optional): Search by company email
+
+                    **Returns:** Paginated list of partners
+                    """
+    )
     public ResponseEntity<ApiResponse<Page<PartnerResponse>>> getPartners(
-            @ModelAttribute PartnerSearchRequest request,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
-            Pageable pageable) {
+            @Parameter(description = "Page number (zero-based)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Number of items per page", example = "20")
+            @RequestParam(defaultValue = "20") int size,
+
+            @Parameter(description = "Field to sort by", example = "createdAt")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction (asc or desc)", example = "desc")
+            @RequestParam(defaultValue = "desc") String sortOrder,
+
+            @ModelAttribute PartnerSearchRequest request) {
 
         PartnerSearchCriteria criteria = request.toCriteria();
-        Page<PartnerResponse> result = partnerService.search(criteria, pageable);
+        Page<PartnerResponse> result = partnerService.search(criteria, page, size, sortBy, sortOrder);
 
         return ResponseEntity.ok(ApiResponse.<Page<PartnerResponse>>builder()
                 .success(true)
@@ -40,13 +63,26 @@ public class PartnerController {
     }
 
     @GetMapping("/{id}")
-    @Schema(description = "Get Partner details by ID")
-    public ResponseEntity<ApiResponse<PartnerResponse>> getPartner(@PathVariable long id) {
+    @Operation(
+            summary = "Get Partner by ID",
+            description = "Retrieve detailed information about a specific partner."
+    )
+    public ResponseEntity<ApiResponse<PartnerResponse>> getPartner(
+            @Parameter(description = "Partner ID", example = "1")
+            @PathVariable long id) {
         PartnerResponse response = partnerService.findById(id);
         return ResponseEntity.ok(ApiResponse.success("Partner fetched successfully", response));
     }
 
     @PostMapping
+    @Operation(
+            summary = "Create Partner (Admin Only)",
+            description = """
+                    Manually create a new partner entity (typically done through registration approval process).
+
+                    **Request Body:** CreatePartnerRequest with company details
+                    """
+    )
     public ResponseEntity<ApiResponse<PartnerResponse>> add(@RequestBody CreatePartnerRequest req) {
         PartnerResponse mobileDeviceResponse = partnerService.create(req);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -54,7 +90,12 @@ public class PartnerController {
     }
 
     @PutMapping("/{id}")
+    @Operation(
+            summary = "Update Partner",
+            description = "Update existing partner information."
+    )
     public ResponseEntity<ApiResponse<PartnerResponse>> update(
+            @Parameter(description = "Partner ID to update", example = "1")
             @PathVariable long id,
             @RequestBody UpdatePartnerRequest req) {
         PartnerResponse partnerResponse = partnerService.update(id, req);
@@ -62,7 +103,13 @@ public class PartnerController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable long id) {
+    @Operation(
+            summary = "Delete Partner",
+            description = "Soft delete a partner by changing their status."
+    )
+    public ResponseEntity<ApiResponse<Void>> delete(
+            @Parameter(description = "Partner ID to delete", example = "1")
+            @PathVariable long id) {
         partnerService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("Partner deleted successfully"));
     }

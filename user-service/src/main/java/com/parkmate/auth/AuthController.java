@@ -7,10 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("api/v1/user-service/auth")
@@ -66,5 +63,28 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(response, "Registration successful. Please verify your email."));
     }
 
+    @PutMapping("/verify")
+    @Operation(
+            summary = "Verify email with verification code",
+            description = "Verify user email using the verification code sent to their email address"
+    )
+    public ResponseEntity<ApiResponse<EmailVerificationResponse>> verifyEmail(
+            @RequestParam String verifyCode
+    ) {
+        EmailVerificationResponse response = authService.verifyEmail(verifyCode);
+        return ResponseEntity.ok(ApiResponse.success(response, "Email verified successfully"));
+    }
+
+    @PutMapping("/resend")
+    @Operation(
+            summary = "Resend verify email with verification code",
+            description = "Resend verify email"
+    )
+    public ResponseEntity<ApiResponse<?>> resendVerificationEmail(
+            @RequestParam String email
+    ) {
+        authService.resendVerificationEmail(email);
+        return ResponseEntity.ok(ApiResponse.success("Email resend successfully"));
+    }
 
 }

@@ -5,12 +5,11 @@ import com.parkmate.mobileDevice.DeviceOs;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 
 public record MobileDeviceResponse(
         @Schema(description = "Device unique identifier", example = "550e8400-e29b-41d4-a716-446655440000")
-        UUID id,
+        Long id,
 
         @Schema(description = "User ID who owns the device", example = "123")
         Long userId,

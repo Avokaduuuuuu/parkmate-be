@@ -1,14 +1,14 @@
 package com.parkmate.mobileDevice;
 
-import com.parkmate.mobileDevice.dto.MobileDeviceSearchCriteria;
-import com.parkmate.mobileDevice.dto.CreateMobileDeviceRequest;
-import com.parkmate.mobileDevice.dto.UpdateMobileDeviceRequest;
-import com.parkmate.mobileDevice.dto.MobileDeviceResponse;
-import com.parkmate.user.User;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
-import com.parkmate.user.UserRepository;
 import com.parkmate.common.util.PaginationUtil;
+import com.parkmate.mobileDevice.dto.CreateMobileDeviceRequest;
+import com.parkmate.mobileDevice.dto.MobileDeviceResponse;
+import com.parkmate.mobileDevice.dto.MobileDeviceSearchCriteria;
+import com.parkmate.mobileDevice.dto.UpdateMobileDeviceRequest;
+import com.parkmate.user.User;
+import com.parkmate.user.UserRepository;
 import com.querydsl.core.types.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,12 +33,15 @@ public class MobileDeviceServiceImpl implements MobileDeviceService {
     private final MobileDeviceMapper mobileDeviceMapper;
     private final MobileDeviceRepository mobileDeviceRepository;
     private final UserRepository userRepository;
+
     @Override
-    public Page<MobileDeviceResponse> searchDevices(MobileDeviceSearchCriteria criteria, Pageable pageable) {
-        Predicate predicate = MobileDeviceSpecification.buildPredicate(criteria);
-        Page<MobileDevice> devicePage = mobileDeviceRepository.findAll(predicate, pageable);
+    public Page<MobileDeviceResponse> searchDevices(MobileDeviceSearchCriteria criteria, int page, int size, String sortBy, String sortOrder) {
+        Page<MobileDevice> devicePage = mobileDeviceRepository.findAll(
+                MobileDeviceSpecification.buildPredicate(criteria),
+                PaginationUtil.parsePageable(page, size, sortBy, sortOrder));
         return devicePage.map(mobileDeviceMapper::toDTO);
     }
+
     @Override
     public List<MobileDeviceResponse> searchDevices(MobileDeviceSearchCriteria criteria) {
         Predicate predicate = MobileDeviceSpecification.buildPredicate(criteria);
@@ -65,7 +67,7 @@ public class MobileDeviceServiceImpl implements MobileDeviceService {
     }
 
     @Override
-    public MobileDeviceResponse update(UUID id, UpdateMobileDeviceRequest request) {
+    public MobileDeviceResponse update(Long id, UpdateMobileDeviceRequest request) {
 
         MobileDevice mobileDevice = mobileDeviceRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND, id));
@@ -77,7 +79,7 @@ public class MobileDeviceServiceImpl implements MobileDeviceService {
     }
 
     @Override
-    public MobileDeviceResponse findById(UUID id) {
+    public MobileDeviceResponse findById(Long id) {
         MobileDevice mobileDevice = mobileDeviceRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND, id));
 
@@ -94,7 +96,7 @@ public class MobileDeviceServiceImpl implements MobileDeviceService {
     }
 
     @Override
-    public void delete(UUID id) {
+    public void delete(Long id) {
         MobileDevice mobileDevice = mobileDeviceRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND, id));
         mobileDevice.setIsActive(false);
