@@ -50,8 +50,8 @@ public enum ErrorCode {
     PASSWORD_MISMATCH(2601, "Password does not match", HttpStatus.UNAUTHORIZED),
     USER_INFO_NOT_FOUND(2602, "User information not found", HttpStatus.NOT_FOUND),
     STORE_REFRESH_TOKEN_FAILED(2603, "Failed to store refresh token", HttpStatus.INTERNAL_SERVER_ERROR),
-    INVALID_REFRESH_TOKEN(2604, "Invalid refresh token", HttpStatus.UNAUTHORIZED);
-
+    INVALID_REFRESH_TOKEN(2604, "Invalid refresh token", HttpStatus.UNAUTHORIZED),
+    INVALID_VALIDATION_CODE(2605, "Verify code not match", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;

@@ -26,7 +26,14 @@ public class PartnerRegistrationController {
     @GetMapping("/{id}")
     @Operation(
             summary = "Get Partner Registration by ID",
-            description = "Fetches the details of a partner registration by its ID."
+            description = """
+                    Retrieves detailed information of a partner registration request.
+
+                    **Parameters:**
+                    - `id` (path): Partner registration ID (Long)
+
+                    **Returns:** Partner registration details including company info, status, and review information
+                    """
     )
     public ResponseEntity<ApiResponse<PartnerRegistrationResponse>> findById(@PathVariable Long id) {
         PartnerRegistrationResponse response = partnerRegistrationService.getPartnerRegistrationById(id);
@@ -35,8 +42,20 @@ public class PartnerRegistrationController {
 
     @GetMapping
     @Operation(
-            summary = "Get All Partner Registration",
-            description = "Fetches the details of all partner registration"
+            summary = "Get All Partner Registrations with Search and Pagination",
+            description = """
+                    Search and retrieve partner registration requests with pagination support.
+
+                    **Query Parameters:**
+                    - `status` (optional): Filter by request status (PENDING, APPROVED, REJECTED)
+                    - `companyName` (optional): Search by company name (partial match)
+                    - `taxNumber` (optional): Search by tax number
+                    - `page` (optional): Page number (default: 0)
+                    - `size` (optional): Page size (default: 10)
+                    - `sort` (optional): Sort field and direction (default: submittedAt,desc)
+
+                    **Returns:** Paginated list of partner registrations
+                    """
     )
     public ResponseEntity<ApiResponse<Page<PartnerRegistrationResponse>>> findAllPartnerRegistrations(
             @ModelAttribute PartnerRegistrationSearchRequest pageRequest,
@@ -49,7 +68,25 @@ public class PartnerRegistrationController {
     @PostMapping
     @Operation(
             summary = "Register a new Partner",
-            description = "Creates a new partner registration request."
+            description = """
+                    Submit a new partner registration request. A verification email will be sent to the contact person.
+
+                    **Request Body (CreatePartnerRegistrationRequest):**
+                    - `companyName` (required): Company/business name
+                    - `taxNumber` (required): Tax identification number (unique)
+                    - `businessLicenseNumber` (required): Business license number
+                    - `businessLicenseFileUrl` (optional): URL to uploaded business license
+                    - `companyAddress` (required): Complete company address
+                    - `companyPhone` (optional): Company contact phone
+                    - `companyEmail` (optional): Company contact email
+                    - `businessDescription` (optional): Description of business operations
+                    - `contactPersonName` (required): Contact person full name
+                    - `contactPersonPhone` (required): Contact person phone number
+                    - `contactPersonEmail` (required): Contact person email (unique)
+                    - `password` (required): Account password
+
+                    **Returns:** Created partner registration with PENDING status
+                    """
     )
     public ResponseEntity<ApiResponse<PartnerRegistrationResponse>> registerPartner(@RequestBody CreatePartnerRegistrationRequest request) {
         PartnerRegistrationResponse response = partnerRegistrationService.registerPartner(request);
@@ -58,8 +95,25 @@ public class PartnerRegistrationController {
 
     @PutMapping("/{id}")
     @Operation(
-            summary = "Update Partner Registration",
-            description = "Updates the status and details of an existing partner registration."
+            summary = "Update Partner Registration Status (Admin Review)",
+            description = """
+                    Admin endpoint to approve or reject a partner registration request.
+
+                    **Parameters:**
+                    - `id` (path): Partner registration ID to update
+
+                    **Request Body (UpdatePartnerRegistrationRequest):**
+                    - `status` (required): New status - APPROVED or REJECTED
+                    - `reviewerId` (required): Admin account ID performing the review
+                    - `approvalNotes` (optional): Admin notes when approving
+                    - `rejectionReason` (required if status=REJECTED): Reason for rejection
+
+                    **Business Logic:**
+                    - If APPROVED: Creates Partner entity, sets account status to ACTIVE
+                    - If REJECTED: Only updates status and rejection reason
+
+                    **Returns:** Updated partner registration with review information
+                    """
     )
     public ResponseEntity<ApiResponse<PartnerRegistrationResponse>> updatePartnerRegistration(
             @PathVariable Long id, @RequestBody UpdatePartnerRegistrationRequest request) {
@@ -70,7 +124,14 @@ public class PartnerRegistrationController {
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Delete Partner Registration",
-            description = "Deletes a partner registration by its ID."
+            description = """
+                    Soft delete a partner registration by setting its status to REJECTED.
+
+                    **Parameters:**
+                    - `id` (path): Partner registration ID to delete
+
+                    **Returns:** Success message
+                    """
     )
     public ResponseEntity<ApiResponse<Void>> deletePartnerRegistration(@PathVariable Long id) {
         partnerRegistrationService.deletePartnerRegistration(id);

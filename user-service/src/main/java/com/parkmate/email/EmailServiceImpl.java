@@ -1,5 +1,9 @@
 package com.parkmate.email;
 
+import com.parkmate.common.exception.AppException;
+import com.parkmate.common.exception.ErrorCode;
+import com.parkmate.partnerRegistration.PartnerRegistration;
+import com.parkmate.partnerRegistration.PartnerRegistrationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +17,7 @@ import org.springframework.stereotype.Service;
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
+    private final PartnerRegistrationRepository partnerRegistrationRepository;
 
     @Value("${app.mail.from}")
     private String fromEmail;
@@ -24,19 +29,39 @@ public class EmailServiceImpl implements EmailService {
     private String frontendUrl;
 
     @Override
-    public void sendVerificationEmail(String toEmail, String token, String recipientName) {
+    public void sendPartnerVerificationEmail(String toEmail, String token) {
         try {
-            String verificationUrl = frontendUrl + "/verify-email?token=" + token;
 
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
             message.setSubject("Xác thực email đăng ký ParkMate");
-            message.setText(buildVerificationEmailText(recipientName, verificationUrl));
+            PartnerRegistration partnerRegistration = partnerRegistrationRepository.findByContactPersonEmail(toEmail)
+                    .orElseThrow(() -> new AppException(ErrorCode.PARTNER_REGISTRATION_NOT_FOUND));
+
+            message.setText(buildVerificationEmailText(partnerRegistration.getContactPersonName(), token));
 
             mailSender.send(message);
-            log.info("Verification email sent successfully to: {}", toEmail);
+            log.info("Partner verification email sent successfully to: {}", toEmail);
 
+        } catch (Exception e) {
+            log.error("Failed to send verification email to: {}", toEmail, e);
+            throw new RuntimeException("Failed to send verification email", e);
+        }
+    }
+
+    @Override
+    public void sendMemberVerificationEmail(String toEmail, String token, String recipientName) {
+        try {
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("Xác thực email đăng ký ParkMate");
+            message.setText(buildMemberVerificationEmailText(recipientName, token));
+
+            mailSender.send(message);
+            log.info("Member verification email sent successfully to: {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send verification email to: {}", toEmail, e);
             throw new RuntimeException("Failed to send verification email", e);
@@ -82,22 +107,29 @@ public class EmailServiceImpl implements EmailService {
 
     // Helper methods để build email content
 
-    private String buildVerificationEmailText(String recipientName, String verificationUrl) {
+    private String buildMemberVerificationEmailText(String recipientName, String verificationToken) {
         return String.format("""
-                Xin chào %s,
+                Hi %s,
                 
-                Cảm ơn bạn đã đăng ký trở thành đối tác của ParkMate!
-                
-                Vui lòng click vào link bên dưới để xác thực email của bạn:
+                Here is your ParkMate verification code:
                 %s
                 
-                Link này sẽ hết hạn sau 24 giờ.
-                
-                Nếu bạn không thực hiện đăng ký này, vui lòng bỏ qua email này.
-                
-                Trân trọng,
                 ParkMate Team
-                """, recipientName, verificationUrl);
+                """, recipientName, verificationToken);
+    }
+
+
+    private String buildVerificationEmailText(String recipientName, String verificationToken) {
+        return String.format("""
+                Hi %s,
+                
+                Thank you for being ParkMate Partner
+                
+                Here is your verification code:
+                %s
+                
+                ParkMate Team
+                """, recipientName, verificationToken);
     }
 
     private String buildApprovalEmailText(String recipientName, String username, String tempPassword) {

@@ -8,6 +8,9 @@ import com.parkmate.common.enums.RequestStatus;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.email.EmailService;
+import com.parkmate.partner.Partner;
+import com.parkmate.partner.PartnerRepository;
+import com.parkmate.partner.PartnerStatus;
 import com.parkmate.partnerRegistration.dto.CreatePartnerRegistrationRequest;
 import com.parkmate.partnerRegistration.dto.PartnerRegistrationResponse;
 import com.parkmate.partnerRegistration.dto.PartnerRegistrationSearchRequest;
@@ -21,7 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.Random;
 
 @RequiredArgsConstructor
 @Service
@@ -31,6 +34,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
     private final PartnerRegistrationRepository partnerRegistrationRepository;
     private final AccountRepository accountRepository;
     private final PartnerRegistrationMapper mapper;
+    private final PartnerRepository partnerRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
@@ -38,7 +42,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
     public PartnerRegistrationResponse registerPartner(CreatePartnerRegistrationRequest request) {
         validateDuplicateConstraint(request);
 
-        String verificationToken = UUID.randomUUID().toString();
+        String verificationToken = generateRandomToken();
 
         Account account = Account.builder()
                 .email(request.getContactPersonEmail())
@@ -59,10 +63,9 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         PartnerRegistration savedEntity = partnerRegistrationRepository.save(partnerRegistration);
 
         try {
-            emailService.sendVerificationEmail(
+            emailService.sendPartnerVerificationEmail(
                     savedAccount.getEmail(),
-                    verificationToken,
-                    request.getContactPersonName()
+                    verificationToken
             );
         } catch (Exception e) {
             log.error("Failed to send verification email to: {}", savedAccount.getEmail(), e);
@@ -79,9 +82,23 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
 
     @Override
     public PartnerRegistrationResponse updatePartnerRegistration(Long id, UpdatePartnerRegistrationRequest request) {
+        if (!request.isValid()) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
         PartnerRegistration partnerRegistration = partnerRegistrationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARTNER_REGISTRATION_NOT_FOUND));
-        mapper.updateEntityFromDto(request, partnerRegistration);
+
+        if (!accountRepository.existsById(request.getReviewerId())) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+
+        switch (request.getStatus()) {
+            case APPROVED -> approvePartnerRegistration(partnerRegistration, request);
+            case REJECTED -> rejectPartnerRegistration(partnerRegistration, request);
+            default -> mapper.updateEntityFromDto(request, partnerRegistration);
+        }
+
         PartnerRegistration savedPartnerRegistration = partnerRegistrationRepository.save(partnerRegistration);
         return mapper.toDto(savedPartnerRegistration);
     }
@@ -107,5 +124,50 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         if (accountRepository.existsByEmail(request.getContactPersonEmail())) {
             throw new AppException(ErrorCode.ACCOUNT_ALREADY_EXISTS);
         }
+    }
+
+    private void approvePartnerRegistration(PartnerRegistration partnerRegistration, UpdatePartnerRegistrationRequest request) {
+        partnerRegistration.setStatus(RequestStatus.APPROVED);
+        partnerRegistration.setReviewedBy(request.getReviewerId());
+        partnerRegistration.setReviewedAt(LocalDateTime.now());
+        partnerRegistration.setApprovalNotes(request.getApprovalNotes());
+        partnerRegistration.setRejectionReason(null);
+        PartnerRegistration savedRegistration = partnerRegistrationRepository.save(partnerRegistration);
+        Account account = accountRepository.findAccountByEmail(savedRegistration.getContactPersonEmail())
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
+        account.setStatus(AccountStatus.ACTIVE);
+        accountRepository.save(account);
+        createPartner(savedRegistration);
+    }
+
+    private void rejectPartnerRegistration(PartnerRegistration partnerRegistration, UpdatePartnerRegistrationRequest request) {
+        partnerRegistration.setStatus(RequestStatus.REJECTED);
+        partnerRegistration.setReviewedBy(request.getReviewerId());
+        partnerRegistration.setReviewedAt(LocalDateTime.now());
+        partnerRegistration.setRejectionReason(request.getRejectionReason());
+        partnerRegistration.setApprovalNotes(null);
+    }
+
+    private void createPartner(PartnerRegistration updatedPartnerRegistration) {
+        partnerRepository.save(
+                Partner.builder()
+                        .partnerRegistration(updatedPartnerRegistration)
+                        .businessLicenseFileUrl(updatedPartnerRegistration.getBusinessLicenseFileUrl())
+                        .businessDescription(updatedPartnerRegistration.getBusinessDescription())
+                        .companyAddress(updatedPartnerRegistration.getCompanyAddress())
+                        .companyName(updatedPartnerRegistration.getCompanyName())
+                        .companyEmail(updatedPartnerRegistration.getCompanyEmail())
+                        .businessLicenseNumber(updatedPartnerRegistration.getBusinessLicenseNumber())
+                        .status(PartnerStatus.APPROVED)
+                        .taxNumber(updatedPartnerRegistration.getTaxNumber())
+                        .companyPhone(updatedPartnerRegistration.getCompanyPhone())
+                        .build()
+        );
+    }
+
+    private String generateRandomToken() {
+        Random random = new Random();
+        return String.valueOf(100000 + random.nextInt(900000));
+
     }
 }

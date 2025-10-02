@@ -37,4 +37,9 @@ public final class PaginationUtil {
     public static Pageable parsePageable(int page, int size, String sort, Set<String> validFields) {
         return PageRequest.of(page, size, parseSort(sort, validFields));
     }
+
+    public static Pageable parsePageable(int page, int size, String sortBy, String sortOrder) {
+        Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
+        return PageRequest.of(page, size, sort);
+    }
 }

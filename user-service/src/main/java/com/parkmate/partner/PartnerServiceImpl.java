@@ -1,11 +1,12 @@
 package com.parkmate.partner;
 
-import com.parkmate.partner.dto.PartnerSearchCriteria;
-import com.parkmate.partner.dto.CreatePartnerRequest;
-import com.parkmate.partner.dto.UpdatePartnerRequest;
-import com.parkmate.partner.dto.PartnerResponse;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
+import com.parkmate.common.util.PaginationUtil;
+import com.parkmate.partner.dto.CreatePartnerRequest;
+import com.parkmate.partner.dto.PartnerResponse;
+import com.parkmate.partner.dto.PartnerSearchCriteria;
+import com.parkmate.partner.dto.UpdatePartnerRequest;
 import com.querydsl.core.types.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,8 +26,9 @@ public class PartnerServiceImpl implements PartnerService {
 
 
     @Override
-    public Page<PartnerResponse> search(PartnerSearchCriteria criteria, Pageable pageable) {
+    public Page<PartnerResponse> search(PartnerSearchCriteria criteria, int page, int size, String sortBy, String sortOrder) {
         Predicate predicate = PartnerSpecification.buildPredicate(criteria);
+        Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
         return partnerRepository.findAll(predicate, pageable).map(partnerMapper::toDto);
     }
 

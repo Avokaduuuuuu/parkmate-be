@@ -2,8 +2,8 @@ package com.parkmate.mobileDevice;
 
 import com.parkmate.common.config.MapStructConfig;
 import com.parkmate.mobileDevice.dto.CreateMobileDeviceRequest;
-import com.parkmate.mobileDevice.dto.UpdateMobileDeviceRequest;
 import com.parkmate.mobileDevice.dto.MobileDeviceResponse;
+import com.parkmate.mobileDevice.dto.UpdateMobileDeviceRequest;
 import org.mapstruct.*;
 
 @Mapper(config = MapStructConfig.class)

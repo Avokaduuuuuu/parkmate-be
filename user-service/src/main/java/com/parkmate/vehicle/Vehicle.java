@@ -1,15 +1,15 @@
 package com.parkmate.vehicle;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.github.f4b6a3.uuid.UuidCreator;
 import com.parkmate.user.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "vehicle",
@@ -24,15 +24,10 @@ import java.util.UUID;
 public class Vehicle {
 
     @Id
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @PrePersist
-    public void assignIdIfNull() {
-        if (id == null) {
-            id = UuidCreator.getTimeOrderedEpoch(); //v7
-        }
-    }
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false,
@@ -41,6 +36,7 @@ public class Vehicle {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "vehicle_type", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private VehicleType vehicleType;
 
     @Column(name = "license_plate", length = 20, nullable = false, unique = true)

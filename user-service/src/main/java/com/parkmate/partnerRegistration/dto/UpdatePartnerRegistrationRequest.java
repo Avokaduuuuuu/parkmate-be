@@ -23,6 +23,9 @@ public class UpdatePartnerRegistrationRequest {
     @Schema(description = "Reason for rejection (required if status is REJECTED)", example = "Business license is expired")
     private String rejectionReason;
 
+    @Schema(description = "Id of admin approve/reject this registration request", example = "2")
+    private Long reviewerId;
+
     // Custom validation method
     public boolean isValid() {
         if (RequestStatus.REJECTED.equals(status)) {

@@ -1,7 +1,7 @@
 package com.parkmate.partner.dto;
 
-import com.parkmate.partner.PartnerStatus;
 import com.parkmate.common.util.ParseUtil;
+import com.parkmate.partner.PartnerStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

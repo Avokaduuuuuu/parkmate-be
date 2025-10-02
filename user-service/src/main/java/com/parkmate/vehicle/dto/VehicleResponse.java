@@ -5,10 +5,9 @@ import com.parkmate.vehicle.VehicleType;
 
 import java.math.BigInteger;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 public record VehicleResponse(
-        UUID id,
+        Long id,
         BigInteger userId,
         VehicleType vehicleType,
         String licensePlate,

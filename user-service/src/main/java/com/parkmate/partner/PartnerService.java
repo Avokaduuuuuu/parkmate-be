@@ -1,11 +1,10 @@
 package com.parkmate.partner;
 
-import com.parkmate.partner.dto.PartnerSearchCriteria;
 import com.parkmate.partner.dto.CreatePartnerRequest;
-import com.parkmate.partner.dto.UpdatePartnerRequest;
 import com.parkmate.partner.dto.PartnerResponse;
+import com.parkmate.partner.dto.PartnerSearchCriteria;
+import com.parkmate.partner.dto.UpdatePartnerRequest;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,7 +12,7 @@ import java.util.List;
 @Service
 public interface PartnerService {
 
-    Page<PartnerResponse> search(PartnerSearchCriteria criteria, Pageable pageable);
+    Page<PartnerResponse> search(PartnerSearchCriteria criteria, int page, int size, String sortBy, String sortOrder);
 
     List<PartnerResponse> search(PartnerSearchCriteria criteria);
 
