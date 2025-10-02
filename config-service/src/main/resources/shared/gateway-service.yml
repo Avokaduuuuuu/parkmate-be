@@ -8,23 +8,7 @@ spring:
   cloud:
     gateway:
       routes:
-        # ============================================
-        # AUTH ROUTES - Public (no JWT)
-        # ============================================
-        - id: auth-routes
-          uri: lb://user-service
-          predicates:
-            - Path=/api/v1/users/auth/**
-          filters:
-            - StripPrefix=0
 
-        # Partner Registration - Public
-        - id: partner-registration-routes
-          uri: lb://user-service
-          predicates:
-            - Path=/api/v1/partner-registrations/**
-          filters:
-            - StripPrefix=0
 
         # ============================================
         # USER SERVICE ROUTES
@@ -32,7 +16,7 @@ spring:
         - id: user-service-routes
           uri: lb://user-service
           predicates:
-            - Path=/api/v1/**
+            - Path=/api/v1/user-service/**
           filters:
             - StripPrefix=0
 
@@ -56,19 +40,11 @@ spring:
         # PARKING LOT SERVICE ROUTES - Protected
         # ============================================
 
-        # Parking Lots
-        - id: parking-lot-routes
-          uri: lb://parking-lot-service
-          predicates:
-            - Path=/api/v1/parking-lots/**
-          filters:
-            - StripPrefix=0
-
         # Catch-all for other parking-lot-service routes
         - id: parking-lot-service-protected
           uri: lb://parking-lot-service
           predicates:
-            - Path=/api/v1/**
+            - Path=/api/v1/parking-service/**
           filters:
             - StripPrefix=0
 

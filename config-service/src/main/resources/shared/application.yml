@@ -6,4 +6,8 @@ eureka:
     initial-instance-info-replication-interval-seconds: 5
 
   instance:
-    prefer-ip-address: true
+    hostname: ${HOSTNAME:localhost}
+    instance-id: ${spring.application.name}:${HOSTNAME:localhost}:${server.port}
+
+gateway:
+  url: ${GATEWAY_URL:http://localhost:8080}

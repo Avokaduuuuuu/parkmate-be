@@ -28,6 +28,7 @@ public class RedisTokenService {
             String json = objectMapper.writeValueAsString(userInfo);
             redisTemplate.opsForValue().set(key, json, seconds, TimeUnit.SECONDS);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new AppException(ErrorCode.STORE_REFRESH_TOKEN_FAILED, "Failed to store refresh token in Redis");
         }
     }

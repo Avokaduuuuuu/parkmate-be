@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/mobile-device")
+@RequestMapping("/api/v1/user-service/mobile-device")
 @RequiredArgsConstructor
 @Tag(name = "Mobile Device Management", description = "APIs for managing mobile devices")
 public class MobileDeviceController {

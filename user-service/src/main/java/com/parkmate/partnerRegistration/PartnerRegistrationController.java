@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/partner-registrations")
+@RequestMapping("/api/v1/user-service/partner-registrations")
 @Tag(name = "Partner Registration", description = "Endpoints for managing partner registrations")
 public class PartnerRegistrationController {
 

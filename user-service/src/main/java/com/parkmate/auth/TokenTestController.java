@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/test/tokens")
+@RequestMapping("/api/v1/user-service/tokens")
 @RequiredArgsConstructor
 @Tag(name = "Token Test", description = "Test endpoints to generate tokens for different roles (Development only)")
 public class TokenTestController {

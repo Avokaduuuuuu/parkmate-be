@@ -23,6 +23,16 @@ spring:
           timeout: 5000
           writetimeout: 5000
 
+
+  data:
+    redis:
+      port: 6379
+      host: ${REDIS_HOST}
+      ssl:
+        enabled: true
+  cache:
+    type: redis
+
 # Custom properties
 app:
   mail:

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/pricing-rules")
+@RequestMapping("/api/v1/parking-service/pricing-rules")
 @RequiredArgsConstructor
 @Tag(name = "Pricing Rule API", description = "API for making, retrieving, update pricing rule of a parking lot")
 public class PricingRuleController {

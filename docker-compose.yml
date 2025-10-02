@@ -8,6 +8,7 @@ x-common-env: &common-env
   CONFIG_PORT: ${CONFIG_PORT}
   EUREKA_PORT: ${EUREKA_PORT}
   EUREKA_HOST: ${EUREKA_HOST}
+  REDIS_HOST: ${REDIS_HOST}
 
 services:
   postgres:
