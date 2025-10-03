@@ -109,6 +109,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         if (request.latitude() != null) parkingLotEntity.setLatitude(request.latitude());
         if (request.longitude() != null) parkingLotEntity.setLongitude(request.longitude());
         if (request.totalFloors() != null) parkingLotEntity.setTotalFloors(request.totalFloors());
+        if (request.status() != null) parkingLotEntity.setStatus(request.status());
 
         return ParkingLotMapper.INSTANCE.toResponse(parkingLotRepository.save(parkingLotEntity));
     }

@@ -3,8 +3,6 @@ package com.parkmate.common.enums;
 public enum VehicleType {
     BIKE,
     MOTORBIKE,
-    CAR_4_SEATS,
-    CAR_7_SEATS,
-    CAR_9_SEATS,
+    CAR_UP_TO_9_SEATS,
     OTHER
 }
