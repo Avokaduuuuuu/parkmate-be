@@ -17,6 +17,8 @@ public interface PartnerRegistrationService {
 
     Page<PartnerRegistrationResponse> getPartnerRegistrations(PartnerRegistrationSearchRequest request, Pageable pageable);
 
+    Page<PartnerRegistrationResponse> getPartnerRegistrations(PartnerRegistrationSearchRequest request, int page, int size, String sortBy, String sortOrder);
+
     void deletePartnerRegistration(Long id);
 
 

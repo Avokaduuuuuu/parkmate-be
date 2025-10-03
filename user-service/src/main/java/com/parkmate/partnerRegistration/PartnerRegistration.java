@@ -9,6 +9,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 
@@ -83,6 +85,18 @@ public class PartnerRegistration {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "Request submission timestamp", example = "2024-09-23 10:30:00")
     private LocalDateTime submittedAt = LocalDateTime.now();
+
+    @Column(name = "created_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "Request submission timestamp", example = "2024-09-23 10:30:00")
+    @CreatedDate
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "Request submission timestamp", example = "2024-09-23 10:30:00")
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
 
     @Schema(description = "ID of admin who reviewed this request", example = "456")
     @Column(name = "reviewed_by")

@@ -7,6 +7,7 @@ import com.parkmate.common.enums.AccountStatus;
 import com.parkmate.common.enums.RequestStatus;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
+import com.parkmate.common.util.PaginationUtil;
 import com.parkmate.email.EmailService;
 import com.parkmate.partner.Partner;
 import com.parkmate.partner.PartnerRepository;
@@ -108,6 +109,14 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         Predicate predicate = PartnerRegistrationSpecification.buildPredicate(request.toCriteria());
         Page<PartnerRegistration> page = partnerRegistrationRepository.findAll(predicate, pageable);
         return page.map(mapper::toDto);
+    }
+
+    @Override
+    public Page<PartnerRegistrationResponse> getPartnerRegistrations(PartnerRegistrationSearchRequest request, int page, int size, String sortBy, String sortOrder) {
+        Predicate predicate = PartnerRegistrationSpecification.buildPredicate(request.toCriteria());
+        Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
+        Page<PartnerRegistration> registrationPage = partnerRegistrationRepository.findAll(predicate, pageable);
+        return registrationPage.map(mapper::toDto);
     }
 
     @Override
