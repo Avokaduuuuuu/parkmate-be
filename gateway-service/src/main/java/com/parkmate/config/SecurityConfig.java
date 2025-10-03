@@ -74,7 +74,7 @@ public class SecurityConfig {
 //                                .pathMatchers(PARTNER_ENDPOINTS).hasRole("PARTNER")
 //                                .pathMatchers(MEMBER_ENDPOINTS).hasRole("MEMBER")
 //                                .anyExchange().authenticated()
-                        .anyExchange().permitAll()
+                                .anyExchange().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(grantedAuthoritiesExtractor())))
