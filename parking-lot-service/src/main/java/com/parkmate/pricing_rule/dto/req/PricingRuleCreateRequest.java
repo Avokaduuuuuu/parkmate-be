@@ -25,8 +25,8 @@ public record PricingRuleCreateRequest(
 
         @Schema(
                 description = "Type of vehicle this pricing rule applies to",
-                example = "CAR_4_SEATS",
-                allowableValues = {"BIKE", "MOTORBIKE", "CAR_4_SEATS", "CAR_7_SEATS", "CAR_9_SEATS", "OTHER"},
+                example = "CAR_UP_TO_9_SEATS",
+                allowableValues = {"BIKE", "MOTORBIKE","CAR_UP_TO_9_SEATS", "OTHER"},
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         @NotNull(message = "Vehicle Type must not be null")

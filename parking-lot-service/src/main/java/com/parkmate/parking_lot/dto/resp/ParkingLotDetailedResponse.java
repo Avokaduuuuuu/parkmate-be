@@ -3,7 +3,9 @@ package com.parkmate.parking_lot.dto.resp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.floor.dto.resp.FloorResponse;
+import com.parkmate.lot_capacity.dto.resp.LotCapacityResponse;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
+import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -41,4 +43,6 @@ public class ParkingLotDetailedResponse {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
     List<FloorResponse> parkingFloors;
+    List<PricingRuleResponse> pricingRules;
+    List<LotCapacityResponse> lotCapacity;
 }
