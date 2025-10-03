@@ -30,7 +30,7 @@ public class VehicleSearchCriteria {
     @Schema(
             description = "Filter by vehicle type",
             example = "CAR_4_SEATS",
-            allowableValues = {"BIKE", "MOTORBIKE", "CAR_4_SEATS", "CAR_7_SEATS", "CAR_9_SEATS", "OTHER"},
+            allowableValues = {"BIKE", "MOTORBIKE", "CAR_UP_TO_9_SEATS", "OTHER"},
             nullable = true
     )
     private VehicleType vehicleType;
