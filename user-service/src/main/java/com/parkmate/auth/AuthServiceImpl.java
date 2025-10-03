@@ -116,7 +116,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Create verification token
-        String verificationToken = UUID.randomUUID().toString();
+        Random random = new Random();
+        String verificationToken = String.valueOf(100000 + random.nextInt(900000));
 
         // Create Account
         Account account = Account.builder()
