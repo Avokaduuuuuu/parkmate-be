@@ -1,14 +1,34 @@
 package com.parkmate.vehicle.dto;
 
 import com.parkmate.vehicle.VehicleType;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Size;
 
+@Schema(description = "Update vehicle request - all fields are optional")
 public record UpdateVehicleRequest(
+        @Schema(description = "Type of vehicle", example = "CAR", allowableValues = {"MOTORBIKE", "CAR", "BICYCLE", "ELECTRIC_SCOOTER"})
         VehicleType vehicleType,
+
+        @Size(max = 500, message = "License image URL must not exceed 500 characters")
+        @Schema(description = "License plate image URL (max 500 chars)", example = "/uploads/license/vehicle123.jpg")
         String licenseImage,
+
+        @Size(max = 50, message = "Vehicle brand must not exceed 50 characters")
+        @Schema(description = "Vehicle brand/manufacturer (max 50 chars)", example = "Toyota")
         String vehicleBrand,
+
+        @Size(max = 50, message = "Vehicle model must not exceed 50 characters")
+        @Schema(description = "Vehicle model name (max 50 chars)", example = "Camry")
         String vehicleModel,
+
+        @Size(max = 30, message = "Vehicle color must not exceed 30 characters")
+        @Schema(description = "Vehicle color (max 30 chars)", example = "Blue")
         String vehicleColor,
+
+        @Schema(description = "Whether vehicle is electric", example = "true")
         boolean isElectric,
+
+        @Schema(description = "Whether vehicle is active/enabled", example = "true")
         boolean active
 ) {
 }

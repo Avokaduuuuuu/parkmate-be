@@ -1,10 +1,7 @@
 package com.parkmate.auth.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -19,50 +16,49 @@ public class RegisterRequest {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
-    @Schema(description = "User email address", example = "user@example.com")
+    @Schema(description = "[MUST BE UNIQUE] User email address ",
+            example = "user@example.com",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
     private String email;
-
-    @NotBlank(message = "Username is required")
-    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
-    @Pattern(regexp = "^[a-zA-Z0-9_-]+$", message = "Username can only contain letters, numbers, underscores and hyphens")
-    @Schema(description = "Unique username", example = "john_doe")
-    private String username;
 
     @NotBlank(message = "Password is required")
     @Size(min = 8, max = 100, message = "Password must be at least 8 characters")
-    @Schema(description = "User password (min 8 characters)", example = "SecurePass123!")
+    @Schema(description = "User password (minimum 8 characters, max 100)", example = "SecurePass123!", requiredMode = Schema.RequiredMode.REQUIRED)
     private String password;
 
     @NotBlank(message = "Phone number is required")
     @Pattern(regexp = "^[0-9]{10,12}$", message = "Phone number must be 10-12 digits")
-    @Schema(description = "Phone number (10-12 digits)", example = "0123456789")
+    @Schema(description = "[MUST BE UNIQUE] Phone number (10-12 digits, numbers only)", example = "0123456789", requiredMode = Schema.RequiredMode.REQUIRED)
     private String phone;
 
     @Size(max = 100, message = "First name must not exceed 100 characters")
-    @Schema(description = "User's first name", example = "John")
+    @Schema(description = "User's first name (optional, max 100 chars)", example = "John")
     private String firstName;
 
     @Size(max = 50, message = "Last name must not exceed 50 characters")
-    @Schema(description = "User's last name", example = "Doe")
+    @Schema(description = "User's last name (optional, max 50 chars)", example = "Doe")
     private String lastName;
 
     @Pattern(regexp = "^[0-9]{9,12}$", message = "ID number must be 9-12 digits")
-    @Schema(description = "National ID number (9-12 digits)", example = "079012345678")
+    @Schema(description = "[MUST BE UNIQUE] National ID number (optional, 9-12 digits if provided)", example = "079012345678")
     private String idNumber;
 
-    @Schema(description = "Date of birth", example = "1990-01-15T00:00:00")
+    @Schema(description = "Date of birth (optional, must be in the past if provided)", example = "1990-01-15T00:00:00")
+    @Past(message = "Date of birth must be in the past")
     private LocalDateTime dateOfBirth;
 
+    @Schema(description = "ID card issue place", example = "Public Security Department of HCMC")
+    private String issuePlace;
+
+    @Schema(description = "ID card issue date", example = "2020-01-15T00:00:00")
+    private LocalDateTime issueDate;
+
+    @Schema(description = "ID card expiry date", example = "2030-01-15T00:00:00")
+    private LocalDateTime expiryDate;
+
     @Size(max = 100, message = "Address must not exceed 100 characters")
-    @Schema(description = "Residential address", example = "123 Main Street, District 1, HCMC")
+    @Schema(description = "Residential address (optional, max 100 chars)", example = "123 Main Street, District 1, HCMC")
     private String address;
-
-    @Size(max = 500, message = "Photo path must not exceed 500 characters")
-    @Schema(description = "Front ID card photo path/URL", example = "/uploads/id/front_123.jpg")
-    private String frontPhotoPath;
-
-    @Size(max = 500, message = "Photo path must not exceed 500 characters")
-    @Schema(description = "Back ID card photo path/URL", example = "/uploads/id/back_123.jpg")
-    private String backPhotoPath;
 
 }

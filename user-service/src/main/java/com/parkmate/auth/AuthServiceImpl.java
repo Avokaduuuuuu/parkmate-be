@@ -111,8 +111,8 @@ public class AuthServiceImpl implements AuthService {
             throw new AppException(ErrorCode.ACCOUNT_ALREADY_EXISTS);
         }
 
-        if (accountRepository.existsByUsername(request.getUsername())) {
-            throw new AppException(ErrorCode.USER_NAME_ALREADY_EXISTS);
+        if (userRepository.existsByPhone(request.getPhone())) {
+            throw new AppException(ErrorCode.PHONE_ALREADY_EXISTS);
         }
 
         // Create verification token
@@ -122,7 +122,6 @@ public class AuthServiceImpl implements AuthService {
         // Create Account
         Account account = Account.builder()
                 .email(request.getEmail())
-                .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(AccountRole.MEMBER)
                 .status(AccountStatus.PENDING_VERIFICATION)
@@ -142,8 +141,6 @@ public class AuthServiceImpl implements AuthService {
                 .dateOfBirth(request.getDateOfBirth() != null ? request.getDateOfBirth().toLocalDate() : null)
                 .address(request.getAddress())
                 .idNumber(request.getIdNumber())
-                .frontPhotoPath(request.getFrontPhotoPath())
-                .backPhotoPath(request.getBackPhotoPath())
                 .build();
 
         User savedUser = userRepository.save(user);

@@ -23,6 +23,8 @@ public interface PartnerRegistrationMapper {
     @Mapping(target = "rejectionReason", ignore = true)
     @Mapping(target = "reviewer", ignore = true)
     @Mapping(target = "partner", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     PartnerRegistration toEntity(CreatePartnerRegistrationRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -42,6 +44,8 @@ public interface PartnerRegistrationMapper {
     @Mapping(target = "reviewedAt", ignore = true)
     @Mapping(target = "reviewer", ignore = true)
     @Mapping(target = "partner", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = org.mapstruct.NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDto(UpdatePartnerRegistrationRequest dto, @MappingTarget PartnerRegistration entity);
 
