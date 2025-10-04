@@ -3,6 +3,7 @@ package com.parkmate.auth.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 
@@ -60,5 +61,21 @@ public class RegisterRequest {
     @Size(max = 100, message = "Address must not exceed 100 characters")
     @Schema(description = "Residential address (optional, max 100 chars)", example = "123 Main Street, District 1, HCMC")
     private String address;
+
+    @Schema(
+            description = "Front side of ID card image (JPG/PNG, max 10MB)",
+            type = "string",
+            format = "binary",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED
+    )
+    private MultipartFile frontIdImage;
+
+    @Schema(
+            description = "Back side of ID card image (JPG/PNG, max 10MB)",
+            type = "string",
+            format = "binary",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED
+    )
+    private MultipartFile backIdImage;
 
 }

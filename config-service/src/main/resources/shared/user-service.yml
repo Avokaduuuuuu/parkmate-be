@@ -29,7 +29,7 @@ spring:
       port: 6379
       host: ${REDIS_HOST}
       ssl:
-        enabled: true
+        enabled: false
   cache:
     type: redis
 
@@ -41,6 +41,12 @@ app:
   frontend:
     url: ${FRONTEND_URL:http://localhost:3000}
 
+aws:
+  s3:
+    bucket-name: ${AWS_S3_BUCKET_NAME:your-bucket-name}
+    region: ${AWS_REGION:us-east-1}
+    accessKeyId: ${AWS_ACCESS_KEY:your-access-key}
+    secretAccessKey: ${AWS_SECRET_KEY:your-secret-key}
 
 springdoc:
   api-docs:
@@ -51,6 +57,8 @@ springdoc:
     enabled: true
     # Disable auto-generated server URL
     disable-swagger-default-url: true
+    default-consumes-media-type: application/json
+    default-produces-media-type: application/json
     # Set default server to Gateway
     URLs:
       - name: User Service via Gateway
