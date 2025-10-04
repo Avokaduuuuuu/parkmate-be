@@ -39,10 +39,7 @@ public record CreateVehicleRequest(
 
         @NotNull(message = "Electric status is required")
         @Schema(description = "Whether vehicle is electric", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
-        boolean isElectric,
+        boolean isElectric
 
-        @Size(max = 500, message = "License image URL must not exceed 500 characters")
-        @Schema(description = "License plate image URL (optional, max 500 chars)", example = "/uploads/license/vehicle123.jpg")
-        String licenseImage
 ) {
 }

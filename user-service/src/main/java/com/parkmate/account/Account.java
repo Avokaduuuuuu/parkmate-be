@@ -31,13 +31,10 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @Column(name = "email", unique = true)
     private String email;
 
-    @Column(unique = true)
-    private String username;
-
-    @Column(nullable = false)
+    @Column(name = "password", nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -51,12 +48,17 @@ public class Account {
     private AccountStatus status = AccountStatus.PENDING_VERIFICATION;
 
     @Column(name = "email_verified")
+    @Builder.Default
     private Boolean emailVerified = false;
+
+    @Column(name = "phone", unique = true)
+    private String phone;
 
     @Column(name = "email_verification_token")
     private String emailVerificationToken;
 
     @Column(name = "phone_verified")
+    @Builder.Default
     private Boolean phoneVerified = false;
 
     @Column(name = "phone_verification_token")
