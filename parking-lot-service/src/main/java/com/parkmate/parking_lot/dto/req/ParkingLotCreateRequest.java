@@ -110,6 +110,14 @@ public record ParkingLotCreateRequest(
         @NotNull(message = "Must define the close time")
         LocalTime operatingHoursEnd,
 
+        @Schema(
+                description = "Indicate that this parking lot work 24h",
+                example = "true",
+                type = "boolean",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        Boolean is24Hour,
+
         @Valid
         List<LotCapacityCreateRequest> lotCapacityRequests,
 

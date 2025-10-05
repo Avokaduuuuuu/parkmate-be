@@ -58,8 +58,7 @@ public class ParkingLotEntity extends BaseEntity {
     LocalTime operatingHoursEnd;
 
     @Column(name = "is_24_hour")
-    @Builder.Default
-    Boolean is24Hour = false;
+    Boolean is24Hour;
 
     @Column(name = "boundary_top_left_x")
     Double boundaryTopLeftX;
