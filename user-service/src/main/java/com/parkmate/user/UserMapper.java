@@ -42,5 +42,10 @@ public interface UserMapper {
     })
     void updateEntity(UpdateUserRequest req, @MappingTarget User user);
 
+    @Mappings({
+            @Mapping(target = "frontPhotoPresignedUrl", ignore = true),
+            @Mapping(target = "backPhotoPresignedUrl", ignore = true),
+            @Mapping(target = "profilePicturePresignedUrl", ignore = true)
+    })
     UserResponse toResponse(User user);
 }

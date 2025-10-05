@@ -10,10 +10,15 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.UUID;
 
 @Slf4j
@@ -22,6 +27,7 @@ import java.util.UUID;
 public class S3Service {
 
     private final S3Client s3Client;
+    private final S3Presigner s3Presigner;
 
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
@@ -67,9 +73,9 @@ public class S3Service {
                     RequestBody.fromInputStream(file.getInputStream(), file.getSize())
             );
 
-            String url = buildPublicUrl(fileName);
-            log.info("File uploaded successfully - URL: {}", url);
-            return url;
+            // Return S3 key instead of public URL
+            log.info("File uploaded successfully - Key: {}", fileName);
+            return fileName;
         } catch (S3Exception e) {
             log.error("S3 upload failed - Error: {}, Message: {}", e.awsErrorDetails().errorCode(), e.getMessage(), e);
             throw new AppException(ErrorCode.S3_UPLOAD_FAILED);
@@ -107,7 +113,8 @@ public class S3Service {
     }
 
     public boolean isValidFileSize(MultipartFile file) {
-        long maxSize = 10 * 1024 * 1024; // 10MB
+        log.info("Validating file size: {} bytes", file.getSize());
+        long maxSize = 10 * 1024 * 1024;
         return file.getSize() <= maxSize;
     }
 
@@ -132,4 +139,30 @@ public class S3Service {
         String baseUrl = String.format("https://%s.s3.%s.amazonaws.com/", bucketName, region);
         return url.replace(baseUrl, "");
     }
+
+    public String generatePresignedUrl(String s3Key) {
+        if (s3Key == null || s3Key.isEmpty()) {
+            return null;
+        }
+
+        try {
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(s3Key)
+                    .build();
+
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .signatureDuration(Duration.ofHours(1)) // URL valid for 1 hour
+                    .getObjectRequest(getObjectRequest)
+                    .build();
+
+            PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+            return presignedRequest.url().toString();
+        } catch (S3Exception e) {
+            log.error("Failed to generate presigned URL for key: {}", s3Key, e);
+            return null;
+        }
+    }
+
+
 }
