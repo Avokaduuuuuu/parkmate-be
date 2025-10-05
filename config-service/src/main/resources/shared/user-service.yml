@@ -7,11 +7,65 @@ spring:
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:nguyenchauthanhbinh0808@gmail.com}
+    password: ${MAIL_PASSWORD:your-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+
+  data:
+    redis:
+      port: 6379
+      host: ${REDIS_HOST}
+      ssl:
+        enabled: false
+  cache:
+    type: redis
+
+# Custom properties
+app:
+  mail:
+    from: ${MAIL_USERNAME:noreply@parkmate.com}
+    from-name: ParkMate System
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
+
+aws:
+  s3:
+    bucket-name: ${AWS_S3_BUCKET_NAME:your-bucket-name}
+    region: ${AWS_REGION:us-east-1}
+    accessKeyId: ${AWS_ACCESS_KEY:your-access-key}
+    secretAccessKey: ${AWS_SECRET_KEY:your-secret-key}
+
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /v3/api-docs
     enabled: true
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
-  show-actuator: true
+    # Disable auto-generated server URL
+    disable-swagger-default-url: true
+    default-consumes-media-type: application/json
+    default-produces-media-type: application/json
+    # Set default server to Gateway
+    URLs:
+      - name: User Service via Gateway
+        url: /v3/api-docs
+  # Disable server generation from context
+  use-management-port: false
+  show-actuator: false
+
+
+
