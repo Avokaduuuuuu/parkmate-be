@@ -92,11 +92,32 @@ public record ParkingLotUpdateRequest(
         )
         Boolean is24Hour,
         @Schema(
-                description = "Status of parking lot",
-                example = "UNDER_SURVEY",
-                allowableValues = {"UNDER_SURVEY", "PREPARING", "REJECTED", "PARTNER_CONFIGURATION", "ACTIVE_PENDING", "ACTIVE", "INACTIVE", "UNDER_MAINTENANCE", "MAP_DENIED"}
+                description = """
+                Status of the parking lot. Each status represents a specific stage in the parking lot lifecycle:
+                
+                • UNDER_SURVEY - Initial stage when parking lot is being surveyed and evaluated
+                • PREPARING - Parking lot is being prepared for operation (infrastructure setup)
+                • REJECTED - Parking lot application/survey has been rejected by administrators
+                • PARTNER_CONFIGURATION - Partner is configuring pricing, spots, and other settings
+                • ACTIVE_PENDING - Configuration complete, waiting for admin approval to go live
+                • ACTIVE - Parking lot is operational and accepting customers
+                • INACTIVE - Parking lot is temporarily closed (e.g., off-season, renovation)
+                • UNDER_MAINTENANCE - Parking lot is undergoing maintenance or repairs
+                • MAP_DENIED - Parking lot location denied on the map system
+                
+                Note: Not all status transitions are allowed. Check business rules before updating.
+                """,
+                example = "ACTIVE",
+                allowableValues = {"UNDER_SURVEY", "PREPARING", "REJECTED", "PARTNER_CONFIGURATION",
+                        "ACTIVE_PENDING", "ACTIVE", "INACTIVE", "UNDER_MAINTENANCE", "MAP_DENIED"}
         )
-        ParkingLotStatus status
+        ParkingLotStatus status,
+        @Schema(
+                description = "Reason if parking lot is REJECTED, MAP_DENIED",
+                example = "Pricing rule not appropriate",
+                type = "string"
+        )
+        String reason
 ) {
 
 }
