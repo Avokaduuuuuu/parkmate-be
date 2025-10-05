@@ -57,6 +57,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     @Transactional
     public ParkingLotResponse addParkingLot(Long partnerId,ParkingLotCreateRequest request) {
         ParkingLotEntity parkingLotEntity = ParkingLotMapper.INSTANCE.toEntity(request);
+        parkingLotEntity.setIs24Hour(request.is24Hour());
         parkingLotEntity.setPartnerId(partnerId);
         parkingLotEntity.setStatus(ParkingLotStatus.PENDING);
         parkingLotEntity.setLotCapacity(toLotCapacity(request.lotCapacityRequests(), parkingLotEntity));
@@ -110,6 +111,8 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         if (request.longitude() != null) parkingLotEntity.setLongitude(request.longitude());
         if (request.totalFloors() != null) parkingLotEntity.setTotalFloors(request.totalFloors());
         if (request.status() != null) parkingLotEntity.setStatus(request.status());
+        if (request.is24Hour() != null) parkingLotEntity.setIs24Hour(request.is24Hour());
+
 
         return ParkingLotMapper.INSTANCE.toResponse(parkingLotRepository.save(parkingLotEntity));
     }

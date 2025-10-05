@@ -84,6 +84,13 @@ public record ParkingLotUpdateRequest(
                 pattern = "^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
         )
         LocalTime operatingHoursEnd,
+
+        @Schema(
+                description = "Indicate that this parking lot work 24h",
+                example = "true",
+                type = "boolean"
+        )
+        Boolean is24Hour,
         @Schema(
                 description = "Status of parking lot",
                 example = "UNDER_SURVEY",
