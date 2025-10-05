@@ -8,6 +8,7 @@ import com.parkmate.common.enums.AccountStatus;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.email.EmailService;
+import com.parkmate.s3.S3Service;
 import com.parkmate.user.User;
 import com.parkmate.user.UserMapper;
 import com.parkmate.user.UserRepository;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -40,6 +42,7 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final UserMapper userMapper;
     private final UserRepository userRepository;
+    private final S3Service s3Service;
 
     @Override
     public AuthResponse login(LoginRequest request) {
@@ -104,36 +107,52 @@ public class AuthServiceImpl implements AuthService {
         log.info("User logged out successfully");
     }
 
-    @Override
-    public RegisterResponse register(RegisterRequest request) {
 
+    @Override
+    @Transactional
+    public RegisterResponse register(RegisterRequest request, MultipartFile frontIdImage, MultipartFile backIdImage) {
+        // Check if account already exists
         if (accountRepository.existsByEmail(request.getEmail())) {
             throw new AppException(ErrorCode.ACCOUNT_ALREADY_EXISTS);
         }
 
-        if (accountRepository.existsByUsername(request.getUsername())) {
-            throw new AppException(ErrorCode.USER_NAME_ALREADY_EXISTS);
+        if (userRepository.existsByPhone(request.getPhone())) {
+            throw new AppException(ErrorCode.PHONE_ALREADY_EXISTS);
         }
 
         // Create verification token
-        Random random = new Random();
-        String verificationToken = String.valueOf(100000 + random.nextInt(900000));
+        String verificationToken = generateNumericVerificationToken();
+
+        // Upload ID images to S3 if provided
+        String frontPhotoUrl = null;
+        String backPhotoUrl = null;
+
+        try {
+            if (frontIdImage != null && !frontIdImage.isEmpty()) {
+                frontPhotoUrl = s3Service.uploadFile(frontIdImage, "id-cards/front", request.getIdNumber());
+            }
+
+            if (backIdImage != null && !backIdImage.isEmpty()) {
+                backPhotoUrl = s3Service.uploadFile(backIdImage, "id-cards/back", request.getIdNumber());
+            }
+        } catch (Exception e) {
+            log.error("Failed to upload ID images to S3", e);
+            throw new AppException(ErrorCode.S3_UPLOAD_FAILED);
+        }
 
         // Create Account
         Account account = Account.builder()
                 .email(request.getEmail())
-                .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(AccountRole.MEMBER)
+                .phone(request.getPhone())
                 .status(AccountStatus.PENDING_VERIFICATION)
-                .emailVerified(false)
-                .phoneVerified(false)
                 .emailVerificationToken(verificationToken)
                 .build();
 
         Account savedAccount = accountRepository.save(account);
 
-        // Create User
+        // Create User linked to Account
         User user = User.builder()
                 .account(savedAccount)
                 .phone(request.getPhone())
@@ -142,22 +161,17 @@ public class AuthServiceImpl implements AuthService {
                 .dateOfBirth(request.getDateOfBirth() != null ? request.getDateOfBirth().toLocalDate() : null)
                 .address(request.getAddress())
                 .idNumber(request.getIdNumber())
-                .frontPhotoPath(request.getFrontPhotoPath())
-                .backPhotoPath(request.getBackPhotoPath())
+                .issuePlace(request.getIssuePlace())
+                .issueDate(request.getIssueDate() != null ? request.getIssueDate().toLocalDate() : null)
+                .expiryDate(request.getExpiryDate() != null ? request.getExpiryDate().toLocalDate() : null)
+                .frontPhotoPath(frontPhotoUrl)
+                .backPhotoPath(backPhotoUrl)
                 .build();
 
         User savedUser = userRepository.save(user);
 
         // Send verification email
-        try {
-            emailService.sendMemberVerificationEmail(
-                    savedAccount.getEmail(),
-                    verificationToken,
-                    savedUser.getFullName() != null ? savedUser.getFullName() : savedAccount.getUsername()
-            );
-        } catch (Exception e) {
-            log.error("Failed to send verification email to: {}", savedAccount.getEmail(), e);
-        }
+        sendVerificationEmail(savedAccount.getEmail(), verificationToken, savedUser.getFullName());
 
         // Generate tokens
         Map<String, Object> claims = buildClaims(savedAccount);
@@ -165,8 +179,6 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = UUID.randomUUID().toString().replace("-", "");
 
         redisTokenService.storeRefreshToken(refreshToken, claims, REFRESH_TOKEN_EXPIRATION);
-
-        log.info("User registered successfully: {}", savedAccount.getEmail());
 
         return RegisterResponse.builder()
                 .authResponse(AuthResponse.builder()
@@ -179,11 +191,15 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
+    private String generateNumericVerificationToken() {
+        Random random = new Random();
+        return String.valueOf(100000 + random.nextInt(900000));
+    }
+
     private Map<String, Object> buildClaims(Account account) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", account.getId());
         claims.put("email", account.getEmail());
-        claims.put("username", account.getUsername());
         claims.put("role", account.getRole().toString());
         return claims;
     }
@@ -238,9 +254,7 @@ public class AuthServiceImpl implements AuthService {
             throw new AppException(ErrorCode.EMAIL_ALREADY_VERIFIED);
         }
 
-        Random random = new Random();
-
-        String newToken = String.valueOf(100000 + random.nextInt(900000));
+        String newToken = generateNumericVerificationToken();
         account.setEmailVerificationToken(newToken);
         accountRepository.save(account);
 
@@ -267,5 +281,15 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-
+    private void sendVerificationEmail(String toEmail, String token, String recipientName) {
+        try {
+            emailService.sendMemberVerificationEmail(
+                    toEmail,
+                    token,
+                    recipientName
+            );
+        } catch (Exception e) {
+            log.error("Failed to send verification email to: {}", toEmail, e);
+        }
+    }
 }

@@ -24,6 +24,7 @@ public interface UserMapper {
             @Mapping(target = "frontPhotoPath", ignore = true),
             @Mapping(target = "backPhotoPath", ignore = true),
             @Mapping(target = "vehicles", ignore = true),
+            @Mapping(target = "fullName", ignore = true),
             @Mapping(target = "account", ignore = true) // test
 
     })
@@ -35,7 +36,9 @@ public interface UserMapper {
             @Mapping(target = "createdAt", ignore = true),
             @Mapping(target = "updatedAt", ignore = true),
             @Mapping(target = "vehicles", ignore = true),
-            @Mapping(target = "account", ignore = true) // test
+            @Mapping(target = "account", ignore = true),
+            @Mapping(target = "fullName", ignore = true),
+// test
     })
     void updateEntity(UpdateUserRequest req, @MappingTarget User user);
 

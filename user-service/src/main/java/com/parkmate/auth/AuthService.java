@@ -1,6 +1,7 @@
 package com.parkmate.auth;
 
 import com.parkmate.auth.dto.*;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface AuthService {
 
@@ -10,7 +11,7 @@ public interface AuthService {
 
     void logout(LogoutRequest request);
 
-    RegisterResponse register(RegisterRequest request);
+    RegisterResponse register(RegisterRequest request, MultipartFile frontIdImage, MultipartFile backIdImage);
 
     EmailVerificationResponse verifyEmail(String token);
 

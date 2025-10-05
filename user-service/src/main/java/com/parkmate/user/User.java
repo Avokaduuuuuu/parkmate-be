@@ -37,6 +37,9 @@ public class User {
     @Column(name = "last_name", length = 50)
     private String lastName;
 
+    @Column(name = "full_name", length = 150)
+    private String fullName;
+
     @Column(name = "date_of_birth", length = 10)
     private LocalDate dateOfBirth;
 
@@ -74,18 +77,6 @@ public class User {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
 
-    public String getFullName() {
-        if (firstName == null && lastName == null) {
-            return null;
-        }
-        if (firstName == null) {
-            return lastName.trim();
-        }
-        if (lastName == null) {
-            return firstName.trim();
-        }
-        return (firstName.trim() + " " + lastName.trim()).trim();
-    }
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false, unique = true)

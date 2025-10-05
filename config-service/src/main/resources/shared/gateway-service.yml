@@ -98,6 +98,10 @@ springdoc:
     tryItOutEnabled: true
     operationsSorter: method
     tagsSorter: alpha
+    override-with-generic-response: false
+    model-and-view-allowed: true
+    modelsSorter: none
+
 
 # Logging
 logging:

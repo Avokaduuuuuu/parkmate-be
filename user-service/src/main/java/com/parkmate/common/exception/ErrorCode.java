@@ -12,6 +12,7 @@ public enum ErrorCode {
     VALIDATION_ERROR(1001, "Validation failed", HttpStatus.BAD_REQUEST),
     INVALID_REQUEST(1002, "Invalid request", HttpStatus.BAD_REQUEST),
     INVALID_ENUM(1003, "Invalid enum", HttpStatus.BAD_REQUEST),
+    IO_ERROR(1004, "I/O error", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // User errors 21
     USER_NOT_FOUND(2101, "User not found", HttpStatus.NOT_FOUND),
@@ -51,7 +52,13 @@ public enum ErrorCode {
     USER_INFO_NOT_FOUND(2602, "User information not found", HttpStatus.NOT_FOUND),
     STORE_REFRESH_TOKEN_FAILED(2603, "Failed to store refresh token", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_REFRESH_TOKEN(2604, "Invalid refresh token", HttpStatus.UNAUTHORIZED),
-    INVALID_VALIDATION_CODE(2605, "Verify code not match", HttpStatus.BAD_REQUEST);
+    INVALID_VALIDATION_CODE(2605, "Verify code not match", HttpStatus.BAD_REQUEST),
+
+    // File Upload Error 28
+    FILE_EMPTY(2801, "Uploaded file is empty", HttpStatus.BAD_REQUEST),
+    FILE_SIZE_EXCEEDED(2802, "Uploaded file size exceeds the limit", HttpStatus.BAD_REQUEST),
+    FILE_TYPE_NOT_ALLOWED(2803, "Uploaded file type is not allowed", HttpStatus.BAD_REQUEST),
+    S3_UPLOAD_FAILED(2804, "Failed to upload file to S3", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int code;
     private final String message;
