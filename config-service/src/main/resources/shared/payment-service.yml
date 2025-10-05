@@ -1,0 +1,25 @@
+server:
+  port: ${PAYMENT_PORT}
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DATABASE_HOST:localhost}:5432/${PAYMENT_DATABASE:PAYMENT_DATABASE}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    # Disable auto-generated server URL
+    disable-swagger-default-url: true
+    # Set default server to Gateway
+    URLs:
+      - name: Payment Service via Gateway
+        url: /v3/api-docs
+  # Disable server generation from context
+  use-management-port: false
+  show-actuator: false
