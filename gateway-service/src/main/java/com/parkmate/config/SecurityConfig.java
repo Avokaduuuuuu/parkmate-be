@@ -27,6 +27,9 @@ import java.util.List;
 public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
+            //Upload
+            "/api/v1/user-service/upload/**",
+
             // Auth endpoints
             "/api/v1/user-service/auth/**",
             "/api/v1/user-service/partner-registrations/**",
