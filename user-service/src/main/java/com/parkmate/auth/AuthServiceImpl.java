@@ -20,7 +20,6 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -114,7 +113,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public RegisterResponse register(RegisterRequest request, MultipartFile frontIdImage, MultipartFile backIdImage) {
+    public RegisterResponse register(RegisterRequest request) {
         // Check if account already exists
         if (accountRepository.existsByEmail(request.getEmail())) {
             throw new AppException(ErrorCode.ACCOUNT_ALREADY_EXISTS);
@@ -126,23 +125,6 @@ public class AuthServiceImpl implements AuthService {
 
         // Create verification token
         String verificationToken = generateNumericVerificationToken();
-
-        // Upload ID images to S3 if provided
-        String frontPhotoUrl = null;
-        String backPhotoUrl = null;
-
-        try {
-            if (frontIdImage != null && !frontIdImage.isEmpty()) {
-                frontPhotoUrl = s3Service.uploadFile(frontIdImage, "id-cards/front", request.getIdNumber());
-            }
-
-            if (backIdImage != null && !backIdImage.isEmpty()) {
-                backPhotoUrl = s3Service.uploadFile(backIdImage, "id-cards/back", request.getIdNumber());
-            }
-        } catch (Exception e) {
-            log.error("Failed to upload ID images to S3", e);
-            throw new AppException(ErrorCode.S3_UPLOAD_FAILED);
-        }
 
         // Create Account
         Account account = Account.builder()
@@ -169,8 +151,8 @@ public class AuthServiceImpl implements AuthService {
                 .issuePlace(request.getIssuePlace())
                 .issueDate(request.getIssueDate() != null ? request.getIssueDate().toLocalDate() : null)
                 .expiryDate(request.getExpiryDate() != null ? request.getExpiryDate().toLocalDate() : null)
-                .frontPhotoPath(frontPhotoUrl)
-                .backPhotoPath(backPhotoUrl)
+                .frontPhotoPath(request.getFrontIdPath())
+                .backPhotoPath(request.getBackIdImgPath())
                 .build();
 
         User savedUser = userRepository.save(user);

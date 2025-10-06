@@ -3,7 +3,6 @@ package com.parkmate.auth.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 
@@ -67,19 +66,15 @@ public class RegisterRequest {
     private String address;
 
     @Schema(
-            description = "Front side of ID card image (JPG/PNG, max 10MB)",
-            type = "string",
-            format = "binary",
+            description = "s3 key of front side of ID card image",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED
     )
-    private MultipartFile frontIdImage;
+    private String frontIdPath;
 
     @Schema(
-            description = "Back side of ID card image (JPG/PNG, max 10MB)",
-            type = "string",
-            format = "binary",
+            description = "s3 key of back side of ID card image",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED
     )
-    private MultipartFile backIdImage;
+    private String backIdImgPath;
 
 }

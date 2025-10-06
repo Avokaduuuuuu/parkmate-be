@@ -31,7 +31,17 @@ public record CreateUserRequest(
 
         @Size(max = 100, message = "Address must not exceed 100 characters")
         @Schema(description = "Residential address (optional, max 100 chars)", example = "123 Main Street, District 1, HCMC")
-        String address
+        String address,
+
+        @Size(max = 500, message = "Profile picture URL must not exceed 500 characters")
+        @Schema(description = "s3 key of the profile picture")
+        String profilePictureUrl,
+
+        @Schema(description = "S3 key of the identity document front photo")
+        String frontPhotoPath,
+
+        @Schema(description = "S3 key of the identity document back photo")
+        String backPhotoPath
 ) {
 }
 
