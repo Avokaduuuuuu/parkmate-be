@@ -5,7 +5,6 @@ import com.parkmate.floor.dto.req.FloorUpdateRequest;
 import com.parkmate.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -26,8 +25,22 @@ public class FloorController {
 
 
     @Operation(
-            summary = "Get all parking floors",
-            description = "Retrieve a paginated list of parking floors with optional filtering and sorting"
+            summary = "Get all parking floors with filtering and pagination",
+            description = """
+                Retrieve a paginated list of parking floors with optional filtering and sorting capabilities.
+                
+                **Query Parameters:**
+                - `parkingLotId` (optional): Filter floors by specific parking lot ID
+                - `floorNumber` (optional): Filter by floor number (-100 to 100, negative for basement levels)
+                - `floorName` (optional): Search by floor name (partial match, case-insensitive)
+                - `isActive` (optional): Filter by active status (true/false)
+                - `page` (optional): Page number (default: 0)
+                - `size` (optional): Page size (default: 10)
+                - `sortBy` (optional): Sort field (default: id) - Available: id, floorName, floorNumber, createdAt
+                - `sortOrder` (optional): Sort direction ASC/DESC (default: ASC)
+                
+                **Returns:** Paginated list of parking floors with their capacity information and associated parking lot details
+                """
     )
     @GetMapping
     public ResponseEntity<?> findAll(
@@ -60,7 +73,20 @@ public class FloorController {
 
     @Operation(
             summary = "Get parking floor by ID",
-            description = "Retrieve detailed information about a specific parking floor by its unique identifier"
+            description = """
+                Retrieve detailed information about a specific parking floor by its unique identifier.
+                
+                **Path Parameters:**
+                - `id` (required): The unique identifier of the parking floor
+                
+                **Returns:** Complete floor details including:
+                - Floor number and display name
+                - Associated parking lot information
+                - Capacity configurations for each vehicle type
+                - Electric vehicle support status
+                - Active status and availability
+                - Creation and update timestamps
+                """
     )
     @GetMapping("/{id}")
     public ResponseEntity<?> findParkingFloorById(
@@ -77,7 +103,30 @@ public class FloorController {
 
     @Operation(
             summary = "Create a new parking floor",
-            description = "Add a new floor to an existing parking lot. The floor will include capacity information for different vehicle types and a unique floor number within the parking lot."
+            description = """
+                Add a new floor to an existing parking lot with capacity configuration.
+                
+                **Path Parameters:**
+                - `parkingLotId` (required): The unique identifier of the parking lot where the floor will be created
+                
+                **Request Body Fields:**
+                - `floorNumber` (required): Floor number (-100 to 100)
+                  * Negative numbers: Basement levels (e.g., -1 for B1, -2 for B2)
+                  * 0: Ground floor
+                  * Positive numbers: Upper floors (e.g., 1, 2, 3)
+                - `floorName` (required): Display name of the floor (max 100 characters, e.g., "Ground Floor", "Basement 1")
+                - `capacityRequests` (optional): List of capacity configurations per vehicle type
+                  * Each item includes: capacity, vehicleType, supportElectricVehicle
+                  * Vehicle types: CAR_4_SEATS, CAR_7_SEATS, CAR_16_SEATS, MOTORBIKE, BICYCLE, TRUCK, OTHER
+                
+                **Business Rules:**
+                - Floor number must be unique within the parking lot
+                - Floor number cannot exceed the parking lot's total floors
+                - At least one capacity configuration is recommended
+                - Electric vehicle support can be enabled per vehicle type
+                
+                **Returns:** Created floor with assigned ID and capacity details
+                """
     )
     @PostMapping("/{parkingLotId}")
     public ResponseEntity<?> createFloor(
@@ -96,8 +145,27 @@ public class FloorController {
     }
 
     @Operation(
-            summary = "Update parking floor",
-            description = "Update an existing parking floor's information including name, capacity, and active status. The floor number cannot be changed after creation."
+            summary = "Update parking floor information",
+            description = """
+                Update an existing parking floor's information. All fields are optional - only include fields you want to update.
+                
+                **Path Parameters:**
+                - `id` (required): The unique identifier of the parking floor to update
+                
+                **Request Body Fields (all optional):**
+                - `floorNumber`: Update floor number (-100 to 100)
+                  * Must remain unique within the parking lot
+                  * Cannot exceed parking lot's total floors
+                - `floorName`: Update display name (max 100 characters)
+                
+                **Important Notes:**
+                - Floor number changes require careful consideration if there are existing parking sessions
+                - Capacity configurations are managed through separate capacity endpoints
+                - Cannot change floor to inactive status through this endpoint (use delete endpoint)
+                - Floor must belong to an active parking lot
+                
+                **Returns:** Updated floor information with new values
+                """
     )
     @PutMapping("/{id}")
     public ResponseEntity<?> updateParkingFloor(
@@ -116,8 +184,33 @@ public class FloorController {
     }
 
     @Operation(
-            summary = "Delete parking floor",
-            description = "Soft delete a parking floor by its ID. This will mark the floor as inactive but preserve historical data. Cannot delete floors with active parking sessions or areas."
+            summary = "Delete (deactivate) parking floor",
+            description = """
+                Soft delete a parking floor by setting its status to inactive.
+                This operation does not permanently remove the floor from the database.
+                
+                **Path Parameters:**
+                - `id` (required): The unique identifier of the parking floor to delete
+                
+                **Behavior:**
+                - Changes floor status to inactive
+                - Preserves all historical data and capacity configurations
+                - Floor will no longer be available for new parking sessions
+                - Existing parking sessions on this floor are not affected
+                
+                **Restrictions:**
+                - Cannot delete floors with active parking sessions
+                - Cannot delete floors with active parking areas
+                - Cannot delete if it's the only floor in the parking lot
+                - Floor must not have pending or in-progress bookings
+                
+                **Use Cases:**
+                - Temporarily closing a floor for maintenance
+                - Removing a floor from active rotation
+                - Seasonal or event-based floor closures
+                
+                **Returns:** Confirmation message with updated floor status
+                """
     )
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteParkingFloor(

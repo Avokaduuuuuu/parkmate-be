@@ -16,10 +16,16 @@ import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Configuration
@@ -49,38 +55,22 @@ public class SecurityConfig {
             "/api/v1/user-service/users",
             "/api/v1/user-service/users/{id}",
 
-            // Public parking endpoints (read-only)
-            "/api/v1/parking-service/parking-lots",
-            "/api/v1/parking-service/parking-lots/{id}",
-            "/api/v1/parking-service/parking-lots/{id}/floors",
-            "/api/v1/parking-service/parking-lots/{id}/availability"
+            "/api/v1/parking-service/lots"
     };
 
-    // Internal endpoints - cho inter-service communication
-    public static final String[] INTERNAL_ENDPOINTS = {
-            "/api/v1/user-service/internal/**",
-            "/api/v1/parking-service/internal/**"
-    };
-
-    // Admin only endpoints
-    public static final String[] ADMIN_ENDPOINTS = {
-            "/api/v1/user-service/admin/**",
-            "/api/v1/parking-service/admin/**"
-    };
 
     // Partner only endpoints
     public static final String[] PARTNER_ENDPOINTS = {
-            "/api/v1/user-service/partner/**",
-            "/api/v1/parking-service/partner/**"
+            "/api/v1/user-service/partners/**",
+            "/api/v1/parking-service/**",
     };
 
     // Member endpoints (regular users)
     public static final String[] MEMBER_ENDPOINTS = {
-            "/api/v1/user-service/users/me",
-            "/api/v1/user-service/users/me/**",
+            "/api/v1/user-service/users/**",
             "/api/v1/user-service/vehicles/**",
             "/api/v1/user-service/reservations/**",
-            "/api/v1/parking-service/reservations/**"
+            "/api/v1/user-service/mobile-devices/**"
     };
 
     @Value("${jwt.secret}")
@@ -90,12 +80,11 @@ public class SecurityConfig {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Add CORS config
                 .authorizeExchange(ex -> ex
                         .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .pathMatchers(INTERNAL_ENDPOINTS).permitAll() // Internal service-to-service calls
-                        .pathMatchers(ADMIN_ENDPOINTS).hasRole("ADMIN")
-                        .pathMatchers(PARTNER_ENDPOINTS).hasAnyRole("PARTNER_OWNER", "PARTNER_STAFF")
-                        .pathMatchers(MEMBER_ENDPOINTS).hasRole("MEMBER")
+                        .pathMatchers(PARTNER_ENDPOINTS).hasAnyRole("PARTNER_OWNER", "PARTNER_STAFF", "ADMIN")
+                        .pathMatchers(MEMBER_ENDPOINTS).hasAnyRole("MEMBER", "ADMIN")
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -128,5 +117,23 @@ public class SecurityConfig {
                 .macAlgorithm(MacAlgorithm.HS512)
                 .build();
     }
+
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.setAllowedOriginPatterns(Collections.singletonList("*")); // Accept all origins
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        config.setExposedHeaders(Arrays.asList("Authorization"));
+        config.setMaxAge(3600L); // Cache preflight response for 1 hour
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+
+        return source;
+    }
+
 
 }
