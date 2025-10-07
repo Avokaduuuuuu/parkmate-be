@@ -11,8 +11,8 @@ public interface PricingRuleService {
     Page<PricingRuleResponse> findAllPricingRules(
             int page, int size, String sortBy, String sortOrder
     );
-    PricingRuleResponse findPricingRuleById(UUID id);
+    PricingRuleResponse findPricingRuleById(Long id);
     PricingRuleResponse createPricingRule(Long parkingLotId, PricingRuleCreateRequest request);
-    PricingRuleResponse updatePricingRule(UUID id, PricingRuleUpdateRequest request);
-    PricingRuleResponse deletePricingRule(UUID id);
+    PricingRuleResponse updatePricingRule(Long id, PricingRuleUpdateRequest request);
+    PricingRuleResponse deletePricingRule(Long id);
 }

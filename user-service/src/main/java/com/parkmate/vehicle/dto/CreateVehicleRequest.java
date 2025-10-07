@@ -39,7 +39,10 @@ public record CreateVehicleRequest(
 
         @NotNull(message = "Electric status is required")
         @Schema(description = "Whether vehicle is electric", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
-        boolean isElectric
+        boolean isElectric,
+
+        @Schema(description = "S3 key of the vehicle registration document image")
+        String licenseImage
 
 ) {
 }
