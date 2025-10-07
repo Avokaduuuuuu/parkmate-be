@@ -3,7 +3,6 @@ package com.parkmate.auth.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 
@@ -25,7 +24,7 @@ public class RegisterRequest {
 
     @NotBlank(message = "Password is required")
     @Size(min = 8, max = 100, message = "Password must be at least 8 characters")
-    @Schema(description = "User password (minimum 8 characters, max 100)", example = "SecurePass123!", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "User password (minimum 8 characters, max 100)", example = "12341234", requiredMode = Schema.RequiredMode.REQUIRED)
     private String password;
 
     @NotBlank(message = "Phone number is required")
@@ -34,18 +33,22 @@ public class RegisterRequest {
     private String phone;
 
     @Size(max = 100, message = "First name must not exceed 100 characters")
-    @Schema(description = "User's first name (optional, max 100 chars)", example = "John")
+    @Schema(description = "User's first name (, max 100 chars)", example = "Trịnh")
     private String firstName;
 
     @Size(max = 50, message = "Last name must not exceed 50 characters")
-    @Schema(description = "User's last name (optional, max 50 chars)", example = "Doe")
+    @Schema(description = "User's last name (, max 50 chars)", example = "Trần Phương Tuấn")
     private String lastName;
 
+    @Size(max = 150, message = "Full name must not exceed 150 characters")
+    @Schema(description = "User's full name (, max 150 chars)", example = "Trịnh Trần Phương Tuấn")
+    private String fullName;
+
     @Pattern(regexp = "^[0-9]{9,12}$", message = "ID number must be 9-12 digits")
-    @Schema(description = "[MUST BE UNIQUE] National ID number (optional, 9-12 digits if provided)", example = "079012345678")
+    @Schema(description = "[MUST BE UNIQUE] National ID number (, 9-12 digits if provided)", example = "079012345678")
     private String idNumber;
 
-    @Schema(description = "Date of birth (optional, must be in the past if provided)", example = "1990-01-15T00:00:00")
+    @Schema(description = "Date of birth (, must be in the past if provided)", example = "1990-01-15T00:00:00")
     @Past(message = "Date of birth must be in the past")
     private LocalDateTime dateOfBirth;
 
@@ -59,23 +62,19 @@ public class RegisterRequest {
     private LocalDateTime expiryDate;
 
     @Size(max = 100, message = "Address must not exceed 100 characters")
-    @Schema(description = "Residential address (optional, max 100 chars)", example = "123 Main Street, District 1, HCMC")
+    @Schema(description = "Residential address (, max 100 chars)", example = "123 Main Street, District 1, HCMC")
     private String address;
 
     @Schema(
-            description = "Front side of ID card image (JPG/PNG, max 10MB)",
-            type = "string",
-            format = "binary",
+            description = "s3 key of front side of ID card image",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED
     )
-    private MultipartFile frontIdImage;
+    private String frontIdPath;
 
     @Schema(
-            description = "Back side of ID card image (JPG/PNG, max 10MB)",
-            type = "string",
-            format = "binary",
+            description = "s3 key of back side of ID card image",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED
     )
-    private MultipartFile backIdImage;
+    private String backIdImgPath;
 
 }

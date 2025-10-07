@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -52,15 +51,15 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(response, "Token refreshed successfully"));
     }
 
-    @PostMapping(path = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(path = "/register")
     @Operation(
             summary = "Customer registration",
             description = "Register a new customer account with optional ID card images"
     )
     public ResponseEntity<ApiResponse<RegisterResponse>> register(
-            @Valid @ModelAttribute RegisterRequest request
+            @Valid @RequestBody RegisterRequest request
     ) {
-        RegisterResponse response = authService.register(request, request.getFrontIdImage(), request.getBackIdImage());
+        RegisterResponse response = authService.register(request);
         return ResponseEntity.ok(
                 ApiResponse.success(response, "Registration successful. Please verify your email.")
         );
