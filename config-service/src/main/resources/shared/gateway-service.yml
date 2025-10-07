@@ -6,6 +6,12 @@ spring:
     name: gateway-service
 
   cloud:
+    loadbalancer:
+      cache:
+        enabled: false
+      ribbon:
+        enabled: false
+
     gateway:
       routes:
 

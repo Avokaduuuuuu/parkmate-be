@@ -23,6 +23,8 @@ import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Configuration
@@ -30,15 +32,23 @@ import java.util.List;
 public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/v1/users/auth",
-            "/api/v1/users/auth/**",
-            "/api/v1/partner-registrations/**",
+            //Upload
+            "/api/v1/user-service/upload/**",
+
+            // Auth endpoints
+            "/api/v1/user-service/auth/**",
+            "/api/v1/user-service/partner-registrations/**",
+
+            // Documentation
             "/actuator/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/v3/api-docs/**",
             "/aggregate/**",
-            "/webjars/**"
+            "/webjars/**",
+
+            //TEST
+            "/api/v1/user-service/tokens/**",
 
             // Public user endpoints (read-only)
             "/api/v1/user-service/users",
@@ -46,17 +56,14 @@ public class SecurityConfig {
             "/api/v1/payment-service/momo/**"
     };
 
-    // Admin only endpoints
-    public static final String[] ADMIN_ENDPOINTS = {
-            "/api/v1/admin/**"
-    };
 
     // Partner only endpoints
     public static final String[] PARTNER_ENDPOINTS = {
-            "/api/v1/partner/**"
+            "/api/v1/user-service/partners/**",
+            "/api/v1/parking-service/**",
     };
 
-    // Driver/Member only endpoints
+    // Member endpoints (regular users)
     public static final String[] MEMBER_ENDPOINTS = {
             "/api/v1/user-service/users/**",
             "/api/v1/user-service/vehicles/**",
@@ -72,13 +79,12 @@ public class SecurityConfig {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Add CORS config
                 .authorizeExchange(ex -> ex
-//                                .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
-//                                .pathMatchers(ADMIN_ENDPOINTS).hasRole("ADMIN")
-//                                .pathMatchers(PARTNER_ENDPOINTS).hasRole("PARTNER")
-//                                .pathMatchers(MEMBER_ENDPOINTS).hasRole("MEMBER")
-//                                .anyExchange().authenticated()
-                                .anyExchange().permitAll()
+                        .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .pathMatchers(PARTNER_ENDPOINTS).hasAnyRole("PARTNER_OWNER", "PARTNER_STAFF", "ADMIN")
+                        .pathMatchers(MEMBER_ENDPOINTS).hasAnyRole("MEMBER", "ADMIN")
+                        .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(grantedAuthoritiesExtractor())))
@@ -104,10 +110,29 @@ public class SecurityConfig {
 
     @Bean
     public ReactiveJwtDecoder jwtDecoder() {
-        SecretKey key = new SecretKeySpec(JWT_KEY.getBytes(), "HmacSHA256");
+        byte[] keyBytes = JWT_KEY.getBytes();
+        SecretKey key = new SecretKeySpec(keyBytes, "HmacSHA512");
         return NimbusReactiveJwtDecoder.withSecretKey(key)
-                .macAlgorithm(MacAlgorithm.HS256)
+                .macAlgorithm(MacAlgorithm.HS512)
                 .build();
     }
+
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.setAllowedOriginPatterns(Collections.singletonList("*")); // Accept all origins
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        config.setExposedHeaders(Arrays.asList("Authorization"));
+        config.setMaxAge(3600L); // Cache preflight response for 1 hour
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+
+        return source;
+    }
+
 
 }
