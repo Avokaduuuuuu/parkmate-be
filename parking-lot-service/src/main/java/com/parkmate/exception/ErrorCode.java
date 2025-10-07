@@ -15,7 +15,6 @@ public enum ErrorCode {
     // ParkingLot errors
     PARKING_NOT_FOUND(3101, "Parking Lot not found", HttpStatus.NOT_FOUND),
     INVALID_PARKING_LOT_STATUS_TRANSITION(3102, "PENDING Parking Lot can not be deleted", HttpStatus.CONFLICT),
-    REASON_REQUIRED(3103, "Reason required", HttpStatus.BAD_REQUEST),
 
     // ParkingFloor errors
     PARKING_FLOOR_NOT_FOUND(3201, "Parking Floor not found", HttpStatus.NOT_FOUND),
@@ -31,10 +30,7 @@ public enum ErrorCode {
     SPOT_NOT_FOUND(3501, "Spot not found", HttpStatus.NOT_FOUND),
     SPOT_COUNT_MISS_MATCH(3502, "Spot count mismatch", HttpStatus.CONFLICT),
     VEHICLE_TYPE_MISS_MATCH(3503, "Spot can not be added to this area", HttpStatus.CONFLICT),
-    BLOCK_REASON_REQUIRED(3504, "Block Reason required", HttpStatus.BAD_REQUEST),
-
-    // Session errors
-    SESSION_NOT_FOUND(3601, "Session Not found", HttpStatus.NOT_FOUND);
+    BLOCK_REASON_REQUIRED(3504, "Block Reason required", HttpStatus.BAD_REQUEST),;
 
     private final int code;
     private final String message;

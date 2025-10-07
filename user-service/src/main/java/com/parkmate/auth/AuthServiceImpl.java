@@ -12,14 +12,12 @@ import com.parkmate.s3.S3Service;
 import com.parkmate.user.User;
 import com.parkmate.user.UserMapper;
 import com.parkmate.user.UserRepository;
-import com.parkmate.user.UserService;
-import com.parkmate.user.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -45,7 +43,6 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final S3Service s3Service;
-    private final UserService userService;
 
     @Override
     public AuthResponse login(LoginRequest request) {
@@ -113,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public RegisterResponse register(RegisterRequest request) {
+    public RegisterResponse register(RegisterRequest request, MultipartFile frontIdImage, MultipartFile backIdImage) {
         // Check if account already exists
         if (accountRepository.existsByEmail(request.getEmail())) {
             throw new AppException(ErrorCode.ACCOUNT_ALREADY_EXISTS);
@@ -125,6 +122,23 @@ public class AuthServiceImpl implements AuthService {
 
         // Create verification token
         String verificationToken = generateNumericVerificationToken();
+
+        // Upload ID images to S3 if provided
+        String frontPhotoUrl = null;
+        String backPhotoUrl = null;
+
+        try {
+            if (frontIdImage != null && !frontIdImage.isEmpty()) {
+                frontPhotoUrl = s3Service.uploadFile(frontIdImage, "id-cards/front", request.getIdNumber());
+            }
+
+            if (backIdImage != null && !backIdImage.isEmpty()) {
+                backPhotoUrl = s3Service.uploadFile(backIdImage, "id-cards/back", request.getIdNumber());
+            }
+        } catch (Exception e) {
+            log.error("Failed to upload ID images to S3", e);
+            throw new AppException(ErrorCode.S3_UPLOAD_FAILED);
+        }
 
         // Create Account
         Account account = Account.builder()
@@ -144,15 +158,14 @@ public class AuthServiceImpl implements AuthService {
                 .phone(request.getPhone())
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
-                .fullName(request.getFullName())
                 .dateOfBirth(request.getDateOfBirth() != null ? request.getDateOfBirth().toLocalDate() : null)
                 .address(request.getAddress())
                 .idNumber(request.getIdNumber())
                 .issuePlace(request.getIssuePlace())
                 .issueDate(request.getIssueDate() != null ? request.getIssueDate().toLocalDate() : null)
                 .expiryDate(request.getExpiryDate() != null ? request.getExpiryDate().toLocalDate() : null)
-                .frontPhotoPath(request.getFrontIdPath())
-                .backPhotoPath(request.getBackIdImgPath())
+                .frontPhotoPath(frontPhotoUrl)
+                .backPhotoPath(backPhotoUrl)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -174,7 +187,7 @@ public class AuthServiceImpl implements AuthService {
                         .tokenType(TOKEN_TYPE)
                         .expiresIn(ACCESS_TOKEN_EXPIRATION)
                         .build())
-                .userResponse(responseWithPresignedURL(userMapper.toResponse(savedUser), savedUser))
+                .userResponse(userMapper.toResponse(savedUser))
                 .build();
     }
 
@@ -278,44 +291,5 @@ public class AuthServiceImpl implements AuthService {
         } catch (Exception e) {
             log.error("Failed to send verification email to: {}", toEmail, e);
         }
-    }
-
-    private UserResponse responseWithPresignedURL(UserResponse response, User user) {
-        return getUserResponse(response, user, s3Service);
-    }
-
-    @NonNull
-    public static UserResponse getUserResponse(UserResponse response, User user, S3Service s3Service) {
-        String frontPhotoUrl = user.getFrontPhotoPath() != null
-                ? s3Service.generatePresignedUrl(user.getFrontPhotoPath())
-                : null;
-
-        String backPhotoUrl = user.getBackPhotoPath() != null
-                ? s3Service.generatePresignedUrl(user.getBackPhotoPath())
-                : null;
-
-        String profilePictureUrl = user.getProfilePictureUrl() != null
-                ? s3Service.generatePresignedUrl(user.getProfilePictureUrl())
-                : null;
-
-        return new UserResponse(
-                response.id(),
-                response.phone(),
-                response.firstName(),
-                response.lastName(),
-                response.fullName(),
-                response.dateOfBirth(),
-                response.address(),
-                response.profilePictureUrl(),
-                response.idNumber(),
-                response.issuePlace(),
-                response.issueDate(),
-                response.expiryDate(),
-                frontPhotoUrl,
-                backPhotoUrl,
-                profilePictureUrl,
-                response.createdAt(),
-                response.updatedAt()
-        );
     }
 }

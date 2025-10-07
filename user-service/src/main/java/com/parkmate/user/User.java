@@ -41,7 +41,6 @@ public class User {
     private String fullName;
 
     @Column(name = "date_of_birth", length = 10)
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
 
     @Column(name = "address", length = 100)
@@ -57,11 +56,8 @@ public class User {
     private String issuePlace;
 
     @Column(name = "issue_date", length = 10)
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate issueDate;
 
-
-    @JsonFormat(pattern = "yyyy-MM-dd")
     @Column(name = "expiry_date", length = 10)
     private LocalDate expiryDate;
 
