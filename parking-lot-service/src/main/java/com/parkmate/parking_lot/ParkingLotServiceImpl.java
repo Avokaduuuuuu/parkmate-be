@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,15 +35,17 @@ public class ParkingLotServiceImpl implements ParkingLotService {
 
     @Override
     public Page<ParkingLotResponse> fetchAllParkingLots(
+            String userHeaderId,
             int page,
             int size,
             String sortBy,
             String sortOrder,
             ParkingLotFilterParams params
     ) {
+        Long partnerId = userHeaderId != null ? Long.parseLong(userHeaderId) : null;
         Sort sort = Sort.by(Sort.Direction.fromString(sortOrder),sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<ParkingLotEntity> parkingLotEntities = parkingLotRepository.findAll(params.getSpecification(),pageable);
+        Page<ParkingLotEntity> parkingLotEntities = parkingLotRepository.findAll(params.getSpecification(partnerId),pageable);
         return parkingLotEntities.map(ParkingLotMapper.INSTANCE::toResponse);
     }
 
@@ -56,7 +59,11 @@ public class ParkingLotServiceImpl implements ParkingLotService {
 
     @Override
     @Transactional
-    public ParkingLotResponse addParkingLot(Long partnerId,ParkingLotCreateRequest request) {
+    public ParkingLotResponse addParkingLot(String userHeaderId, ParkingLotCreateRequest request) {
+        if (userHeaderId == null || userHeaderId.isEmpty()) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        Long partnerId = Long.parseLong(userHeaderId);
         ParkingLotEntity parkingLotEntity = ParkingLotMapper.INSTANCE.toEntity(request);
         parkingLotEntity.setIs24Hour(request.is24Hour());
         parkingLotEntity.setPartnerId(partnerId);

@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -30,7 +31,7 @@ public class ParkingLotController {
                 Search and retrieve parking lots with filtering and pagination support.
                 
                 **Query Parameters:**
-                - `partnerId` (optional): Filter by partner ID - returns parking lots owned by specific partner
+                - `ownedByMe` (optional): Returns parking lots owned by current authenticated partner
                 - `name` (optional): Search by parking lot name (partial match, case-insensitive)
                 - `city` (optional): Search by city name (partial match, case-insensitive)
                 - `is24Hour` (optional): Filter by 24-hour operation (true/false)
@@ -55,6 +56,8 @@ public class ParkingLotController {
                 """
     )
     public ResponseEntity<?> findAll(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false, defaultValue = "id") String sortBy,
@@ -67,6 +70,7 @@ public class ParkingLotController {
                         ApiResponse.success(
                                 "All parking lots found!",
                                 parkingLotService.fetchAllParkingLots(
+                                        userIdHeader,
                                         page, size, sortBy, sortOrder, params
                                 ))
                 );
@@ -104,8 +108,9 @@ public class ParkingLotController {
                 );
     }
 
-    @PostMapping("/{partnerId}")
+    @PostMapping
     @Operation(
+
             summary = "Create a new parking lot",
             description = """
                 Create a new parking lot for a specific partner with complete configuration.
@@ -137,15 +142,16 @@ public class ParkingLotController {
     )
     public ResponseEntity<?> addParkingLot(
             @Parameter(description = "ID of the partner creating this parking lot", required = true, example = "123")
-            @PathVariable("partnerId") Long partnerId,
-            @RequestBody @Valid ParkingLotCreateRequest request
+            @RequestBody @Valid ParkingLotCreateRequest request,
+            @Parameter(hidden = true)
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader
     ) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(
                         ApiResponse.success(
                                 "Parking Lot created successfully",
-                                parkingLotService.addParkingLot(partnerId,request)
+                                parkingLotService.addParkingLot(userIdHeader,request)
                         )
                 );
     }

@@ -11,6 +11,7 @@ public enum ErrorCode {
     VALIDATION_ERROR(1001, "Validation failed", HttpStatus.BAD_REQUEST),
     INVALID_REQUEST(1002, "Invalid request", HttpStatus.BAD_REQUEST),
     INVALID_ENUM(1003, "Invalid enum", HttpStatus.BAD_REQUEST),
+    UNAUTHORIZED(1004, "Unauthorized", HttpStatus.UNAUTHORIZED),
 
     // ParkingLot errors
     PARKING_NOT_FOUND(3101, "Parking Lot not found", HttpStatus.NOT_FOUND),
