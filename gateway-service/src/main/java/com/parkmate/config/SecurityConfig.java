@@ -19,7 +19,6 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
@@ -53,9 +52,8 @@ public class SecurityConfig {
 
             // Public user endpoints (read-only)
             "/api/v1/user-service/users",
-            "/api/v1/user-service/users/{id}",
-
-            "/api/v1/parking-service/lots"
+            "/api/v1/parking-service/lots",
+            "/api/v1/payment-service/momo/**"
     };
 
 
@@ -70,7 +68,8 @@ public class SecurityConfig {
             "/api/v1/user-service/users/**",
             "/api/v1/user-service/vehicles/**",
             "/api/v1/user-service/reservations/**",
-            "/api/v1/user-service/mobile-devices/**"
+            "/api/v1/user-service/mobile-devices/**",
+            "/api/v1/payment-service/**"
     };
 
     @Value("${jwt.secret}")
