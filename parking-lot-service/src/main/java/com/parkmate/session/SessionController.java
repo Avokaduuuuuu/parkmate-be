@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/parking-service/sessions")
 @RequiredArgsConstructor
-@Tag(name = "Parking Session API", description = "API for managing parking sessions and vehicle entry/exit tracking")
+@Tag(name = "Parking Session API", description = "API for managing and calculating parking sessions and vehicle entry/exit tracking")
 public class SessionController {
 
     private final SessionService sessionService;
