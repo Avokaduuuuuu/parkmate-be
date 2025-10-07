@@ -50,7 +50,7 @@ public class SessionEntity {
     @JdbcType(PostgreSQLEnumJdbcType.class)
     SessionType sessionType;
 
-    @Column(name = "auth_type")
+    @Column(name = "auth_method")
     @Enumerated(EnumType.STRING)
     @JdbcType(PostgreSQLEnumJdbcType.class)
     AuthMethod authMethod;

@@ -54,7 +54,10 @@ public class SecurityConfig {
             // Public user endpoints (read-only)
             "/api/v1/user-service/users",
             "/api/v1/parking-service/lots",
-            "/api/v1/payment-service/momo/**"
+            "/api/v1/parking-service/lots/{id}",
+            "/api/v1/parking-service/floors/{id}",
+            "/api/v1/payment-service/momo/**",
+            "/api/v1/parking-service/sessions/**"
     };
 
 
