@@ -116,7 +116,6 @@ public record ParkingLotCreateRequest(
                 type = "boolean",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        @NotNull
         Boolean is24Hour,
 
         @Valid

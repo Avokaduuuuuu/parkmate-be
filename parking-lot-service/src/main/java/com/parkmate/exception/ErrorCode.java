@@ -15,7 +15,6 @@ public enum ErrorCode {
     // ParkingLot errors
     PARKING_NOT_FOUND(3101, "Parking Lot not found", HttpStatus.NOT_FOUND),
     INVALID_PARKING_LOT_STATUS_TRANSITION(3102, "PENDING Parking Lot can not be deleted", HttpStatus.CONFLICT),
-    REASON_REQUIRED(3103, "Reason required", HttpStatus.BAD_REQUEST),
 
     // ParkingFloor errors
     PARKING_FLOOR_NOT_FOUND(3201, "Parking Floor not found", HttpStatus.NOT_FOUND),

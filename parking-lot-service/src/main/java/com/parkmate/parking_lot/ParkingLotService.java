@@ -11,8 +11,7 @@ public interface ParkingLotService {
             int page,
             int size,
             String sortBy,
-            String sortOrder,
-            ParkingLotFilterParams params
+            String sortOrder
     );
 
     ParkingLotDetailedResponse getParkingLotById(Long id);

@@ -77,10 +77,6 @@ public class ParkingLotEntity extends BaseEntity {
     @JdbcType(PostgreSQLEnumJdbcType.class)
     ParkingLotStatus status;
 
-    @Column(name = "reason")
-    String reason;
-
-
     @OneToMany(mappedBy = "parkingLot")
     List<FloorEntity> parkingFloors;
 
