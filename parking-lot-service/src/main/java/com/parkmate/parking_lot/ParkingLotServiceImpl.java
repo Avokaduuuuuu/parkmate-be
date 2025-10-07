@@ -20,10 +20,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -141,5 +143,31 @@ public class ParkingLotServiceImpl implements ParkingLotService {
 
         parkingLotEntity.setStatus(ParkingLotStatus.INACTIVE);
         return ParkingLotMapper.INSTANCE.toResponse(parkingLotRepository.save(parkingLotEntity));
+    }
+
+    @Override
+    public List<ParkingLotResponse> fetchNearbyParkingLots(Double latitude, Double longitude, Double radiusKm) {
+        Specification<ParkingLotEntity> specification = withinBoundingBox(latitude, longitude, radiusKm);
+
+        return parkingLotRepository.findAll(specification)
+                .stream().map(ParkingLotMapper.INSTANCE::toResponse).collect(Collectors.toList());
+    }
+
+    private Specification<ParkingLotEntity> withinBoundingBox(Double latitude, Double longitude, Double radiusKm) {
+        // Calculate the delta of latitude direction
+        // 1 degree = 111km
+        double latDelta = radiusKm / 111.0;
+        // 1 degree of longitude varies by latitude
+        // At equator: 111 km, at poles: 0 km
+        double longDelta = radiusKm / (111.0 * Math.cos(Math.toRadians(latitude)));
+
+        double minLat = latitude - latDelta;
+        double maxLat = latitude + latDelta;
+        double minLong = longitude - longDelta;
+        double maxLong = longitude + longDelta;
+        return (root, query, cb) -> cb.and(
+                cb.between(root.get("latitude"), minLat, maxLat),
+                cb.between(root.get("longitude"), minLong, maxLong)
+        );
     }
 }
