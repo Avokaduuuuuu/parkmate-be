@@ -6,6 +6,7 @@ import com.parkmate.area.AreaEntity;
 import com.parkmate.pricing_rule.enums.RuleScope;
 import com.parkmate.common.enums.VehicleType;
 import com.parkmate.parking_lot.ParkingLotEntity;
+import com.parkmate.session.SessionEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -17,6 +18,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -92,4 +94,6 @@ public class PricingRuleEntity {
     @JoinColumn(name = "area_id")
     AreaEntity parkingArea;
 
+    @OneToMany(mappedBy = "pricingRule")
+    List<SessionEntity> sessions;
 }
