@@ -252,4 +252,74 @@ public class ParkingLotController {
                         )
                 );
     }
+
+    @GetMapping("/nearby")
+    @Operation(
+            summary = "Get nearby parking lots based on location",
+            description = """
+                Find parking lots within a specified radius from a given geographic location.
+                Uses the Haversine formula to calculate distances between coordinates.
+                
+                **Query Parameters:**
+                - `latitude` (required): Latitude coordinate of the search center point (-90 to 90)
+                - `longitude` (required): Longitude coordinate of the search center point (-180 to 180)
+                - `radiusKm` (required): Search radius in kilometers (e.g., 5.0 for 5km radius)
+                
+                **How it works:**
+                - Calculates the straight-line distance from the provided coordinates to each parking lot
+                - Returns only parking lots within the specified radius
+                - Results are typically sorted by distance (nearest first)
+                - Only includes ACTIVE parking lots that are currently operational
+                
+                **Returns:** List of nearby parking lots including:
+                - Parking lot details (name, address, location)
+                - Distance from search point in kilometers
+                - Available capacity and pricing information
+                - Operating hours and 24-hour status
+                - Current availability status
+                
+                **Use Cases:**
+                - Mobile app "Find parking near me" feature
+                - Navigation and route planning
+                - Checking parking availability in a specific area
+                - Location-based parking recommendations
+                
+                **Example:**
+                - Search for parking within 2km of current location
+                - Find parking near a specific address or landmark
+                - Discover parking options in an unfamiliar area
+                """
+    )
+    public ResponseEntity<?> getNearbyParkingLots(
+            @Parameter(
+                    description = "Latitude coordinate of search center point (decimal degrees)",
+                    required = true,
+                    example = "10.7827500",
+                    schema = @Schema(type = "number", format = "double", minimum = "-90", maximum = "90")
+            )
+            @RequestParam("latitude") Double latitude,
+
+            @Parameter(
+                    description = "Longitude coordinate of search center point (decimal degrees)",
+                    required = true,
+                    example = "106.6986700",
+                    schema = @Schema(type = "number", format = "double", minimum = "-180", maximum = "180")
+            )
+            @RequestParam("longitude") Double longitude,
+
+            @Parameter(
+                    description = "Search radius in kilometers. Recommended values: 1-10 km for urban areas",
+                    required = true,
+                    example = "5.0",
+                    schema = @Schema(type = "number", format = "double", minimum = "0.1", maximum = "50")
+            )
+            @RequestParam("radiusKm") Double radiusKm
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success(
+                        "Fetch nearby Parking Lots successfully",
+                        parkingLotService.fetchNearbyParkingLots(latitude, longitude, radiusKm)
+                )
+        );
+    }
 }
