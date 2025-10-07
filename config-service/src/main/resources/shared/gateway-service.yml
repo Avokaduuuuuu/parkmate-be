@@ -6,12 +6,6 @@ spring:
     name: gateway-service
 
   cloud:
-    loadbalancer:
-      cache:
-        enabled: false
-      ribbon:
-        enabled: false
-
     gateway:
       routes:
 
@@ -61,12 +55,14 @@ spring:
             - Path=/aggregate/parking-lot-service/v3/api-docs
           filters:
             - SetPath=/v3/api-docs
+
+      # ============================================
+      # GLOBAL CORS
+      # ============================================
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins:
-              - "http://localhost:5173"
-              - "http://localhost:3000"
+            allowedOriginPatterns: "*"
             allowedMethods:
               - GET
               - POST

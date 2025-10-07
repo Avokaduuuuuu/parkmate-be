@@ -3,15 +3,12 @@ package com.parkmate.spot;
 
 import com.parkmate.area.AreaEntity;
 import com.parkmate.common.BaseEntity;
-import com.parkmate.session.SessionEntity;
 import com.parkmate.spot.enums.SpotStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
-
-import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @Builder
@@ -49,7 +46,4 @@ public class SpotEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "area_id")
     AreaEntity parkingArea;
-
-    @OneToMany(mappedBy = "spot")
-    List<SessionEntity> sessions;
 }

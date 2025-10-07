@@ -38,4 +38,10 @@ public class RedisConfig {
         return redisTemplate;
     }
 
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
+
+
 }

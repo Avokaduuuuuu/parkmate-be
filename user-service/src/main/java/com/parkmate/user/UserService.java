@@ -1,16 +1,13 @@
 package com.parkmate.user;
 
+import com.parkmate.user.dto.CreateUserRequest;
 import com.parkmate.user.dto.UserResponse;
-import org.springframework.security.core.Authentication;
-
-import java.util.List;
+import jakarta.validation.constraints.NotBlank;
 
 public interface UserService {
 
-    UserResponse getUserById(Long id);
+    UserResponse login(@NotBlank String phone, @NotBlank String password);
 
-    List<UserResponse> getAllUsers();
-
-    UserResponse getCurrentUser(Authentication authentication, String userIdHeader);
+    UserResponse register(CreateUserRequest request);
 
 }
