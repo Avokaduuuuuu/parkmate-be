@@ -1,4 +1,4 @@
-package com.parkmate.auth;
+package com.parkmate.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
