@@ -144,6 +144,7 @@ public class AuthServiceImpl implements AuthService {
                 .account(savedAccount)
                 .phone(request.getPhone())
                 .firstName(request.getFirstName())
+                .lastName(request.getLastName())
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -245,10 +246,11 @@ public class AuthServiceImpl implements AuthService {
                 );
 
             } else {
+                String fullName = account.getUser().getFirstName() + " " + account.getUser().getLastName();
                 emailService.sendMemberVerificationEmail(
                         account.getEmail(),
                         newToken,
-                        account.getRole().equals(AccountRole.MEMBER) ? account.getUser().getFullName() : account.getPartner().getCompanyName()
+                        account.getRole().equals(AccountRole.MEMBER) ? fullName : account.getPartner().getCompanyName()
                 );
             }
 

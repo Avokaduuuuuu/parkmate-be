@@ -16,6 +16,7 @@ public interface VehicleMapper {
             @Mapping(target = "isActive", ignore = true),
             @Mapping(target = "createdAt", ignore = true),
             @Mapping(target = "updatedAt", ignore = true),
+            @Mapping(target = "isElectric", source = "electric")
 
     })
     Vehicle toEntity(CreateVehicleRequest vehicleDTO);
