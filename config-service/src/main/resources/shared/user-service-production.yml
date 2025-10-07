@@ -1,13 +1,7 @@
 server:
-  port: ${USER_PORT}
+port: ${USER_PORT}
 
 spring:
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 20MB
-      enabled: true
-
   datasource:
     url: jdbc:postgresql://${DATABASE_HOST:localhost}:5432/${USER_DATABASE:USER_DATABASE}
     username: ${DATABASE_USERNAME}
@@ -35,7 +29,7 @@ spring:
       port: 6379
       host: ${REDIS_HOST}
       ssl:
-        enabled: false
+        enabled: true
   cache:
     type: redis
 

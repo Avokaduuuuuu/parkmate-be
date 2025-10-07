@@ -37,11 +37,12 @@ public class ParkingLotServiceImpl implements ParkingLotService {
             int page,
             int size,
             String sortBy,
-            String sortOrder
+            String sortOrder,
+            ParkingLotFilterParams params
     ) {
         Sort sort = Sort.by(Sort.Direction.fromString(sortOrder),sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<ParkingLotEntity> parkingLotEntities = parkingLotRepository.findAll(pageable);
+        Page<ParkingLotEntity> parkingLotEntities = parkingLotRepository.findAll(params.getSpecification(),pageable);
         return parkingLotEntities.map(ParkingLotMapper.INSTANCE::toResponse);
     }
 
@@ -110,7 +111,12 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         if (request.latitude() != null) parkingLotEntity.setLatitude(request.latitude());
         if (request.longitude() != null) parkingLotEntity.setLongitude(request.longitude());
         if (request.totalFloors() != null) parkingLotEntity.setTotalFloors(request.totalFloors());
-        if (request.status() != null) parkingLotEntity.setStatus(request.status());
+        if (request.status() != null) {
+            parkingLotEntity.setStatus(request.status());
+            if ((request.status() == ParkingLotStatus.REJECTED || request.status() == ParkingLotStatus.MAP_DENIED) && request.reason() == null) {
+                throw new AppException(ErrorCode.REASON_REQUIRED);
+            }
+        }
         if (request.is24Hour() != null) parkingLotEntity.setIs24Hour(request.is24Hour());
 
 
@@ -120,7 +126,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     @Override
     public ParkingLotResponse deleteParkingLot(Long id) {
         ParkingLotEntity parkingLotEntity = parkingLotRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND, "Reason is required for REJECTED or MAP_DENIED parking lot"));
 
         if (parkingLotEntity.getStatus().equals(ParkingLotStatus.PENDING)) {
             throw new AppException(ErrorCode.INVALID_PARKING_LOT_STATUS_TRANSITION);

@@ -1,19 +1,34 @@
 package com.parkmate.user.dto;
 
-import org.springframework.format.annotation.DateTimeFormat;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-
-
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record UserResponse(
         Long id,
         String phone,
         String firstName,
         String lastName,
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+        String fullName,
+        @JsonFormat(pattern = "yyyy-MM-dd")
+        LocalDate dateOfBirth,
+        String address,
+        String profilePictureUrl,
+        String idNumber,
+        String issuePlace,
+        @JsonFormat(pattern = "yyyy-MM-dd")
+        LocalDate issueDate,
+        @JsonFormat(pattern = "yyyy-MM-dd")
+        LocalDate expiryDate,
+        String frontPhotoPresignedUrl,
+        String backPhotoPresignedUrl,
+        String profilePicturePresignedUrl,
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         LocalDateTime createdAt,
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         LocalDateTime updatedAt
 ) {
 }
