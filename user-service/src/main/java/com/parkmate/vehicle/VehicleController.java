@@ -6,6 +6,7 @@ import com.parkmate.vehicle.dto.UpdateVehicleRequest;
 import com.parkmate.vehicle.dto.VehicleResponse;
 import com.parkmate.vehicle.dto.VehicleSearchCriteria;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -57,9 +58,10 @@ public class VehicleController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
             @RequestParam(required = false, defaultValue = "asc") String sortOrder,
+            @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader,
             @ModelAttribute VehicleSearchCriteria searchCriteria
     ) {
-        Page<VehicleResponse> vehicleResponse = vehicleService.findAll(page, size, sortBy, sortOrder, searchCriteria);
+        Page<VehicleResponse> vehicleResponse = vehicleService.findAll(page, size, sortBy, sortOrder, searchCriteria, userIdHeader);
         return ResponseEntity.ok(ApiResponse.success("Vehicles fetched successfully", vehicleResponse));
 
     }

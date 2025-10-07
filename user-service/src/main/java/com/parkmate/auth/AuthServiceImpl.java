@@ -2,6 +2,7 @@ package com.parkmate.auth;
 
 import com.parkmate.account.Account;
 import com.parkmate.account.AccountRepository;
+import com.parkmate.account.dto.AccountBasicResponse;
 import com.parkmate.auth.dto.*;
 import com.parkmate.common.enums.AccountRole;
 import com.parkmate.common.enums.AccountStatus;
@@ -143,16 +144,6 @@ public class AuthServiceImpl implements AuthService {
                 .account(savedAccount)
                 .phone(request.getPhone())
                 .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .fullName(request.getFullName())
-                .dateOfBirth(request.getDateOfBirth() != null ? request.getDateOfBirth().toLocalDate() : null)
-                .address(request.getAddress())
-                .idNumber(request.getIdNumber())
-                .issuePlace(request.getIssuePlace())
-                .issueDate(request.getIssueDate() != null ? request.getIssueDate().toLocalDate() : null)
-                .expiryDate(request.getExpiryDate() != null ? request.getExpiryDate().toLocalDate() : null)
-                .frontPhotoPath(request.getFrontIdPath())
-                .backPhotoPath(request.getBackIdImgPath())
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -298,7 +289,13 @@ public class AuthServiceImpl implements AuthService {
                 ? s3Service.generatePresignedUrl(user.getProfilePictureUrl())
                 : null;
 
+        AccountBasicResponse accountBasicResponse = new AccountBasicResponse(
+                user.getAccount().getId(),
+                user.getAccount().getEmail()
+        );
+
         return new UserResponse(
+                accountBasicResponse,
                 response.id(),
                 response.phone(),
                 response.firstName(),

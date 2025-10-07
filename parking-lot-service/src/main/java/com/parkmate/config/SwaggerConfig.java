@@ -40,7 +40,7 @@ public class SwaggerConfig {
                 // Info
                 .info(new Info()
                         .title("ParkMate - User Service API")
-                        .description("User Management, Vehicle, Partner APIs")
+                        .description("Payment service API documentation for ParkMate application")
                         .version("1.0.0")
                         .contact(new Contact()
                                 .name("ParkMate Team")

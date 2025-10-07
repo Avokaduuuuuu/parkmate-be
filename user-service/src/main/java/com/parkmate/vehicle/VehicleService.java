@@ -16,7 +16,7 @@ public interface VehicleService {
 
     VehicleResponse updateVehicle(Long id, UpdateVehicleRequest request);
 
-    Page<VehicleResponse> findAll(int page, int size, String sortBy, String sortOrder, VehicleSearchCriteria searchCriteria);
+    Page<VehicleResponse> findAll(int page, int size, String sortBy, String sortOrder, VehicleSearchCriteria searchCriteria, String userId);
 
     void deleteVehicle(Long id);
 

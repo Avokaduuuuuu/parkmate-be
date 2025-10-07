@@ -1,18 +1,19 @@
 package com.parkmate.user;
 
 import com.parkmate.common.dto.ApiResponse;
+import com.parkmate.user.dto.UpdateUserRequest;
 import com.parkmate.user.dto.UserResponse;
+import com.parkmate.user.dto.UserSearchCriteria;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/user-service/users")
@@ -25,8 +26,14 @@ public class UserController {
 
     @GetMapping
     @Operation(summary = "Get all users")
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
-        List<UserResponse> users = userService.getAllUsers();
+    public ResponseEntity<ApiResponse<Page<UserResponse>>> getAllUsers(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(value = "sortOrder", defaultValue = "asc") String sortOrder,
+            @RequestBody(required = false) UserSearchCriteria criteria
+    ) {
+        Page<UserResponse> users = userService.getAllUsers(page, size, sortBy, sortOrder, criteria);
         return ResponseEntity.ok(ApiResponse.success(users, "Users retrieved successfully"));
     }
 
@@ -49,6 +56,24 @@ public class UserController {
 
         UserResponse user = userService.getCurrentUser(authentication, userIdHeader);
         return ResponseEntity.ok(ApiResponse.success(user, "User profile retrieved successfully"));
+    }
+
+    @PutMapping
+    @Operation(
+            summary = "Update user profile",
+            description = "Requires authentication. Click 'Authorize' button and enter JWT token.",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
+            @Parameter(hidden = true) Authentication authentication,
+            @RequestBody UpdateUserRequest request) {
+
+        return ResponseEntity.ok(ApiResponse.success(
+                userService.updateUser(
+                        userService.getCurrentUser(authentication, userIdHeader).id(),
+                        request),
+                "User profile updated successfully"));
     }
 
 }

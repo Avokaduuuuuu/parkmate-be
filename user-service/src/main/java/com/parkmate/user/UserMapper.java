@@ -9,26 +9,6 @@ import org.mapstruct.*;
 @Mapper(config = MapStructConfig.class)
 public interface UserMapper {
 
-    @Mappings({
-            @Mapping(target = "id", ignore = true),
-            @Mapping(target = "createdAt", ignore = true),
-            @Mapping(target = "updatedAt", ignore = true),
-            // tạm thời ignore các trường không có trong request
-            @Mapping(target = "dateOfBirth", ignore = true),
-            @Mapping(target = "address", ignore = true),
-            @Mapping(target = "profilePictureUrl", ignore = true),
-            @Mapping(target = "idNumber", ignore = true),
-            @Mapping(target = "issuePlace", ignore = true),
-            @Mapping(target = "issueDate", ignore = true),
-            @Mapping(target = "expiryDate", ignore = true),
-            @Mapping(target = "frontPhotoPath", ignore = true),
-            @Mapping(target = "backPhotoPath", ignore = true),
-            @Mapping(target = "vehicles", ignore = true),
-            @Mapping(target = "fullName", ignore = true),
-            @Mapping(target = "account", ignore = true) // test
-
-    })
-    User toEntity(CreateUserRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mappings({
@@ -37,15 +17,14 @@ public interface UserMapper {
             @Mapping(target = "updatedAt", ignore = true),
             @Mapping(target = "vehicles", ignore = true),
             @Mapping(target = "account", ignore = true),
-            @Mapping(target = "fullName", ignore = true),
-// test
     })
     void updateEntity(UpdateUserRequest req, @MappingTarget User user);
 
     @Mappings({
             @Mapping(target = "frontPhotoPresignedUrl", ignore = true),
             @Mapping(target = "backPhotoPresignedUrl", ignore = true),
-            @Mapping(target = "profilePicturePresignedUrl", ignore = true)
+            @Mapping(target = "profilePicturePresignedUrl", ignore = true),
+            @Mapping(target = "account", ignore = true)
     })
     UserResponse toResponse(User user);
 }
