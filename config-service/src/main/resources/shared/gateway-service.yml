@@ -33,6 +33,20 @@ spring:
             - Path=/aggregate/user-service/v3/api-docs
           filters:
             - SetPath=/v3/api-docs
+        # Catch-all for other Payment service routes
+        - id: payment-service-protected
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/payment-service/**
+          filters:
+            - StripPrefix=0
+        # Payment service swagger
+        - id: payment-swagger
+          uri: lb://payment-service
+          predicates:
+            - Path=/aggregate/payment-service/v3/api-docs
+          filters:
+            - SetPath=/v3/api-docs
 
         # User service actuator
         - id: user-actuator
@@ -79,6 +93,7 @@ spring:
             maxAge: 3600
         add-to-simple-url-handler-mapping: true
 
+
       # ============================================
       # DEFAULT FILTERS
       # ============================================
@@ -99,6 +114,8 @@ springdoc:
         url: /aggregate/user-service/v3/api-docs
       - name: Parking Lot Service
         url: /aggregate/parking-lot-service/v3/api-docs
+      - name: Payment Service
+        url: /aggregate/payment-service/v3/api-docs
     tryItOutEnabled: true
     operationsSorter: method
     tagsSorter: alpha

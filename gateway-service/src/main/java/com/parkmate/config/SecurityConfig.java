@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -25,7 +24,6 @@ import reactor.core.publisher.Mono;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 @Configuration
@@ -70,7 +68,8 @@ public class SecurityConfig {
             "/api/v1/user-service/vehicles/**",
             "/api/v1/user-service/reservations/**",
             "/api/v1/user-service/mobile-devices/**",
-            "/api/v1/payment-service/**"
+            "/api/v1/payment-service/**",
+            "/api/v1/payment-service/wallets/**"
     };
 
     @Value("${jwt.secret}")

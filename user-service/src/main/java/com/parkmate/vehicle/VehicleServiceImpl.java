@@ -67,9 +67,17 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
-    public Page<VehicleResponse> findAll(int page, int size, String sortBy, String sortOrder, VehicleSearchCriteria searchCriteria) {
-
-        Predicate predicate = VehicleSpecification.buildPredicate(searchCriteria);
+    public Page<VehicleResponse> findAll(int page,
+                                         int size,
+                                         String sortBy,
+                                         String sortOrder,
+                                         VehicleSearchCriteria searchCriteria,
+                                         String userId) {
+        long uId = 0;
+        if (userId != null && !userId.isEmpty()) {
+            uId = Long.parseLong(userId);
+        }
+        Predicate predicate = VehicleSpecification.buildPredicate(searchCriteria, uId);
         Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
         Page<Vehicle> vehiclePage = vehicleRepository.findAll(predicate, pageable);
         return vehiclePage.map(vehicleMapper::toDTO);

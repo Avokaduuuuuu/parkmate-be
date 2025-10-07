@@ -1,59 +1,81 @@
 package com.parkmate.user.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
+import lombok.Data;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Schema(description = "Update user request - all fields are optional")
-public record UpdateUserRequest(
-        @Pattern(regexp = "^[0-9]{10,12}$", message = "Phone number must be 10-12 digits")
-        @Schema(description = "Phone number (10-12 digits, numbers only)", example = "0123456789")
-        String phone,
+@Builder
+@Data
+public class UpdateUserRequest {
 
-        @Size(max = 100, message = "First name must not exceed 100 characters")
-        @Schema(description = "User's first name (max 100 chars)", example = "John")
-        String firstName,
+    @NotBlank(message = "Phone is required")
+    @Pattern(regexp = "^[0-9]{10,12}$", message = "Phone number must be 10-12 digits")
+    @Schema(description = "Phone number (10-12 digits, numbers only)", example = "0123456789", requiredMode = Schema.RequiredMode.REQUIRED)
+    String phone;
 
-        @Size(max = 50, message = "Last name must not exceed 50 characters")
-        @Schema(description = "User's last name (max 50 chars)", example = "Doe")
-        String lastName,
+    @NotBlank(message = "First name is required")
+    @Size(max = 100, message = "First name must not exceed 100 characters")
+    @Schema(description = "User's first name (max 100 chars)", example = "John", requiredMode = Schema.RequiredMode.REQUIRED)
+    String firstName;
 
-        @Past(message = "Date of birth must be in the past")
-        @Schema(description = "Date of birth (must be in the past)", example = "1990-01-15")
-        LocalDate dateOfBirth,
+    @NotBlank(message = "Last name is required")
+    @Size(max = 50, message = "Last name must not exceed 50 characters")
+    @Schema(description = "User's last name (max 50 chars)", example = "Doe", requiredMode = Schema.RequiredMode.REQUIRED)
+    String lastName;
 
-        @Size(max = 100, message = "Address must not exceed 100 characters")
-        @Schema(description = "Residential address (max 100 chars)", example = "123 Main Street, District 1, HCMC")
-        String address,
+    @Size(max = 100, message = "Address must not exceed 100 characters")
+    @Schema(description = "Residential address (optional, max 100 chars)", example = "123 Main Street, District 1, HCMC")
+    String address;
 
-        @Size(max = 500, message = "Profile picture URL must not exceed 500 characters")
-        @Schema(description = "Profile picture URL (max 500 chars)", example = "/uploads/profile/user123.jpg")
-        String profilePictureUrl,
+    @Size(max = 500, message = "Profile picture URL must not exceed 500 characters")
+    @Schema(description = "s3 key of the profile picture")
+    String profilePictureUrl;
 
-        @Pattern(regexp = "^[0-9]{9,12}$", message = "ID number must be 9-12 digits")
-        @Schema(description = "National ID number (9-12 digits)", example = "079012345678")
-        String idNumber,
+    @Schema(description = "S3 key of the identity document front photo")
+    String frontPhotoPath;
 
-        @Size(max = 100, message = "Issue place must not exceed 100 characters")
-        @Schema(description = "ID card issue place (max 100 chars)", example = "Public Security Department of HCMC")
-        String issuePlace,
+    @Schema(description = "S3 key of the identity document back photo")
+    String backPhotoPath;
 
-        @Schema(description = "ID card issue date", example = "2020-01-15")
-        LocalDate issueDate,
+    @Size(max = 150, message = "Full name must not exceed 150 characters")
+    @Schema(description = "User's full name (, max 150 chars)", example = "Trịnh Trần Phương Tuấn")
+    private String fullName;
 
-        @Schema(description = "ID card expiry date", example = "2030-01-15")
-        LocalDate expiryDate,
+    @Pattern(regexp = "^[0-9]{9,12}$", message = "ID number must be 9-12 digits")
+    @Schema(description = "[MUST BE UNIQUE] National ID number (, 9-12 digits if provided)", example = "079012345678")
+    private String idNumber;
 
-        @Size(max = 500, message = "Photo path must not exceed 500 characters")
-        @Schema(description = "Front ID card photo path/URL (max 500 chars)", example = "/uploads/id/front_123.jpg")
-        String frontPhotoPath,
+    @Schema(description = "Date of birth (, must be in the past if provided)", example = "1990-01-15T00:00:00")
+    @Past(message = "Date of birth must be in the past")
+    private LocalDateTime dateOfBirth;
 
-        @Size(max = 500, message = "Photo path must not exceed 500 characters")
-        @Schema(description = "Back ID card photo path/URL (max 500 chars)", example = "/uploads/id/back_123.jpg")
-        String backPhotoPath
-) {
+    @Schema(description = "ID card issue place", example = "Public Security Department of HCMC")
+    private String issuePlace;
+
+    @Schema(description = "ID card issue date", example = "2020-01-15T00:00:00")
+    private LocalDateTime issueDate;
+
+    @Schema(description = "ID card expiry date", example = "2030-01-15T00:00:00")
+    private LocalDateTime expiryDate;
+
+    @Schema(
+            description = "s3 key of front side of ID card image",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED
+    )
+    private String frontIdPath;
+
+    @Schema(
+            description = "s3 key of back side of ID card image",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED
+    )
+    private String backIdImgPath;
+
 }
 

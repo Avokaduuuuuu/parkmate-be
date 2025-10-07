@@ -7,6 +7,17 @@ spring:
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
 
+momo:
+  partner-code: ${MOMO_PARTNER_CODE:MOMO}
+  access-key: ${MOMO_ACCESS_KEY:F8BBA842ECF85}
+  secret-key: ${MOMO_SECRET_KEY:K951B6PE1waDMi640xX08PD3vg6EkVlz}
+  endpoint: ${MOMO_PAYMENT_URL:https://test-payment.momo.vn/v2/gateway/api/create}
+  ipn-url: ${MOMO_NOTIFY_URL:http://localhost:8080/api/v1/payment/momo/ipn}
+  redirect-url: ${MOMO_RETURN_URL:http://localhost:8080/api/payment/momo/return}
+  request-type: captureWallet
+  lang: vi
+  timeout: 30000
+
 springdoc:
   api-docs:
     path: /v3/api-docs

@@ -13,6 +13,7 @@ public enum ErrorCode {
     INVALID_REQUEST(1002, "Invalid request", HttpStatus.BAD_REQUEST),
     INVALID_ENUM(1003, "Invalid enum", HttpStatus.BAD_REQUEST),
     IO_ERROR(1004, "I/O error", HttpStatus.INTERNAL_SERVER_ERROR),
+    UNAUTHENTICATED(1005, "Unauthenticated", HttpStatus.UNAUTHORIZED),
 
     // User errors 21
     USER_NOT_FOUND(2101, "User not found", HttpStatus.NOT_FOUND),
