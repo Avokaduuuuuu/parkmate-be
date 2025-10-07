@@ -38,13 +38,13 @@ public class PricingRuleController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> findById(
-            @PathVariable("id") String ruleId
+            @PathVariable("id") Long ruleId
     ) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(
                         ApiResponse.success(
                                 "Fetch Pricing Rule by Id successfully",
-                                pricingRuleService.findPricingRuleById(UUID.fromString(ruleId))
+                                pricingRuleService.findPricingRuleById(ruleId)
                         )
                 );
     }
@@ -65,27 +65,27 @@ public class PricingRuleController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updatePricingRule(
-            @PathVariable("id") String id,
+            @PathVariable("id") Long id,
             @RequestBody @Valid PricingRuleUpdateRequest request
     ) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(
                         ApiResponse.success(
                                 "Pricing Rule is updated successfully",
-                                pricingRuleService.updatePricingRule(UUID.fromString(id), request)
+                                pricingRuleService.updatePricingRule(id, request)
                         )
                 );
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePricingRule(
-            @PathVariable("id") String id
+            @PathVariable("id") Long id
     ) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(
                         ApiResponse.success(
                                 "Pricing Rule is disable",
-                                pricingRuleService.deletePricingRule(UUID.fromString(id))
+                                pricingRuleService.deletePricingRule(id)
                         )
                 );
     }

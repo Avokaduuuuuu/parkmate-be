@@ -61,10 +61,6 @@ spring:
             - Path=/aggregate/parking-lot-service/v3/api-docs
           filters:
             - SetPath=/v3/api-docs
-
-      # ============================================
-      # GLOBAL CORS
-      # ============================================
       globalcors:
         cors-configurations:
           '[/**]':
