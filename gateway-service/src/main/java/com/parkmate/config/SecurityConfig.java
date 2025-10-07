@@ -16,6 +16,9 @@ import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
@@ -37,11 +40,10 @@ public class SecurityConfig {
             "/aggregate/**",
             "/webjars/**"
 
-    };
-
-    // Internal endpoints - cho inter-service communication
-    public static final String[] INTERNAL_ENDPOINTS = {
-            "/internal/**"
+            // Public user endpoints (read-only)
+            "/api/v1/user-service/users",
+            "/api/v1/parking-service/lots",
+            "/api/v1/payment-service/momo/**"
     };
 
     // Admin only endpoints
@@ -56,9 +58,11 @@ public class SecurityConfig {
 
     // Driver/Member only endpoints
     public static final String[] MEMBER_ENDPOINTS = {
-            "/api/v1/users/profile/**",
-            "/api/v1/users/vehicles/**",
-            "/api/user-service/partners/**",
+            "/api/v1/user-service/users/**",
+            "/api/v1/user-service/vehicles/**",
+            "/api/v1/user-service/reservations/**",
+            "/api/v1/user-service/mobile-devices/**",
+            "/api/v1/payment-service/**"
     };
 
     @Value("${jwt.secret}")
