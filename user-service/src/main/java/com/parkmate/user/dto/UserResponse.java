@@ -7,7 +7,6 @@ import com.parkmate.account.dto.AccountBasicResponse;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public record UserResponse(
 
         AccountBasicResponse account,

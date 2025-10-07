@@ -12,7 +12,7 @@ public interface VehicleService {
 
     VehicleResponse findByLicensePlate(String licensePlate);
 
-    VehicleResponse createVehicle(CreateVehicleRequest request);
+    VehicleResponse createVehicle(CreateVehicleRequest request, String userId);
 
     VehicleResponse updateVehicle(Long id, UpdateVehicleRequest request);
 

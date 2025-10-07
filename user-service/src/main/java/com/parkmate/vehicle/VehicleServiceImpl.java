@@ -1,5 +1,7 @@
 package com.parkmate.vehicle;
 
+import com.parkmate.account.Account;
+import com.parkmate.account.AccountRepository;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.common.util.PaginationUtil;
@@ -21,6 +23,7 @@ public class VehicleServiceImpl implements VehicleService {
 
     private final VehicleRepository vehicleRepository;
     private final VehicleMapper vehicleMapper;
+    private final AccountRepository accountRepository;
     private final UserRepository userRepository;
 
     @Override
@@ -36,14 +39,20 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
-    public VehicleResponse createVehicle(CreateVehicleRequest request) {
+    public VehicleResponse createVehicle(CreateVehicleRequest request, String userId) {
 
-        if (vehicleRepository.existsByLicensePlate(request.licensePlate())) {
-            throw new AppException(ErrorCode.VEHICLE_ALREADY_EXISTS, request.licensePlate());
+        if (vehicleRepository.existsByLicensePlate(request.getLicensePlate())) {
+            throw new AppException(ErrorCode.VEHICLE_ALREADY_EXISTS, request.getLicensePlate());
         }
 
-        User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, request.userId()));
+        if (userId != null && !userId.isEmpty()) {
+            Account account = accountRepository.findById(Long.parseLong(userId))
+                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, userId));
+            request.setUserId(account.getUser().getId());
+        }
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, request.getUserId()));
 
         Vehicle vehicle = vehicleMapper.toEntity(request);
 
@@ -72,14 +81,26 @@ public class VehicleServiceImpl implements VehicleService {
                                          String sortBy,
                                          String sortOrder,
                                          VehicleSearchCriteria searchCriteria,
-                                         String userId) {
-        long uId = 0;
-        if (userId != null && !userId.isEmpty()) {
-            uId = Long.parseLong(userId);
+                                         String accountIdHeader) {
+        Long userId = null;
+        // X-User-Id header contains accountId, need to convert to userId
+        if (accountIdHeader != null && !accountIdHeader.isEmpty() && searchCriteria.isOwnedByMe()) {
+            Account account = accountRepository.findById(Long.parseLong(accountIdHeader))
+                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, accountIdHeader));
+            userId = account.getUser().getId();
         }
-        Predicate predicate = VehicleSpecification.buildPredicate(searchCriteria, uId);
+
+        System.out.println("DEBUG - accountId header: " + accountIdHeader);
+        System.out.println("DEBUG - converted userId: " + userId);
+        System.out.println("DEBUG - searchCriteria: " + searchCriteria);
+
+        Predicate predicate = VehicleSpecification.buildPredicate(searchCriteria, userId);
+        System.out.println("DEBUG - predicate: " + predicate);
+
         Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
         Page<Vehicle> vehiclePage = vehicleRepository.findAll(predicate, pageable);
+        System.out.println("DEBUG - total elements: " + vehiclePage.getTotalElements());
+
         return vehiclePage.map(vehicleMapper::toDTO);
     }
 

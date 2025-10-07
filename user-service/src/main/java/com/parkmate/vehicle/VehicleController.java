@@ -63,7 +63,6 @@ public class VehicleController {
     ) {
         Page<VehicleResponse> vehicleResponse = vehicleService.findAll(page, size, sortBy, sortOrder, searchCriteria, userIdHeader);
         return ResponseEntity.ok(ApiResponse.success("Vehicles fetched successfully", vehicleResponse));
-
     }
 
 
@@ -82,8 +81,10 @@ public class VehicleController {
                     **Returns:** Created vehicle information
                     """
     )
-    public ResponseEntity<ApiResponse<VehicleResponse>> addVehicle(@RequestBody CreateVehicleRequest req) {
-        VehicleResponse vehicleResponse = vehicleService.createVehicle(req);
+    public ResponseEntity<ApiResponse<VehicleResponse>> addVehicle(
+            @RequestBody CreateVehicleRequest req,
+            @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader) {
+        VehicleResponse vehicleResponse = vehicleService.createVehicle(req, userIdHeader);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Vehicle created successfully", vehicleResponse));
     }
