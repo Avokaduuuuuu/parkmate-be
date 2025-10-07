@@ -37,11 +37,4 @@ public class RedisConfig {
         redisTemplate.setConnectionFactory(factory);
         return redisTemplate;
     }
-
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
-
 }
