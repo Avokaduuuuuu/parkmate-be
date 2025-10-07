@@ -38,7 +38,7 @@ public class PricingRuleServiceImpl implements PricingRuleService {
     }
 
     @Override
-    public PricingRuleResponse findPricingRuleById(UUID id) {
+    public PricingRuleResponse findPricingRuleById(Long id) {
         return PricingRuleMapper.INSTANCE.toResponse(
                 pricingRuleRepository.findById(id)
                         .orElseThrow(() -> new AppException(ErrorCode.PRICING_RULE_NOT_FOUND))
@@ -75,7 +75,7 @@ public class PricingRuleServiceImpl implements PricingRuleService {
     }
 
     @Override
-    public PricingRuleResponse updatePricingRule(UUID id, PricingRuleUpdateRequest request) {
+    public PricingRuleResponse updatePricingRule(Long id, PricingRuleUpdateRequest request) {
         PricingRuleEntity pricingRuleEntity = pricingRuleRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRICING_RULE_NOT_FOUND));
         if (request.ruleName() != null) pricingRuleEntity.setRuleName(request.ruleName());
@@ -100,7 +100,7 @@ public class PricingRuleServiceImpl implements PricingRuleService {
     }
 
     @Override
-    public PricingRuleResponse deletePricingRule(UUID id) {
+    public PricingRuleResponse deletePricingRule(Long id) {
         PricingRuleEntity pricingRuleEntity = pricingRuleRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRICING_RULE_NOT_FOUND));
         pricingRuleEntity.setIsActive(false);

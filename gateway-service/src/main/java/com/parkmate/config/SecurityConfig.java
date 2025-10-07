@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -79,7 +80,7 @@ public class SecurityConfig {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Add CORS config
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Changed this line
                 .authorizeExchange(ex -> ex
                         .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .pathMatchers(PARTNER_ENDPOINTS).hasAnyRole("PARTNER_OWNER", "PARTNER_STAFF", "ADMIN")
@@ -122,17 +123,14 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOriginPatterns(Collections.singletonList("*")); // Accept all origins
+        config.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
-        config.setExposedHeaders(Arrays.asList("Authorization"));
-        config.setMaxAge(3600L); // Cache preflight response for 1 hour
+        config.setAllowedHeaders(Arrays.asList("*"));
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-
         return source;
     }
-
 
 }

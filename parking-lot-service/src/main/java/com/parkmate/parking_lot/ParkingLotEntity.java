@@ -6,6 +6,7 @@ import com.parkmate.floor.FloorEntity;
 import com.parkmate.lot_capacity.LotCapacityEntity;
 import com.parkmate.pricing_rule.PricingRuleEntity;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
+import com.parkmate.session.SessionEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -89,5 +90,8 @@ public class ParkingLotEntity extends BaseEntity {
 
     @OneToMany(mappedBy = "parkingLot", cascade = CascadeType.ALL)
     List<LotCapacityEntity> lotCapacity;
+
+    @OneToMany(mappedBy = "parkingLot")
+    List<SessionEntity> sessions;
 
 }
