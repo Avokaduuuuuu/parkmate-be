@@ -6,6 +6,19 @@ spring:
     url: jdbc:postgresql://${DATABASE_HOST:localhost}:5432/${PARKING_DATABASE:PARKING_DATABASE}
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+      enabled: true
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 500
+        order_inserts: true
+        order_updates: true
+
 
 springdoc:
   api-docs:
@@ -23,3 +36,10 @@ springdoc:
   # Disable server generation from context
   use-management-port: false
   show-actuator: false
+
+aws:
+  s3:
+    bucket-name: ${AWS_S3_BUCKET_NAME:your-bucket-name}
+    region: ${AWS_REGION:us-east-1}
+    accessKeyId: ${AWS_ACCESS_KEY:your-access-key}
+    secretAccessKey: ${AWS_SECRET_KEY:your-secret-key}

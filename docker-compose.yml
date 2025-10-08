@@ -111,3 +111,22 @@ services:
       PARKING_LOT_PORT: ${PARKING_LOT_PORT}
       <<: *common-env
     restart: unless-stopped
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      config-service:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+    ports:
+      - "8083:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker  # Fixed typo
+      PARKING_DATABASE: ${PAYMENT_DATABASE}
+      PARKING_LOT_PORT: ${PAYMENT_PORT}
+      <<: *common-env
+    restart: unless-stopped

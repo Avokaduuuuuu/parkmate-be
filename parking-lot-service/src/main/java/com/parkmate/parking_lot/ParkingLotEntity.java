@@ -3,6 +3,7 @@ package com.parkmate.parking_lot;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.common.BaseEntity;
 import com.parkmate.floor.FloorEntity;
+import com.parkmate.image.ImageEntity;
 import com.parkmate.lot_capacity.LotCapacityEntity;
 import com.parkmate.pricing_rule.PricingRuleEntity;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
@@ -93,5 +94,8 @@ public class ParkingLotEntity extends BaseEntity {
 
     @OneToMany(mappedBy = "parkingLot")
     List<SessionEntity> sessions;
+
+    @OneToMany(mappedBy = "parkingLot", cascade = CascadeType.ALL)
+    List<ImageEntity> images;
 
 }

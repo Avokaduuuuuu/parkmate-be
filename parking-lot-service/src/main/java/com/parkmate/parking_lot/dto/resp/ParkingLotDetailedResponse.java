@@ -3,6 +3,7 @@ package com.parkmate.parking_lot.dto.resp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.floor.dto.resp.FloorResponse;
+import com.parkmate.image.dto.resp.ImageResponse;
 import com.parkmate.lot_capacity.dto.resp.LotCapacityResponse;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
@@ -45,4 +46,5 @@ public class ParkingLotDetailedResponse {
     List<FloorResponse> parkingFloors;
     List<PricingRuleResponse> pricingRules;
     List<LotCapacityResponse> lotCapacity;
+    List<ImageResponse> images;
 }

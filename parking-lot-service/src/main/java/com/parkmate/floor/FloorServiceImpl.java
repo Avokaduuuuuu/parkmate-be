@@ -80,6 +80,11 @@ public class FloorServiceImpl implements FloorService {
         return FloorMapper.INSTANCE.toResponse(floorRepository.save(floorEntity));
     }
 
+    @Override
+    public Long count() {
+        return floorRepository.count();
+    }
+
 
     private List<FloorCapacityEntity> toFloorCapacityEntities(List<FloorCapacityCreateRequest> requests, FloorEntity floorEntity) {
         return requests.stream()

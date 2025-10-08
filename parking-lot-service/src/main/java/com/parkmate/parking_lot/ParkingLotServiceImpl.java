@@ -13,6 +13,7 @@ import com.parkmate.exception.ErrorCode;
 import com.parkmate.pricing_rule.PricingRuleEntity;
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import com.parkmate.pricing_rule.enums.RuleScope;
+import com.parkmate.s3.S3Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
 public class ParkingLotServiceImpl implements ParkingLotService {
 
     private final ParkingLotRepository parkingLotRepository;
+    private final S3Service s3Service;
 
     @Override
     public Page<ParkingLotResponse> fetchAllParkingLots(
@@ -53,10 +56,12 @@ public class ParkingLotServiceImpl implements ParkingLotService {
 
     @Override
     public ParkingLotDetailedResponse getParkingLotById(Long id) {
-        return ParkingLotMapper.INSTANCE.toDetailedResponse(
+        ParkingLotDetailedResponse parkingLotResponse = ParkingLotMapper.INSTANCE.toDetailedResponse(
                 parkingLotRepository.findById(id)
-                        .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND))
-        );
+                        .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND)));
+
+        parkingLotResponse.getImages().forEach(image -> image.setPath(s3Service.getPresignedUrl(image.getPath())));
+        return parkingLotResponse;
     }
 
     @Override
@@ -151,6 +156,11 @@ public class ParkingLotServiceImpl implements ParkingLotService {
 
         return parkingLotRepository.findAll(specification)
                 .stream().map(ParkingLotMapper.INSTANCE::toResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public Long count() {
+        return parkingLotRepository.count();
     }
 
     private Specification<ParkingLotEntity> withinBoundingBox(Double latitude, Double longitude, Double radiusKm) {

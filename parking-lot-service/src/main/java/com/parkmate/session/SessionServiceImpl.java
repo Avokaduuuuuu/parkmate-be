@@ -101,4 +101,18 @@ public class SessionServiceImpl implements SessionService{
         sessionEntity.setStatus(SessionStatus.COMPLETED);
         return SessionMapper.INSTANCE.toResponse(sessionRepository.save(sessionEntity));
     }
+
+    @Override
+    public Long count() {
+        return sessionRepository.count();
+    }
+
+    @Override
+    public SessionResponse deleteSession(String cardUUID) {
+        SessionEntity sessionEntity = sessionRepository.findByCardUUIDAndStatus(cardUUID, SessionStatus.ACTIVE)
+                .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND, "Session with Card UUID " + cardUUID + " not found"));
+        sessionEntity.setStatus(SessionStatus.DELETED);
+
+        return SessionMapper.INSTANCE.toResponse(sessionRepository.save(sessionEntity));
+    }
 }

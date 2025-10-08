@@ -15,4 +15,5 @@ public interface PricingRuleService {
     PricingRuleResponse createPricingRule(Long parkingLotId, PricingRuleCreateRequest request);
     PricingRuleResponse updatePricingRule(Long id, PricingRuleUpdateRequest request);
     PricingRuleResponse deletePricingRule(Long id);
+    Long count();
 }

@@ -25,4 +25,5 @@ public interface ParkingLotService {
     ParkingLotResponse deleteParkingLot(Long id);
 
     List<ParkingLotResponse> fetchNearbyParkingLots(Double latitude, Double longitude, Double radiusKm);
+    Long count();
 }

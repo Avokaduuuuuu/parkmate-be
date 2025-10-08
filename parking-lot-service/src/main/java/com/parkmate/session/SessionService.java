@@ -19,5 +19,7 @@ public interface SessionService {
 
     SessionResponse getSession(String cardUUID);
     SessionResponse updateSession(String cardUUID, SessionUpdateRequest request);
+    Long count();
+    SessionResponse deleteSession(String cardUUID);
 }
 
