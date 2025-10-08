@@ -1,11 +1,10 @@
 package com.parkmate.auth;
 
 import com.parkmate.auth.dto.*;
-import org.springframework.web.multipart.MultipartFile;
 
 public interface AuthService {
 
-    AuthResponse login(LoginRequest request);
+    LoginResponse login(LoginRequest request);
 
     AuthResponse refresh(RefreshRequest request);
 

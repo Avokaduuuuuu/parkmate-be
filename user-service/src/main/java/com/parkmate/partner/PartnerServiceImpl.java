@@ -4,6 +4,7 @@ import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.common.util.PaginationUtil;
 import com.parkmate.partner.dto.*;
+import com.parkmate.s3.S3Service;
 import com.querydsl.core.types.Predicate;
 import jakarta.transaction.Transactional;
 import jakarta.validation.ConstraintViolation;
@@ -31,6 +32,7 @@ public class PartnerServiceImpl implements PartnerService {
 
     private final PartnerRepository partnerRepository;
     private final PartnerMapper partnerMapper;
+    private final S3Service s3Service;
 
     private final Validator validator;
 
@@ -75,7 +77,24 @@ public class PartnerServiceImpl implements PartnerService {
     @Override
     public PartnerResponse findById(long id) {
         Partner partner = partnerRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.PARTNER_NOT_FOUND, "Partner not found"));
-        return partnerMapper.toDto(partner);
+        String presignedUrl = s3Service.generatePresignedUrl(partner.getBusinessLicenseFileUrl());
+        PartnerResponse response = partnerMapper.toDto(partner);
+        return new PartnerResponse(
+                response.id(),
+                response.companyName(),
+                response.taxNumber(),
+                response.businessLicenseNumber(),
+                presignedUrl,
+                response.companyAddress(),
+                response.companyPhone(),
+                response.companyEmail(),
+                response.businessDescription(),
+                response.status(),
+                response.suspensionReason(),
+                response.createdAt(),
+                response.updatedAt(),
+                response.accounts()
+        );
     }
 
     @Override
