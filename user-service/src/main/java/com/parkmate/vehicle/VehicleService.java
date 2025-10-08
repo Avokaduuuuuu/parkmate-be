@@ -1,10 +1,8 @@
 package com.parkmate.vehicle;
 
-import com.parkmate.vehicle.dto.CreateVehicleRequest;
-import com.parkmate.vehicle.dto.UpdateVehicleRequest;
-import com.parkmate.vehicle.dto.VehicleResponse;
-import com.parkmate.vehicle.dto.VehicleSearchCriteria;
+import com.parkmate.vehicle.dto.*;
 import org.springframework.data.domain.Page;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface VehicleService {
 
@@ -19,5 +17,11 @@ public interface VehicleService {
     Page<VehicleResponse> findAll(int page, int size, String sortBy, String sortOrder, VehicleSearchCriteria searchCriteria, String userId);
 
     void deleteVehicle(Long id);
+
+    ImportVehicleResponse importVehiclesFromExcel(MultipartFile file);
+
+    long count();
+
+    void exportVehiclesToExcel(VehicleSearchCriteria searchCriteria, String userId, java.io.OutputStream outputStream) throws java.io.IOException;
 
 }

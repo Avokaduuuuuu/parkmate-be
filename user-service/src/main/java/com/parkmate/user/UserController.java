@@ -1,6 +1,7 @@
 package com.parkmate.user;
 
 import com.parkmate.common.dto.ApiResponse;
+import com.parkmate.user.dto.ImportUserResponse;
 import com.parkmate.user.dto.UpdateUserRequest;
 import com.parkmate.user.dto.UserResponse;
 import com.parkmate.user.dto.UserSearchCriteria;
@@ -11,9 +12,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/user-service/users")
@@ -74,6 +77,39 @@ public class UserController {
                         userService.getCurrentUser(authentication, userIdHeader).id(),
                         request),
                 "User profile updated successfully"));
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Import users from Excel file")
+    public ResponseEntity<ImportUserResponse> importUsers(
+            @RequestParam("file") MultipartFile file
+    ) {
+        ImportUserResponse response = userService.importUsersFromExcel(file);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/count")
+    @Operation(
+            summary = "Count Users",
+            description = "Count total number of users with optional filtering."
+    )
+    public ResponseEntity<ApiResponse<Long>> countUsers() {
+        long count = userService.count();
+        return ResponseEntity.ok(ApiResponse.success("Users counted successfully", count));
+    }
+
+    @GetMapping("/export")
+    @Operation(
+            summary = "Export Users to Excel",
+            description = "Export all users (or filtered users) to an Excel file."
+    )
+    public void exportUsers(
+            jakarta.servlet.http.HttpServletResponse response,
+            @RequestBody(required = false) UserSearchCriteria criteria
+    ) throws java.io.IOException {
+        response.setContentType("application/octet-stream");
+        response.setHeader("Content-Disposition", "attachment; filename=users.xlsx");
+        userService.exportUsersToExcel(criteria, response.getOutputStream());
     }
 
 }
