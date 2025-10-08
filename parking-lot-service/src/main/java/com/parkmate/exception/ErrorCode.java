@@ -35,7 +35,10 @@ public enum ErrorCode {
     BLOCK_REASON_REQUIRED(3504, "Block Reason required", HttpStatus.BAD_REQUEST),
 
     // Session errors
-    SESSION_NOT_FOUND(3601, "Session Not found", HttpStatus.NOT_FOUND);
+    SESSION_NOT_FOUND(3601, "Session Not found", HttpStatus.NOT_FOUND),
+
+    // Image errors
+    INVALID_IMAGE(3602, "Invalid image", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;
