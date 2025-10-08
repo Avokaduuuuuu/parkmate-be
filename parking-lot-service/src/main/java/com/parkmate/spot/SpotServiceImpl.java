@@ -91,4 +91,9 @@ public class SpotServiceImpl implements SpotService {
         spotEntity.setStatus(SpotStatus.DISABLED);
         return SpotMapper.INSTANCE.toResponse(spotRepository.save(spotEntity));
     }
+
+    @Override
+    public Long count() {
+        return spotRepository.count();
+    }
 }

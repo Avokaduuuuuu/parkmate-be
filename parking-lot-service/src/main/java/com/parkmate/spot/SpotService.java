@@ -16,4 +16,6 @@ public interface SpotService {
     List<SpotResponse> addSpots(List<SpotCreateRequest> requests, Long areaId);
     SpotResponse updateSpot(Long id, SpotUpdateRequest request);
     SpotResponse deleteSpot(Long id);
+
+    Long count();
 }

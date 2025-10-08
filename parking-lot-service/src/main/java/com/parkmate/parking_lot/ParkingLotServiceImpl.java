@@ -158,6 +158,11 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                 .stream().map(ParkingLotMapper.INSTANCE::toResponse).collect(Collectors.toList());
     }
 
+    @Override
+    public Long count() {
+        return parkingLotRepository.count();
+    }
+
     private Specification<ParkingLotEntity> withinBoundingBox(Double latitude, Double longitude, Double radiusKm) {
         // Calculate the delta of latitude direction
         // 1 degree = 111km

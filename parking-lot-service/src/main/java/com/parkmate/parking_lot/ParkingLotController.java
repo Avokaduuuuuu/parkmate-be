@@ -1,5 +1,6 @@
 package com.parkmate.parking_lot;
 
+import com.parkmate.exception.ErrorCode;
 import com.parkmate.parking_lot.dto.req.ParkingLotCreateRequest;
 import com.parkmate.parking_lot.dto.req.ParkingLotUpdateRequest;
 import com.parkmate.common.ApiResponse;
@@ -11,10 +12,18 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @RestController
 @RequestMapping("/api/v1/parking-service/lots")
@@ -23,6 +32,8 @@ import org.springframework.web.bind.annotation.*;
 public class ParkingLotController {
 
     private final ParkingLotService parkingLotService;
+    private final ParkingLotImportService importService;
+    private final ParkingLotExportService exportService;
 
     @GetMapping
     @Operation(
@@ -321,5 +332,144 @@ public class ParkingLotController {
                         parkingLotService.fetchNearbyParkingLots(latitude, longitude, radiusKm)
                 )
         );
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<?> countParkingLots() {
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("Count parking lots successfully", parkingLotService.count())
+        );
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Import parking lots from Excel file",
+            description = """
+                    Import multiple parking lot records from an Excel file (.xlsx format).
+                    
+                    **File Requirements:**
+                    - Format: Excel (.xlsx)
+                    - Maximum file size: 50 MB
+                    - Maximum records: 10,000 per file
+                    
+                    **Excel Column Order:**
+                    1. Partner ID (Long)
+                    2. Name (String)
+                    3. Street Address (String)
+                    4. Ward (String)
+                    5. City (String)
+                    6. Latitude (Double, -90 to 90)
+                    7. Longitude (Double, -180 to 180)
+                    8. Total Floors (Integer)
+                    9. Operating Hours Start (Time, format: HH:mm:ss)
+                    10. Operating Hours End (Time, format: HH:mm:ss)
+                    11. Is 24 Hour (Boolean: true/false)
+                    12. Boundary Top Left X (Double)
+                    13. Boundary Top Left Y (Double)
+                    14. Boundary Width (Double)
+                    15. Boundary Height (Double)
+                    16. Status (String: PENDING, ACTIVE, etc.)
+                    17. Reason (String, optional)
+                    
+                    **Process:**
+                    - First row should be headers (will be skipped)
+                    - Records are imported in batches of 500 for optimal performance
+                    - Invalid rows are logged but don't stop the import
+                    - Transaction is committed after successful import
+                    
+                    **Returns:** Import summary including:
+                    - Number of successfully imported records
+                    - Number of failed records
+                    - List of errors with row numbers
+                    
+                    **Example Excel Data:**
+                    | Partner ID | Name | Street Address | Ward | City | Latitude | Longitude | ... |
+                    |------------|------|----------------|------|------|----------|-----------|-----|
+                    | 1 | Plaza Parking | 123 Main St | Ward 1 | HCMC | 10.7827 | 106.6987 | ... |
+                    """,
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Excel file containing parking lot data",
+                    required = true,
+                    content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE)
+            )
+    )
+    public ResponseEntity<?> importParkingLots(
+            @Parameter(description = "Excel file (.xlsx) with parking lot data")
+            @RequestParam("file") MultipartFile file
+    ) {
+        try {
+            // Validate file
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error(ErrorCode.UNCATEGORIZED_EXCEPTION.name(), "File is empty"));
+            }
+
+            String filename = file.getOriginalFilename();
+            if (filename == null || !filename.endsWith(".xlsx")) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error(ErrorCode.UNCATEGORIZED_EXCEPTION.name(), "Filename is invalid"));
+            }
+
+            // Import data
+            ParkingLotImportService.ImportResult result = importService.importFromExcel(file);
+
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success(
+                            "Successfully imported " + filename,
+                            result
+                    ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(ErrorCode.UNCATEGORIZED_EXCEPTION.name(), e.getMessage()));
+        }
+    }
+
+    @GetMapping("/export")
+    @Operation(
+            summary = "Export all parking lots to Excel",
+            description = """
+                    Export all parking lots to an Excel file (.xlsx format).
+                    
+                    **Returns:** Excel file containing:
+                    - All parking lot records
+                    - Complete data including ID, partner info, location, operating hours
+                    - Status and timestamps
+                    - Formatted and styled spreadsheet
+                    
+                    **File Format:**
+                    - Extension: .xlsx
+                    - Encoding: UTF-8
+                    - Includes header row with column names
+                    - Auto-sized columns for readability
+                    
+                    **Use Cases:**
+                    - Data backup and archival
+                    - Offline analysis and reporting
+                    - Data migration to other systems
+                    - Sharing data with partners or stakeholders
+                    """
+    )
+    public ResponseEntity<?> exportAllParkingLots() {
+        try {
+            byte[] excelData = exportService.exportAllToExcel();
+
+            String filename = "parking_lots_" +
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) +
+                    ".xlsx";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename);
+            headers.add(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(excelData.length)
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(new ByteArrayResource(excelData));
+
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(ErrorCode.UNCATEGORIZED_EXCEPTION.name(), e.getMessage()));
+        }
     }
 }
