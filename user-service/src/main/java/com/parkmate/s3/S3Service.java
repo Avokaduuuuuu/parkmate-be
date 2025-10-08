@@ -209,10 +209,10 @@ public class S3Service {
 
     private String determineFolderPathWithEntity(Long entityId, ImageType imageType) {
         return switch (imageType) {
-            case AVATAR -> String.format("users/user-%d/profile", entityId);
+            case AVATAR -> String.format("member/member-%d/profile", entityId);
             case VEHICLE_LICENSE_PLATE -> String.format("vehicles/vehicle-%d", entityId);
             case PARTNER_BUSINESS_LICENSE -> String.format("partners/partner-%d/business", entityId);
-            case FRONT_ID_CARD, BACK_ID_CARD -> String.format("partners/partner-%d/id-cards", entityId);
+            case FRONT_ID_CARD, BACK_ID_CARD -> String.format("member/member-%d/id-cards", entityId);
         };
     }
 

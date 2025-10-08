@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/parking-service/sessions")
 @RequiredArgsConstructor
-@Tag(name = "Parking Session API", description = "API for managing parking sessions and vehicle entry/exit tracking")
+@Tag(name = "Parking Session API", description = "API for managing and calculating parking sessions and vehicle entry/exit tracking")
 public class SessionController {
 
     private final SessionService sessionService;
@@ -204,5 +204,22 @@ public class SessionController {
 
                         )
                 );
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<?> countSessions() {
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("Count sessions", sessionService.count())
+        );
+    }
+
+    @DeleteMapping("/{cardUUID}")
+    public ResponseEntity<?> deleteSession(@PathVariable("cardUUID") String cardUUID) {
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success(
+                        "Session deleted successfully",
+                        sessionService.deleteSession(cardUUID)
+                )
+        );
     }
 }

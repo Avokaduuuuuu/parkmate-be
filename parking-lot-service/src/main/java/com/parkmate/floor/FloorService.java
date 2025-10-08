@@ -14,4 +14,6 @@ public interface FloorService {
     FloorResponse deleteFloor(Long id);
 
     FloorResponse updateFloor(Long id, FloorUpdateRequest request);
+
+    Long count();
 }

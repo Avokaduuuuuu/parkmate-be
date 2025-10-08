@@ -8,6 +8,7 @@ import com.parkmate.pricing_rule.PricingRuleRepository;
 import com.parkmate.session.dto.req.SessionCreateRequest;
 import com.parkmate.session.dto.req.SessionUpdateRequest;
 import com.parkmate.session.dto.resp.SessionResponse;
+import com.parkmate.session.enums.SessionStatus;
 import com.parkmate.session.enums.SessionType;
 import com.parkmate.session.enums.SyncStatus;
 import jakarta.transaction.Transactional;
@@ -35,11 +36,14 @@ public class SessionServiceImpl implements SessionService{
         if (request.userId() != null) {
             sessionEntity.setUserId(request.userId());
             sessionEntity.setSessionType(SessionType.MEMBER);
+        }else {
+            sessionEntity.setSessionType(SessionType.OCCASIONAL);
         }
         sessionEntity.setVehicleId(request.vehicleId());
         sessionEntity.setLicensePlate(request.licensePlate());
         sessionEntity.setEntryTime(request.entryTime());
         sessionEntity.setAuthMethod(request.authMethod());
+        sessionEntity.setStatus(SessionStatus.ACTIVE);
         sessionEntity.setSyncStatus(SyncStatus.PENDING);
         sessionEntity.setParkingLot(parkingLotRepository.findById(lotId)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND))
@@ -73,23 +77,42 @@ public class SessionServiceImpl implements SessionService{
 
     @Override
     public SessionResponse updateSession(String cardUUID, SessionUpdateRequest request) {
-        SessionEntity sessionEntity = sessionRepository.findByCardUUID(cardUUID)
+        SessionEntity sessionEntity = sessionRepository.findByCardUUIDAndStatus(cardUUID, SessionStatus.ACTIVE)
                 .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND, "Session with Card UUID " + cardUUID + " not found"));
         PricingRuleEntity pricingRuleEntity = sessionEntity.getPricingRule();
-        BigDecimal total = BigDecimal.ZERO;
-
         Long durationMinutes = ChronoUnit.MINUTES.between(sessionEntity.getEntryTime(), request.exitTime());
         if (pricingRuleEntity.getFreeMinute() < durationMinutes) {
             long remainingMinutes = durationMinutes - pricingRuleEntity.getInitialDurationMinute();
             if (remainingMinutes > 0) {
-                Long block = remainingMinutes / pricingRuleEntity.getGracePeriodMinute();
+                BigDecimal total = sessionEntity.getTotalAmount();
+                Long block = (long) Math.ceil((double) remainingMinutes / pricingRuleEntity.getGracePeriodMinute());
                 total = total.add(BigDecimal.valueOf(block * pricingRuleEntity.getBaseRate()));
+                sessionEntity.setTotalAmount(total);
+            } else {
+                sessionEntity.setTotalAmount(BigDecimal.valueOf(pricingRuleEntity.getInitialCharge()));
             }
+        } else {
+            sessionEntity.setTotalAmount(BigDecimal.ZERO);
         }
-        sessionEntity.setTotalAmount(total);
+
         sessionEntity.setExitTime(sessionEntity.getEntryTime());
         sessionEntity.setNote(request.note());
         sessionEntity.setDurationMinute(Math.toIntExact(durationMinutes));
+        sessionEntity.setStatus(SessionStatus.COMPLETED);
+        return SessionMapper.INSTANCE.toResponse(sessionRepository.save(sessionEntity));
+    }
+
+    @Override
+    public Long count() {
+        return sessionRepository.count();
+    }
+
+    @Override
+    public SessionResponse deleteSession(String cardUUID) {
+        SessionEntity sessionEntity = sessionRepository.findByCardUUIDAndStatus(cardUUID, SessionStatus.ACTIVE)
+                .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND, "Session with Card UUID " + cardUUID + " not found"));
+        sessionEntity.setStatus(SessionStatus.DELETED);
+
         return SessionMapper.INSTANCE.toResponse(sessionRepository.save(sessionEntity));
     }
 }

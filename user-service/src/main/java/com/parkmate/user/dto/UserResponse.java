@@ -2,12 +2,14 @@ package com.parkmate.user.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.parkmate.account.dto.AccountBasicResponse;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public record UserResponse(
+
+        AccountBasicResponse account,
         Long id,
         String phone,
         String firstName,

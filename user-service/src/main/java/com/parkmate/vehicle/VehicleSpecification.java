@@ -9,13 +9,17 @@ import org.springframework.util.StringUtils;
 @Component
 public class VehicleSpecification {
 
-    public static Predicate buildPredicate(VehicleSearchCriteria criteria) {
+    public static Predicate buildPredicate(VehicleSearchCriteria criteria, Long userId) {
 
         QVehicle vehicle = QVehicle.vehicle;
         BooleanBuilder builder = new BooleanBuilder();
 
         if (criteria == null) {
             return builder;
+        }
+
+        if (userId != null) {
+            builder.and(vehicle.user.id.eq(userId));
         }
 
         // User filters

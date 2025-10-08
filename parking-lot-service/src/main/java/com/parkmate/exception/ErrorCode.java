@@ -11,6 +11,7 @@ public enum ErrorCode {
     VALIDATION_ERROR(1001, "Validation failed", HttpStatus.BAD_REQUEST),
     INVALID_REQUEST(1002, "Invalid request", HttpStatus.BAD_REQUEST),
     INVALID_ENUM(1003, "Invalid enum", HttpStatus.BAD_REQUEST),
+    UNAUTHORIZED(1004, "Unauthorized", HttpStatus.UNAUTHORIZED),
 
     // ParkingLot errors
     PARKING_NOT_FOUND(3101, "Parking Lot not found", HttpStatus.NOT_FOUND),
@@ -34,7 +35,10 @@ public enum ErrorCode {
     BLOCK_REASON_REQUIRED(3504, "Block Reason required", HttpStatus.BAD_REQUEST),
 
     // Session errors
-    SESSION_NOT_FOUND(3601, "Session Not found", HttpStatus.NOT_FOUND);
+    SESSION_NOT_FOUND(3601, "Session Not found", HttpStatus.NOT_FOUND),
+
+    // Image errors
+    INVALID_IMAGE(3602, "Invalid image", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;

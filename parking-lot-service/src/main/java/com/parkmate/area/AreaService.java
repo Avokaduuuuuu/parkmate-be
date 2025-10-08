@@ -15,4 +15,6 @@ public interface AreaService {
     AreaResponse createArea(AreaCreateRequest request, Long floorId);
     AreaResponse updateArea(AreaUpdateRequest request, Long id);
     AreaResponse deleteArea(Long id);
+
+    Long count();
 }

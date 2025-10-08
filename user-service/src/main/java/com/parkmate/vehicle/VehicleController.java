@@ -1,17 +1,17 @@
 package com.parkmate.vehicle;
 
 import com.parkmate.common.dto.ApiResponse;
-import com.parkmate.vehicle.dto.CreateVehicleRequest;
-import com.parkmate.vehicle.dto.UpdateVehicleRequest;
-import com.parkmate.vehicle.dto.VehicleResponse;
-import com.parkmate.vehicle.dto.VehicleSearchCriteria;
+import com.parkmate.vehicle.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/user-service/vehicle")
@@ -57,11 +57,11 @@ public class VehicleController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
             @RequestParam(required = false, defaultValue = "asc") String sortOrder,
+            @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader,
             @ModelAttribute VehicleSearchCriteria searchCriteria
     ) {
-        Page<VehicleResponse> vehicleResponse = vehicleService.findAll(page, size, sortBy, sortOrder, searchCriteria);
+        Page<VehicleResponse> vehicleResponse = vehicleService.findAll(page, size, sortBy, sortOrder, searchCriteria, userIdHeader);
         return ResponseEntity.ok(ApiResponse.success("Vehicles fetched successfully", vehicleResponse));
-
     }
 
 
@@ -80,8 +80,10 @@ public class VehicleController {
                     **Returns:** Created vehicle information
                     """
     )
-    public ResponseEntity<ApiResponse<VehicleResponse>> addVehicle(@RequestBody CreateVehicleRequest req) {
-        VehicleResponse vehicleResponse = vehicleService.createVehicle(req);
+    public ResponseEntity<ApiResponse<VehicleResponse>> addVehicle(
+            @RequestBody CreateVehicleRequest req,
+            @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader) {
+        VehicleResponse vehicleResponse = vehicleService.createVehicle(req, userIdHeader);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Vehicle created successfully", vehicleResponse));
     }
@@ -124,6 +126,40 @@ public class VehicleController {
     public ResponseEntity<ApiResponse<Void>> deleteVehicle(@PathVariable Long id) {
         vehicleService.deleteVehicle(id);
         return ResponseEntity.ok(ApiResponse.success("Vehicle deleted successfully"));
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Import vehicles from Excel file")
+    public ResponseEntity<ImportVehicleResponse> importVehicles(
+            @RequestParam("file") MultipartFile file
+    ) {
+        ImportVehicleResponse response = vehicleService.importVehiclesFromExcel(file);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/count")
+    @Operation(
+            summary = "Count Vehicles",
+            description = "Count total number of vehicles with optional filtering."
+    )
+    public ResponseEntity<ApiResponse<Long>> countVehicles() {
+        long count = vehicleService.count();
+        return ResponseEntity.ok(ApiResponse.success("Vehicles counted successfully", count));
+    }
+
+    @GetMapping("/export")
+    @Operation(
+            summary = "Export Vehicles to Excel",
+            description = "Export all vehicles (or filtered vehicles) to an Excel file."
+    )
+    public void exportVehicles(
+            jakarta.servlet.http.HttpServletResponse response,
+            @ModelAttribute VehicleSearchCriteria searchCriteria,
+            @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader
+    ) throws java.io.IOException {
+        response.setContentType("application/octet-stream");
+        response.setHeader("Content-Disposition", "attachment; filename=vehicles.xlsx");
+        vehicleService.exportVehiclesToExcel(searchCriteria, userIdHeader, response.getOutputStream());
     }
 
 

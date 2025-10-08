@@ -13,6 +13,7 @@ import com.parkmate.exception.ErrorCode;
 import com.parkmate.pricing_rule.PricingRuleEntity;
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import com.parkmate.pricing_rule.enums.RuleScope;
+import com.parkmate.s3.S3Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,9 +21,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -31,32 +36,41 @@ import java.util.List;
 public class ParkingLotServiceImpl implements ParkingLotService {
 
     private final ParkingLotRepository parkingLotRepository;
+    private final S3Service s3Service;
 
     @Override
     public Page<ParkingLotResponse> fetchAllParkingLots(
+            String userHeaderId,
             int page,
             int size,
             String sortBy,
             String sortOrder,
             ParkingLotFilterParams params
     ) {
+        Long partnerId = userHeaderId != null ? Long.parseLong(userHeaderId) : null;
         Sort sort = Sort.by(Sort.Direction.fromString(sortOrder),sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<ParkingLotEntity> parkingLotEntities = parkingLotRepository.findAll(params.getSpecification(),pageable);
+        Page<ParkingLotEntity> parkingLotEntities = parkingLotRepository.findAll(params.getSpecification(partnerId),pageable);
         return parkingLotEntities.map(ParkingLotMapper.INSTANCE::toResponse);
     }
 
     @Override
     public ParkingLotDetailedResponse getParkingLotById(Long id) {
-        return ParkingLotMapper.INSTANCE.toDetailedResponse(
+        ParkingLotDetailedResponse parkingLotResponse = ParkingLotMapper.INSTANCE.toDetailedResponse(
                 parkingLotRepository.findById(id)
-                        .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND))
-        );
+                        .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND)));
+
+        parkingLotResponse.getImages().forEach(image -> image.setPath(s3Service.getPresignedUrl(image.getPath())));
+        return parkingLotResponse;
     }
 
     @Override
     @Transactional
-    public ParkingLotResponse addParkingLot(Long partnerId,ParkingLotCreateRequest request) {
+    public ParkingLotResponse addParkingLot(String userHeaderId, ParkingLotCreateRequest request) {
+        if (userHeaderId == null || userHeaderId.isEmpty()) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        Long partnerId = Long.parseLong(userHeaderId);
         ParkingLotEntity parkingLotEntity = ParkingLotMapper.INSTANCE.toEntity(request);
         parkingLotEntity.setIs24Hour(request.is24Hour());
         parkingLotEntity.setPartnerId(partnerId);
@@ -134,5 +148,36 @@ public class ParkingLotServiceImpl implements ParkingLotService {
 
         parkingLotEntity.setStatus(ParkingLotStatus.INACTIVE);
         return ParkingLotMapper.INSTANCE.toResponse(parkingLotRepository.save(parkingLotEntity));
+    }
+
+    @Override
+    public List<ParkingLotResponse> fetchNearbyParkingLots(Double latitude, Double longitude, Double radiusKm) {
+        Specification<ParkingLotEntity> specification = withinBoundingBox(latitude, longitude, radiusKm);
+
+        return parkingLotRepository.findAll(specification)
+                .stream().map(ParkingLotMapper.INSTANCE::toResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public Long count() {
+        return parkingLotRepository.count();
+    }
+
+    private Specification<ParkingLotEntity> withinBoundingBox(Double latitude, Double longitude, Double radiusKm) {
+        // Calculate the delta of latitude direction
+        // 1 degree = 111km
+        double latDelta = radiusKm / 111.0;
+        // 1 degree of longitude varies by latitude
+        // At equator: 111 km, at poles: 0 km
+        double longDelta = radiusKm / (111.0 * Math.cos(Math.toRadians(latitude)));
+
+        double minLat = latitude - latDelta;
+        double maxLat = latitude + latDelta;
+        double minLong = longitude - longDelta;
+        double maxLong = longitude + longDelta;
+        return (root, query, cb) -> cb.and(
+                cb.between(root.get("latitude"), minLat, maxLat),
+                cb.between(root.get("longitude"), minLong, maxLong)
+        );
     }
 }

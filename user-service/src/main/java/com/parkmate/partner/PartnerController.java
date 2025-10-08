@@ -8,8 +8,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 
@@ -26,13 +28,13 @@ public class PartnerController {
             summary = "Search Partners with Pagination",
             description = """
                     Search and retrieve approved partners with pagination and filtering.
-
+                    
                     **Search Criteria (PartnerSearchRequest):**
                     - `companyName` (optional): Search by company name (partial match)
                     - `taxNumber` (optional): Search by tax number
                     - `status` (optional): Filter by partner status
                     - `companyEmail` (optional): Search by company email
-
+                    
                     **Returns:** Paginated list of partners
                     """
     )
@@ -79,7 +81,7 @@ public class PartnerController {
             summary = "Create Partner (Admin Only)",
             description = """
                     Manually create a new partner entity (typically done through registration approval process).
-
+                    
                     **Request Body:** CreatePartnerRequest with company details
                     """
     )
@@ -112,6 +114,61 @@ public class PartnerController {
             @PathVariable long id) {
         partnerService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("Partner deleted successfully"));
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Import partners from Excel file")
+    public ResponseEntity<ImportPartnerResponse> importPartners(
+            @RequestParam("file") MultipartFile file
+    ) {
+        ImportPartnerResponse response = partnerService.importPartnersFromExcel(file);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/count")
+    @Operation(
+            summary = "Count Partners",
+            description = """
+                    Count total number of partners with optional filtering.
+                    
+                    **Search Criteria (PartnerSearchRequest):**
+                    - `companyName` (optional): Filter by company name (partial match)
+                    - `taxNumber` (optional): Filter by tax number
+                    - `status` (optional): Filter by partner status
+                    - `companyEmail` (optional): Filter by company email
+                    
+                    **Returns:** Total count of partners matching the criteria
+                    """
+    )
+    public ResponseEntity<ApiResponse<Long>> countPartners() {
+        long count = partnerService.count();
+        return ResponseEntity.ok(ApiResponse.success("Partners counted successfully", count));
+    }
+
+    @GetMapping("/export")
+    @Operation(
+            summary = "Export Partners to Excel",
+            description = """
+                    Export all partners (or filtered partners) to an Excel file.
+                    
+                    **Search Criteria (PartnerSearchRequest):**
+                    - `companyName` (optional): Filter by company name (partial match)
+                    - `taxNumber` (optional): Filter by tax number
+                    - `status` (optional): Filter by partner status
+                    - `companyEmail` (optional): Filter by company email
+                    
+                    **Returns:** Excel file download
+                    """
+    )
+    public void exportPartners(
+            jakarta.servlet.http.HttpServletResponse response,
+            @ModelAttribute PartnerSearchRequest request
+    ) throws java.io.IOException {
+        response.setContentType("application/octet-stream");
+        response.setHeader("Content-Disposition", "attachment; filename=partners.xlsx");
+
+        PartnerSearchCriteria criteria = request.toCriteria();
+        partnerService.exportPartnersToExcel(criteria, response.getOutputStream());
     }
 
 }

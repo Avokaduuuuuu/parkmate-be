@@ -1,5 +1,7 @@
 package com.parkmate.parking_lot;
 
+import com.parkmate.exception.AppException;
+import com.parkmate.exception.ErrorCode;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.criteria.Predicate;
@@ -17,18 +19,22 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Schema(description = "Filter parameters for querying parking lots")
 public class ParkingLotFilterParams {
-    Long partnerId;
+    Boolean ownedByMe;
     String name;
     String city;
     Boolean is24Hour;
     ParkingLotStatus status;
 
-    public Specification<ParkingLotEntity> getSpecification() {
+    public Specification<ParkingLotEntity> getSpecification(Long partnerId) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            if (partnerId != null) {
-                predicates.add(cb.equal(root.get("partnerId"), partnerId));
+            if (ownedByMe != null && ownedByMe) {
+                if (partnerId != null) {
+                    predicates.add(cb.equal(root.get("partnerId"), partnerId));
+                } else {
+                    throw new AppException(ErrorCode.UNAUTHORIZED);
+                }
             }
             if (name != null) {
                 predicates.add(cb.like(root.get("name"), "%" + name + "%"));

@@ -101,6 +101,11 @@ public class AreaServiceImpl implements AreaService {
         return AreaMapper.INSTANCE.toResponse(areaRepository.save(area));
     }
 
+    @Override
+    public Long count() {
+        return areaRepository.countAllBy();
+    }
+
     private List<SpotEntity> toSpotEntities(List<SpotCreateRequest> requests, AreaEntity area) {
         return requests.stream()
                 .map(spot -> {

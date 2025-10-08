@@ -19,6 +19,8 @@ import java.time.LocalDateTime;
 )
 public class VehicleSearchCriteria {
 
+    boolean ownedByMe;
+
     // Single values
     @Schema(
             description = "Filter by specific user ID",

@@ -224,4 +224,11 @@ public class FloorController {
                         )
                 );
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<?> count() {
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("Count Floors", floorService.count())
+        );
+    }
 }

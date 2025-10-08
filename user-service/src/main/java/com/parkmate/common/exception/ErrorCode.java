@@ -13,6 +13,7 @@ public enum ErrorCode {
     INVALID_REQUEST(1002, "Invalid request", HttpStatus.BAD_REQUEST),
     INVALID_ENUM(1003, "Invalid enum", HttpStatus.BAD_REQUEST),
     IO_ERROR(1004, "I/O error", HttpStatus.INTERNAL_SERVER_ERROR),
+    UNAUTHENTICATED(1005, "Unauthenticated", HttpStatus.UNAUTHORIZED),
 
     // User errors 21
     USER_NOT_FOUND(2101, "User not found", HttpStatus.NOT_FOUND),
@@ -29,7 +30,7 @@ public enum ErrorCode {
     // Vehicle errors 23
     VEHICLE_NOT_FOUND(2301, "Vehicle not found", HttpStatus.NOT_FOUND),
     VEHICLE_ALREADY_EXISTS(2302, "Vehicle with license plate '{0}' already exists", HttpStatus.CONFLICT),
-
+    INVALID_VEHICLE_TYPE(2303, "Invalid vehicle type '{0}'", HttpStatus.BAD_REQUEST),
     // Partner errors 24
     PARTNER_NOT_FOUND(2401, "Partner not found", HttpStatus.NOT_FOUND),
     PARTNER_ALREADY_EXISTS(2402, "Partner with name '{0}' already exists", HttpStatus.CONFLICT),

@@ -5,9 +5,13 @@ import com.parkmate.parking_lot.dto.req.ParkingLotUpdateRequest;
 import com.parkmate.parking_lot.dto.resp.ParkingLotDetailedResponse;
 import com.parkmate.parking_lot.dto.resp.ParkingLotResponse;
 import org.springframework.data.domain.Page;
+import org.springframework.security.core.Authentication;
+
+import java.util.List;
 
 public interface ParkingLotService {
     Page<ParkingLotResponse> fetchAllParkingLots(
+            String userHeaderId,
             int page,
             int size,
             String sortBy,
@@ -16,7 +20,10 @@ public interface ParkingLotService {
     );
 
     ParkingLotDetailedResponse getParkingLotById(Long id);
-    ParkingLotResponse addParkingLot(Long partnerId,ParkingLotCreateRequest request);
+    ParkingLotResponse addParkingLot(String userHeaderId, ParkingLotCreateRequest request);
     ParkingLotResponse updateParkingLot(Long id, ParkingLotUpdateRequest request);
     ParkingLotResponse deleteParkingLot(Long id);
+
+    List<ParkingLotResponse> fetchNearbyParkingLots(Double latitude, Double longitude, Double radiusKm);
+    Long count();
 }
