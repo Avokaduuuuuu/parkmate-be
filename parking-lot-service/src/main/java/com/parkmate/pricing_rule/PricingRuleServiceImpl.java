@@ -106,4 +106,9 @@ public class PricingRuleServiceImpl implements PricingRuleService {
         pricingRuleEntity.setIsActive(false);
         return PricingRuleMapper.INSTANCE.toResponse(pricingRuleRepository.save(pricingRuleEntity));
     }
+
+    @Override
+    public Long count() {
+        return pricingRuleRepository.count();
+    }
 }

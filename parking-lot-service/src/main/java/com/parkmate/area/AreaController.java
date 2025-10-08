@@ -140,4 +140,15 @@ public class AreaController {
                         )
                 );
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<?> count() {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(
+                        ApiResponse.success(
+                                "Count Areas",
+                                areaService.count()
+                        )
+                );
+    }
 }

@@ -130,4 +130,12 @@ public class SpotController {
                         )
                 );
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<?> countSpots() {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(
+                        ApiResponse.success("Count Spots", spotService.count())
+                );
+    }
 }

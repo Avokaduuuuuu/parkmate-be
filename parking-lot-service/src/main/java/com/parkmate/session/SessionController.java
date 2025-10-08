@@ -205,4 +205,21 @@ public class SessionController {
                         )
                 );
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<?> countSessions() {
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("Count sessions", sessionService.count())
+        );
+    }
+
+    @DeleteMapping("/{cardUUID}")
+    public ResponseEntity<?> deleteSession(@PathVariable("cardUUID") String cardUUID) {
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success(
+                        "Session deleted successfully",
+                        sessionService.deleteSession(cardUUID)
+                )
+        );
+    }
 }
