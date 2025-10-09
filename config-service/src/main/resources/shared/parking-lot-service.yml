@@ -6,11 +6,13 @@ spring:
     url: jdbc:postgresql://${DATABASE_HOST:localhost}:5432/${PARKING_DATABASE:PARKING_DATABASE}
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
+
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 20MB
       enabled: true
+
   jpa:
     properties:
       hibernate:
@@ -19,7 +21,6 @@ spring:
         order_inserts: true
         order_updates: true
 
-
 springdoc:
   api-docs:
     path: /v3/api-docs
@@ -27,13 +28,10 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
-    # Disable auto-generated server URL
     disable-swagger-default-url: true
-    # Set default server to Gateway
     URLs:
       - name: User Service via Gateway
         url: /v3/api-docs
-  # Disable server generation from context
   use-management-port: false
   show-actuator: false
 
@@ -43,3 +41,50 @@ aws:
     region: ${AWS_REGION:us-east-1}
     accessKeyId: ${AWS_ACCESS_KEY:your-access-key}
     secretAccessKey: ${AWS_SECRET_KEY:your-secret-key}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+    tags:
+      application: parking-lot-service
+    export:
+      prometheus:
+        enabled: true
+
+  observations:
+    key-values:
+      application: parking-lot-service
+    # ADD THESE - Enable HTTP observations
+    http:
+      server:
+        requests:
+          enabled: true
+    annotations:
+      enabled: true
+
+  tracing:
+    sampling:
+      probability: 1.0
+    enabled: true  # ADD THIS
+
+  zipkin:
+    tracing:
+      endpoint: http://${ZIPKIN_URL:http://localhost:9411}/api/v2/spans
+
+# ADD LOGGING PATTERN WITH TRACE IDs
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  level:
+    root: INFO
+    com.parkmate: DEBUG
+    io.micrometer.tracing: DEBUG  # Temporary - to see tracing activity
