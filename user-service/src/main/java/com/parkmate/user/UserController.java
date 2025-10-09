@@ -34,7 +34,7 @@ public class UserController {
             @RequestParam(value = "size", defaultValue = "10") int size,
             @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
             @RequestParam(value = "sortOrder", defaultValue = "asc") String sortOrder,
-            @RequestBody(required = false) UserSearchCriteria criteria
+            @ModelAttribute UserSearchCriteria criteria
     ) {
         Page<UserResponse> users = userService.getAllUsers(page, size, sortBy, sortOrder, criteria);
         return ResponseEntity.ok(ApiResponse.success(users, "Users retrieved successfully"));

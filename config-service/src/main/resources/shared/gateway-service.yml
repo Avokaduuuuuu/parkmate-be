@@ -13,9 +13,11 @@ spring:
         enabled: false
 
     gateway:
+      # Enable tracing in gateway
+      observability:
+        enabled: true
+
       routes:
-
-
         # ============================================
         # USER SERVICE ROUTES
         # ============================================
@@ -33,6 +35,7 @@ spring:
             - Path=/aggregate/user-service/v3/api-docs
           filters:
             - SetPath=/v3/api-docs
+
         # Catch-all for other Payment service routes
         - id: payment-service-protected
           uri: lb://payment-service
@@ -40,6 +43,7 @@ spring:
             - Path=/api/v1/payment-service/**
           filters:
             - StripPrefix=0
+
         # Payment service swagger
         - id: payment-swagger
           uri: lb://payment-service
@@ -75,6 +79,7 @@ spring:
             - Path=/aggregate/parking-lot-service/v3/api-docs
           filters:
             - SetPath=/v3/api-docs
+
       globalcors:
         cors-configurations:
           '[/**]':
@@ -92,7 +97,6 @@ spring:
             allowCredentials: true
             maxAge: 3600
         add-to-simple-url-handler-mapping: true
-
 
       # ============================================
       # DEFAULT FILTERS
@@ -123,26 +127,58 @@ springdoc:
     model-and-view-allowed: true
     modelsSorter: none
 
+# Management & Observability
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,gateway
 
-# Logging
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+    tags:
+      application: gateway-service
+    export:
+      prometheus:
+        enabled: true
+
+  # Enable HTTP request observations
+  observations:
+    key-values:
+      application: gateway-service
+    http:
+      server:
+        requests:
+          enabled: true
+    annotations:
+      enabled: true
+
+  # Tracing configuration
+  tracing:
+    sampling:
+      probability: 1.0
+    enabled: true
+    propagation:
+      type: b3
+
+  # Zipkin configuration
+  zipkin:
+    tracing:
+      endpoint: http://${SERVER_HOST:localhost}:${ZIPKIN_PORT:9411}/api/v2/spans
+
+# Logging with trace IDs
 logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
     org.springframework.cloud.gateway: DEBUG
     org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: TRACE
     org.springframework.security: DEBUG
     org.springframework.web.cors: DEBUG
-    com.parkmate: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-
-# Actuator for Gateway
-management:
-  endpoints:
-    web:
-      exposure:
-        include: gateway, health, info, mappings
-  endpoint:
-    gateway:
-      enabled: true
-    health:
-      show-details: always
+    com.avocado.parkmate: DEBUG
+    io.micrometer.tracing: DEBUG
+    brave.Tracer: DEBUG
