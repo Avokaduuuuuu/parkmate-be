@@ -1,7 +1,6 @@
 package com.parkmate.user.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.parkmate.account.dto.AccountBasicResponse;
 
 import java.time.LocalDate;
@@ -18,6 +17,8 @@ public record UserResponse(
         @JsonFormat(pattern = "yyyy-MM-dd")
         LocalDate dateOfBirth,
         String address,
+        String gender,
+        String nationality,
         String profilePictureUrl,
         String idNumber,
         String issuePlace,

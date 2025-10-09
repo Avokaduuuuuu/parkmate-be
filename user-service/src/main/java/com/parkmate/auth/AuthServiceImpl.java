@@ -366,6 +366,8 @@ public class AuthServiceImpl implements AuthService {
                 response.fullName(),
                 response.dateOfBirth(),
                 response.address(),
+                response.gender(),
+                response.nationality(),
                 response.profilePictureUrl(),
                 response.idNumber(),
                 response.issuePlace(),

@@ -59,7 +59,18 @@ public enum ErrorCode {
     FILE_EMPTY(2801, "Uploaded file is empty", HttpStatus.BAD_REQUEST),
     FILE_SIZE_EXCEEDED(2802, "Uploaded file size exceeds the limit", HttpStatus.BAD_REQUEST),
     FILE_TYPE_NOT_ALLOWED(2803, "Uploaded file type is not allowed", HttpStatus.BAD_REQUEST),
-    S3_UPLOAD_FAILED(2804, "Failed to upload file to S3", HttpStatus.INTERNAL_SERVER_ERROR);
+    S3_UPLOAD_FAILED(2804, "Failed to upload file to S3", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    //Wallet errors 32
+    WALLET_NOT_FOUND(3201, "Wallet not found", HttpStatus.NOT_FOUND),
+    WALLET_ALREADY_EXISTS(3202, "Wallet with ID '{0}' already exists", HttpStatus.CONFLICT),
+    INSUFFICIENT_WALLET_BALANCE(3203, "Insufficient wallet balance", HttpStatus.BAD_REQUEST),
+    WALLET_TOPUP_FAILED(3204, "Wallet top-up failed", HttpStatus.INTERNAL_SERVER_ERROR),
+    WALLET_TRANSACTION_NOT_FOUND(3205, "Wallet transaction not found", HttpStatus.NOT_FOUND),
+    WALLET_TRANSACTION_ALREADY_EXISTS(3206, "Wallet transaction with ID '{0}' already exists", HttpStatus.CONFLICT),
+    INVALID_WALLET_OPERATION(3207, "Invalid wallet operation", HttpStatus.BAD_REQUEST),
+    WALLET_IS_INACTIVE(3208, "Wallet is inactive", HttpStatus.BAD_REQUEST),
+    WALLET_DEDUCTION_FAILED(3209, "Wallet deduction failed", HttpStatus.INTERNAL_SERVER_ERROR),;
 
     private final int code;
     private final String message;
