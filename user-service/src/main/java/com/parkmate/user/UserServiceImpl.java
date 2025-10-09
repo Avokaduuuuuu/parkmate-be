@@ -364,6 +364,13 @@ public class UserServiceImpl implements UserService {
         workbook.close();
     }
 
+    @Override
+    public void deleteUser(Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, id));
+        user.getAccount().setStatus(AccountStatus.DELETED);
+        accountRepository.save(user.getAccount());
+    }
+
     private String validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             return "File is empty";

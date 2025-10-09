@@ -28,4 +28,6 @@ public interface UserService {
 
     void exportUsersToExcel(UserSearchCriteria criteria, java.io.OutputStream outputStream) throws java.io.IOException;
 
+    void deleteUser(Long id);
+
 }

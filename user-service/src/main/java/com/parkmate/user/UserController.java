@@ -112,4 +112,11 @@ public class UserController {
         userService.exportUsersToExcel(criteria, response.getOutputStream());
     }
 
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete user by ID")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.ok(ApiResponse.success("User deleted successfully"));
+    }
+
 }
