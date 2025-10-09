@@ -124,6 +124,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         PartnerRegistration partnerRegistration = partnerRegistrationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARTNER_REGISTRATION_NOT_FOUND));
         partnerRegistration.setStatus(RequestStatus.REJECTED);
+        partnerRegistrationRepository.save(partnerRegistration);
     }
 
     private void validateDuplicateConstraint(CreatePartnerRegistrationRequest request) {

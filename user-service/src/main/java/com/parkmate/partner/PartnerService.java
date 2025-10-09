@@ -1,11 +1,10 @@
 package com.parkmate.partner;
 
-import com.parkmate.partner.dto.CreatePartnerRequest;
-import com.parkmate.partner.dto.PartnerResponse;
-import com.parkmate.partner.dto.PartnerSearchCriteria;
-import com.parkmate.partner.dto.UpdatePartnerRequest;
+import com.parkmate.partner.dto.*;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -24,4 +23,10 @@ public interface PartnerService {
 
     void delete(long id);
 
+    @Transactional
+    ImportPartnerResponse importPartnersFromExcel(MultipartFile file);
+
+    long count();
+
+    void exportPartnersToExcel(PartnerSearchCriteria criteria, java.io.OutputStream outputStream) throws java.io.IOException;
 }

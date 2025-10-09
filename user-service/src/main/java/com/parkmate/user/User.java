@@ -44,6 +44,12 @@ public class User {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
 
+    @Column(name = "gender", length = 10)
+    private String gender;
+
+    @Column(name = "nationality")
+    private String nationality;
+
     @Column(name = "address", length = 100)
     private String address;
 

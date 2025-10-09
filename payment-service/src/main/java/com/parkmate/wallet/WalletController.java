@@ -22,7 +22,7 @@ public class WalletController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<WalletResponse>>> getWalletById(
+    public ResponseEntity<ApiResponse<Page<WalletResponse>>> getWallets(
             @RequestParam int page,
             @RequestParam int size,
             @RequestParam String sortBy,
