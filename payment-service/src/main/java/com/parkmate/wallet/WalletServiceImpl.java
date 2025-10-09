@@ -14,6 +14,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -28,15 +30,7 @@ public class WalletServiceImpl implements WalletService {
     public WalletResponse createWallet(CreateWalletRequest createWalletRequest) {
 
         // Check if user exists in user-service
-        try {
-            userServiceClient.getUserById(createWalletRequest.getUserId());
-        } catch (FeignException.NotFound e) {
-            log.error("User not found with ID: {}", createWalletRequest.getUserId());
-            throw new AppException(ErrorCode.USER_NOT_FOUND, createWalletRequest.getUserId());
-        } catch (FeignException e) {
-            log.error("Error calling user-service: {}", e.getMessage());
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
+        checkUserExists(createWalletRequest.getUserId());
 
         // Check if wallet already exists for this user
         if (walletRepository.existsByUserId(createWalletRequest.getUserId())) {
@@ -45,7 +39,7 @@ public class WalletServiceImpl implements WalletService {
 
         Wallet wallet = Wallet.builder()
                 .userId(createWalletRequest.getUserId())
-                .balance(0L)
+                .balance(BigDecimal.ZERO)
                 .currency("VND")
                 .isActive(true)
                 .build();
@@ -59,6 +53,15 @@ public class WalletServiceImpl implements WalletService {
         Wallet wallet = walletRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND, id));
 
+        return walletMapper.toResponse(wallet);
+    }
+
+    @Override
+    public WalletResponse getByUserId(String userHeaderId) {
+        Long userId = Long.parseLong(userHeaderId);
+        checkUserExists(userId);
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND, userId));
         return walletMapper.toResponse(wallet);
     }
 
@@ -86,5 +89,17 @@ public class WalletServiceImpl implements WalletService {
     @Override
     public void deleteById(Long id) {
 
+    }
+
+    void checkUserExists(Long userId) {
+        try {
+            userServiceClient.getUserById(userId);
+        } catch (FeignException.NotFound e) {
+            log.error("User not found with ID: {}", userId);
+            throw new AppException(ErrorCode.USER_NOT_FOUND, userId);
+        } catch (FeignException e) {
+            log.error("Error calling user-service: {}", e.getMessage());
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 }

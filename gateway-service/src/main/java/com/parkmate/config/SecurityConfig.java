@@ -72,7 +72,8 @@ public class SecurityConfig {
             "/api/v1/user-service/reservations/**",
             "/api/v1/user-service/mobile-devices/**",
             "/api/v1/payment-service/**",
-            "/api/v1/payment-service/wallets/**"
+            "/api/v1/payment-service/wallets/**",
+            "/api/v1/user-service/reservations/**",
     };
 
     @Value("${jwt.secret}")
