@@ -14,6 +14,8 @@ import com.parkmate.common.util.QRCodeGenerator;
 import com.parkmate.reservation.dto.CreateReservationRequest;
 import com.parkmate.reservation.dto.ReservationResponse;
 import com.parkmate.reservation.dto.ReservationSearchCriteria;
+import com.parkmate.user.User;
+import com.parkmate.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -35,6 +37,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final PaymentClient paymentClient;
     private final ReservationMapper reservationMapper;
     private final ObjectMapper objectMapper;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -42,7 +45,9 @@ public class ReservationServiceImpl implements ReservationService {
 
         if (userId != null && request.isOwnedByMe()) {
             long userIdLong = Long.parseLong(userId);
-            request.setUserId(userIdLong);
+            User user = userRepository.findByAccountId(userIdLong)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            request.setUserId(user.getId());
         }
 
         if (request.getUserId() == null) {
