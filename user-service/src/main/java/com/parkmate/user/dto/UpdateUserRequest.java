@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 @Data
 public class UpdateUserRequest {
 
+    boolean ownedByMe;
+
     @NotBlank(message = "Phone is required")
     @Pattern(regexp = "^[0-9]{10,12}$", message = "Phone number must be 10-12 digits")
     @Schema(description = "Phone number (10-12 digits, numbers only)", example = "0123456789", requiredMode = Schema.RequiredMode.REQUIRED)

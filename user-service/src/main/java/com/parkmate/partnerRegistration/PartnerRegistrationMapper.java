@@ -12,6 +12,8 @@ import org.mapstruct.MappingTarget;
 @Mapper(config = MapStructConfig.class)
 public interface PartnerRegistrationMapper {
     @Mapping(target = "partnerId", source = "partner.id")
+    @Mapping(target = "submittedByAccountId", source = "submittedByAccount.id")
+    @Mapping(target = "reviewerId", source = "reviewer.id")
     PartnerRegistrationResponse toDto(PartnerRegistration partnerRegistration);
 
     @Mapping(target = "id", ignore = true)
@@ -25,6 +27,7 @@ public interface PartnerRegistrationMapper {
     @Mapping(target = "partner", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "submittedByAccount", ignore = true)
     PartnerRegistration toEntity(CreatePartnerRegistrationRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -46,6 +49,7 @@ public interface PartnerRegistrationMapper {
     @Mapping(target = "partner", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "submittedByAccount", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = org.mapstruct.NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDto(UpdatePartnerRegistrationRequest dto, @MappingTarget PartnerRegistration entity);
 

@@ -201,7 +201,7 @@ public class S3Service {
     private String determineFolderPath(ImageType imageType) {
         return switch (imageType) {
             case AVATAR -> "users/avatars";
-            case VEHICLE_LICENSE_PLATE -> "vehicles/license-plates";
+            case VEHICLE_IMAGE -> "vehicles/vehicle-images";
             case PARTNER_BUSINESS_LICENSE -> "partners/business-licenses";
             case FRONT_ID_CARD, BACK_ID_CARD -> "partners/id-cards";
         };
@@ -210,7 +210,7 @@ public class S3Service {
     private String determineFolderPathWithEntity(Long entityId, ImageType imageType) {
         return switch (imageType) {
             case AVATAR -> String.format("member/member-%d/profile", entityId);
-            case VEHICLE_LICENSE_PLATE -> String.format("vehicles/vehicle-%d", entityId);
+            case VEHICLE_IMAGE -> String.format("vehicles/vehicle-%d", entityId);
             case PARTNER_BUSINESS_LICENSE -> String.format("partners/partner-%d/business", entityId);
             case FRONT_ID_CARD, BACK_ID_CARD -> String.format("member/member-%d/id-cards", entityId);
         };
@@ -219,7 +219,7 @@ public class S3Service {
     private String determineFilePrefix(ImageType imageType) {
         return switch (imageType) {
             case AVATAR -> "avatar";
-            case VEHICLE_LICENSE_PLATE -> "license-plate";
+            case VEHICLE_IMAGE -> "vehicle-image";
             case PARTNER_BUSINESS_LICENSE -> "business-license";
             case FRONT_ID_CARD -> "front-id";
             case BACK_ID_CARD -> "back-id";
@@ -238,7 +238,7 @@ public class S3Service {
                 userRepository.save(user);
                 log.info("Updated user {} avatar to {}", entityId, s3Key);
             }
-            case VEHICLE_LICENSE_PLATE -> {
+            case VEHICLE_IMAGE -> {
                 Vehicle vehicle = vehicleRepository.findById(entityId)
                         .orElseThrow(() -> new AppException(ErrorCode.VEHICLE_NOT_FOUND));
                 vehicle.setLicenseImage(s3Key);

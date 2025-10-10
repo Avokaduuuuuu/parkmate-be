@@ -20,7 +20,6 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,14 +71,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserResponse getCurrentUser(Authentication authentication, String userIdHeader) {
+    public UserResponse getCurrentUser(String userIdHeader) {
         long accountId;
 
         // Try to get userId from header first (from gateway)
         if (userIdHeader != null && !userIdHeader.isEmpty()) {
             accountId = Long.parseLong(userIdHeader);
-        } else if (authentication != null) {
-            accountId = Long.parseLong(authentication.getName());
         } else {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }

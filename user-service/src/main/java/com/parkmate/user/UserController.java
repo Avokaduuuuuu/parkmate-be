@@ -57,25 +57,27 @@ public class UserController {
             @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
             @Parameter(hidden = true) Authentication authentication) {
 
-        UserResponse user = userService.getCurrentUser(authentication, userIdHeader);
+        UserResponse user = userService.getCurrentUser(userIdHeader);
         return ResponseEntity.ok(ApiResponse.success(user, "User profile retrieved successfully"));
     }
 
-    @PutMapping
+    @PutMapping(value = {"", "/{id}"})
     @Operation(
             summary = "Update user profile",
-            description = "Requires authentication. Click 'Authorize' button and enter JWT token.",
+            description = "If ID is provided: Admin updates specific user (requires ADMIN role). If no ID: User updates their own profile. Click 'Authorize' button and enter JWT token.",
             security = @SecurityRequirement(name = "Bearer Authentication")
     )
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+            @PathVariable(required = false) Long id,
             @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
-            @Parameter(hidden = true) Authentication authentication,
             @RequestBody UpdateUserRequest request) {
 
+        Long targetUserId = (id != null)
+                ? id
+                : userService.getCurrentUser(userIdHeader).id();
+
         return ResponseEntity.ok(ApiResponse.success(
-                userService.updateUser(
-                        userService.getCurrentUser(authentication, userIdHeader).id(),
-                        request),
+                userService.updateUser(targetUserId, request),
                 "User profile updated successfully"));
     }
 
