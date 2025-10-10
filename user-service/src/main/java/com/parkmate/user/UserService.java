@@ -29,4 +29,6 @@ public interface UserService {
 
     void deleteUser(Long id);
 
+    Long getUserIdByAccountId(Long userHeaderId);
+
 }

@@ -5,6 +5,7 @@ import com.parkmate.user.dto.ImportUserResponse;
 import com.parkmate.user.dto.UpdateUserRequest;
 import com.parkmate.user.dto.UserResponse;
 import com.parkmate.user.dto.UserSearchCriteria;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -119,6 +120,13 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.ok(ApiResponse.success("User deleted successfully"));
+    }
+
+    @GetMapping("/internal/account/{accountId}")
+    @Operation(summary = "Get User ID by Account ID (Internal Use Only)")
+    @Hidden
+    public Long getUserIdByAccountId(@PathVariable Long accountId) {
+        return userService.getUserIdByAccountId(accountId);
     }
 
 }

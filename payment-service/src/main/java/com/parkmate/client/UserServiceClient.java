@@ -11,4 +11,8 @@ public interface UserServiceClient {
 
     @GetMapping("/api/v1/user-service/users/{id}")
     ApiResponse<UserResponse> getUserById(@PathVariable("id") Long id);
+
+    @GetMapping("/api/v1/user-service/users/internal/account/{accountId}")
+    Long getUserIdByAccountId(@PathVariable("accountId") Long accountId);
+
 }
