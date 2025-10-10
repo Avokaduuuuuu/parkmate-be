@@ -101,7 +101,13 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, id));
         userMapper.updateEntity(request, user);
-        createWalletIfNotExists(user);
+        try {
+            createWalletIfNotExists(user);
+        } catch (Exception e) {
+            log.error("Error creating wallet for user ID {}: {}", user.getId(), e.getMessage());
+            // Proceed without failing the entire update
+        }
+
         return responseWithPresignedURL(userMapper.toResponse(userRepository.save(user)), user);
     }
 
@@ -109,14 +115,13 @@ public class UserServiceImpl implements UserService {
         return getUserResponse(response, user, s3Service);
     }
 
-    private boolean hasWallet(User user) {
-        return user.getIdNumber() == null && user.getIssueDate() == null && user.getExpiryDate() == null;
+    private boolean hasIdentityInfo(User user) {
+        return user.getIdNumber() != null || user.getIssueDate() != null || user.getExpiryDate() != null;
     }
 
     private void createWalletIfNotExists(User user) {
-        if (!hasWallet(user)) {
+        if (hasIdentityInfo(user)) {
             // Call wallet service to create wallet
-            // walletService.createWallet(user.getId());
             CreateWalletRequest createWalletRequest = CreateWalletRequest.builder()
                     .userId(user.getId())
                     .build();
@@ -366,6 +371,13 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, id));
         user.getAccount().setStatus(AccountStatus.DELETED);
         accountRepository.save(user.getAccount());
+    }
+
+    @Override
+    public Long getUserIdByAccountId(Long accountId) {
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_INFO_NOT_FOUND));
+        return user.getId();
     }
 
     private String validateFile(MultipartFile file) {
