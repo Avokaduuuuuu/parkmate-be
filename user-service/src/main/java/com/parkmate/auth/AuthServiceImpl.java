@@ -91,7 +91,10 @@ public class AuthServiceImpl implements AuthService {
             case PARTNER_OWNER:
                 Partner partner = account.getPartner();
                 if (partner == null) {
-                    throw new AppException(ErrorCode.PARTNER_NOT_FOUND, "Partner not found for account");
+                    return LoginResponse.builder()
+                            .authResponse(authResponse)
+                            .partnerResponse(null)
+                            .build();
                 }
 
                 PartnerResponse partnerResponse = partnerMapper.toDto(partner);

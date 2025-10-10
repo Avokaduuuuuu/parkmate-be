@@ -7,10 +7,10 @@ import com.parkmate.partner.Partner;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 
@@ -89,13 +89,13 @@ public class PartnerRegistration {
     @Column(name = "created_at")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "Request submission timestamp", example = "2024-09-23 10:30:00")
-    @CreatedDate
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "Request submission timestamp", example = "2024-09-23 10:30:00")
-    @LastModifiedDate
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
 
     @Schema(description = "ID of admin who reviewed this request", example = "456")
@@ -124,6 +124,11 @@ public class PartnerRegistration {
     @OneToOne(mappedBy = "partnerRegistration", cascade = CascadeType.ALL)
     @Schema(description = "Partner created from this request (if approved)")
     private Partner partner;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "submitted_by_account_id", nullable = false)
+    @Schema(description = "Account that submitted this registration request")
+    private Account submittedByAccount;
 
     // Helper methods
     @Schema(hidden = true)

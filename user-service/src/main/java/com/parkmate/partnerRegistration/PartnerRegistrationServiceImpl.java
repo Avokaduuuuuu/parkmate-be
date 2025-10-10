@@ -60,6 +60,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         PartnerRegistration partnerRegistration = mapper.toEntity(request);
         partnerRegistration.setStatus(RequestStatus.PENDING);
         partnerRegistration.setSubmittedAt(LocalDateTime.now());
+        partnerRegistration.setSubmittedByAccount(savedAccount);
 
         PartnerRegistration savedEntity = partnerRegistrationRepository.save(partnerRegistration);
 
@@ -146,8 +147,9 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         Account account = accountRepository.findAccountByEmail(savedRegistration.getContactPersonEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
         account.setStatus(AccountStatus.ACTIVE);
+        account.setPartner(createPartner(savedRegistration));
+        log.info("Partner created with ID: {} for registration ID: {}", account.getPartner().getId(), savedRegistration.getId());
         accountRepository.save(account);
-        createPartner(savedRegistration);
     }
 
     private void rejectPartnerRegistration(PartnerRegistration partnerRegistration, UpdatePartnerRegistrationRequest request) {
@@ -158,8 +160,8 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         partnerRegistration.setApprovalNotes(null);
     }
 
-    private void createPartner(PartnerRegistration updatedPartnerRegistration) {
-        partnerRepository.save(
+    private Partner createPartner(PartnerRegistration updatedPartnerRegistration) {
+        return partnerRepository.save(
                 Partner.builder()
                         .partnerRegistration(updatedPartnerRegistration)
                         .businessLicenseFileUrl(updatedPartnerRegistration.getBusinessLicenseFileUrl())

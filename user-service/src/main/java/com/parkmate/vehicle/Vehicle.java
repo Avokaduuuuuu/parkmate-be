@@ -42,8 +42,8 @@ public class Vehicle {
     @Column(name = "license_plate", length = 20, nullable = false, unique = true)
     private String licensePlate;
 
-    @Column(name = "license_image")
-    private String licenseImage;
+    @Column(name = "vehicle_image")
+    private String vehicleImage;
 
     @Column(name = "vehicle_brand", length = 100)
     private String vehicleBrand;
