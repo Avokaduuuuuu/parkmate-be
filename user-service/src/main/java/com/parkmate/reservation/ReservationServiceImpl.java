@@ -74,27 +74,44 @@ public class ReservationServiceImpl implements ReservationService {
                             .build()
             );
 
-            if (!paymentResult.hasBody()) {
+            // Check if payment service returned a response
+            if (!paymentResult.hasBody() || paymentResult.getBody() == null) {
                 log.error("Payment service returned empty response for reservation ID: {}", reservation.getId());
-                throw new AppException(ErrorCode.WALLET_DEDUCTION_FAILED);
-            }
-            if (paymentResult.getBody() != null && !paymentResult.getBody().success()) {
-                log.info("Payment successful for reservation ID: {}, transaction ID: {}",
-                        reservation.getId(), paymentResult.getBody().data().getSessionId());
-                throw new AppException(ErrorCode.WALLET_DEDUCTION_FAILED, paymentResult.getBody().message());
+                reservation.setStatus(ReservationStatus.CANCELLED);
+                reservationRepository.save(reservation);
+                throw new AppException(ErrorCode.WALLET_DEDUCTION_FAILED, "Payment service is unavailable");
             }
 
+            ApiResponse<WalletTransactionResponse> paymentResponse = paymentResult.getBody();
+
+            // Check if payment was successful
+            if (!paymentResponse.success()) {
+                log.warn("Payment failed for reservation ID: {}. Reason: {}",
+                        reservation.getId(), paymentResponse.message());
+                reservation.setStatus(ReservationStatus.CANCELLED);
+                reservationRepository.save(reservation);
+                // Return the specific error message from payment service (e.g., "Insufficient balance")
+                throw new AppException(ErrorCode.WALLET_DEDUCTION_FAILED, paymentResponse.message());
+            }
+
+            // Payment successful
+            log.info("Payment successful for reservation ID: {}, transaction ID: {}",
+                    reservation.getId(),
+                    paymentResponse.data() != null ? paymentResponse.data().getSessionId() : "N/A");
 
             // Update reservation status to CONFIRMED
             reservation.setStatus(ReservationStatus.PENDING);
             reservationRepository.save(reservation);
 
+        } catch (AppException e) {
+            // Re-throw AppException to preserve the specific error message
+            throw e;
         } catch (Exception e) {
-            log.error("Payment failed for reservation ID: {}", reservation.getId(), e);
-            // Update reservation status to PAYMENT_FAILED
+            log.error("Unexpected error during payment for reservation ID: {}", reservation.getId(), e);
+            // Update reservation status to CANCELLED
             reservation.setStatus(ReservationStatus.CANCELLED);
             reservationRepository.save(reservation);
-            throw new AppException(ErrorCode.WALLET_DEDUCTION_FAILED);
+            throw new AppException(ErrorCode.WALLET_DEDUCTION_FAILED, "Payment processing failed: " + e.getMessage());
         }
 
         // Generate QR code with reservation information
