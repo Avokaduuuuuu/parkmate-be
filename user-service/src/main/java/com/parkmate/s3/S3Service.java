@@ -241,7 +241,7 @@ public class S3Service {
             case VEHICLE_IMAGE -> {
                 Vehicle vehicle = vehicleRepository.findById(entityId)
                         .orElseThrow(() -> new AppException(ErrorCode.VEHICLE_NOT_FOUND));
-                vehicle.setLicenseImage(s3Key);
+                vehicle.setVehicleImage(s3Key);
                 vehicleRepository.save(vehicle);
                 log.info("Updated vehicle {} license plate image to {}", entityId, s3Key);
             }
