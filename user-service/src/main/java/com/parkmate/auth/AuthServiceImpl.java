@@ -49,7 +49,6 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final S3Service s3Service;
-    private final UserService userService;
     private final PartnerMapper partnerMapper;
 
     @Override
@@ -239,7 +238,11 @@ public class AuthServiceImpl implements AuthService {
 
     private Map<String, Object> buildClaims(Account account) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", account.getId());
+        if (account.getRole() == AccountRole.PARTNER_OWNER && account.getPartner() != null) {
+            claims.put("userId", account.getPartner().getId());
+        } else {
+            claims.put("userId", account.getId());
+        }
         claims.put("email", account.getEmail());
         claims.put("role", account.getRole().toString());
         return claims;
