@@ -41,18 +41,16 @@ public record PricingRuleCreateRequest(
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
         @DecimalMin(value = "0.0", message = "Base rate must be non-negative")
-        Double baseRate,
+        Double stepRate,
 
         @Schema(
-                description = "Deposit fee required upfront in VND (refundable)",
-                example = "50000.0",
-                minimum = "0.0",
-                type = "number",
-                format = "double",
+                description = "Grace period in minutes after the paid time expires before penalties apply",
+                example = "10",
+                minimum = "0",
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
-        @DecimalMin(value = "0.0", message = "Deposit fee must be non-negative")
-        Double depositFee,
+        @Min(value = 0, message = "Grace period minute could not be negative")
+        Integer stepMinute,
 
         @Schema(
                 description = "Initial charge applied immediately upon entry in VND",
@@ -73,24 +71,6 @@ public record PricingRuleCreateRequest(
         )
         @Min(value = 0, message = "Initial duration minute could not be negative")
         Integer initialDurationMinute,
-
-        @Schema(
-                description = "Number of free parking minutes before charges apply",
-                example = "15",
-                minimum = "0",
-                requiredMode = Schema.RequiredMode.NOT_REQUIRED
-        )
-        @Min(value = 0, message = "Free minute could not be negative")
-        Integer freeMinute,
-
-        @Schema(
-                description = "Grace period in minutes after the paid time expires before penalties apply",
-                example = "10",
-                minimum = "0",
-                requiredMode = Schema.RequiredMode.NOT_REQUIRED
-        )
-        @Min(value = 0, message = "Grace period minute could not be negative")
-        Integer gracePeriodMinute,
 
         @Schema(
                 description = "Date and time when this pricing rule becomes effective",

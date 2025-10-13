@@ -3,7 +3,7 @@ package com.parkmate.pricing_rule;
 
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.parkmate.area.AreaEntity;
-import com.parkmate.pricing_rule.enums.RuleScope;
+import com.parkmate.default_pricing_rule.DefaultPricingRuleEntity;
 import com.parkmate.common.enums.VehicleType;
 import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.session.SessionEntity;
@@ -42,11 +42,11 @@ public class PricingRuleEntity {
     @Column(name = "rule_name", length = 100)
     String ruleName;
 
-    @Column(name = "base_rate", columnDefinition = "fee after grace period minute")
-    Double baseRate;
+    @Column(name = "step_rate", columnDefinition = "fee after step period minute")
+    Double stepRate;
 
-    @Column(name = "deposit_fee", columnDefinition = "fee for reservation")
-    Double depositFee;
+    @Column(name = "step_minute", columnDefinition = "Charge more fee after a period")
+    Integer stepMinute;
 
     @Column(name = "initial_charge", columnDefinition = "Initial charge when check-in")
     Double initialCharge;
@@ -54,16 +54,6 @@ public class PricingRuleEntity {
     @Column(name = "initial_duration_minute", columnDefinition = "How long initial charge covers")
     Integer initialDurationMinute;
 
-    @Column(name = "free_minute", columnDefinition = "Time after check-in for free check-out")
-    Integer freeMinute;
-
-    @Column(name = "grace_period_minute", columnDefinition = "Charge more fee after a period")
-    Integer gracePeriodMinute;
-
-    @Column(name = "rule_scope")
-    @Enumerated(EnumType.STRING)
-    @JdbcType(PostgreSQLEnumJdbcType.class)
-    RuleScope ruleScope;
 
     @Column(name = "is_active")
     @Builder.Default
@@ -90,10 +80,12 @@ public class PricingRuleEntity {
     @JoinColumn(name = "lot_id")
     ParkingLotEntity parkingLot;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "area_id")
-    AreaEntity parkingArea;
+    @OneToMany(mappedBy = "pricingRule")
+    List<AreaEntity> areas;
 
     @OneToMany(mappedBy = "pricingRule")
     List<SessionEntity> sessions;
+
+    @OneToMany(mappedBy = "pricingRule")
+    List<DefaultPricingRuleEntity> defaultPricingRules;
 }

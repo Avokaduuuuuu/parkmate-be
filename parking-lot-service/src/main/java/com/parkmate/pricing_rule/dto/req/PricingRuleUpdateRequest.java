@@ -1,6 +1,6 @@
 package com.parkmate.pricing_rule.dto.req;
 
-import com.parkmate.pricing_rule.enums.RuleScope;
+
 import com.parkmate.common.enums.VehicleType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
@@ -35,18 +35,8 @@ public record PricingRuleUpdateRequest(
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
         @DecimalMin(value = "0.0", message = "Base rate must be non-negative")
-        Double baseRate,
+        Double stepRate,
 
-        @Schema(
-                description = "Deposit fee required upfront in VND (refundable)",
-                example = "50000.0",
-                minimum = "0.0",
-                type = "number",
-                format = "double",
-                requiredMode = Schema.RequiredMode.NOT_REQUIRED
-        )
-        @DecimalMin(value = "0.0", message = "Deposit fee must be non-negative")
-        Double depositFee,
 
         @Schema(
                 description = "Initial charge applied immediately upon entry in VND",
@@ -68,14 +58,6 @@ public record PricingRuleUpdateRequest(
         @Min(value = 0, message = "Initial duration minute could not be negative")
         Integer initialDurationMinute,
 
-        @Schema(
-                description = "Number of free parking minutes before charges apply",
-                example = "15",
-                minimum = "0",
-                requiredMode = Schema.RequiredMode.NOT_REQUIRED
-        )
-        @Min(value = 0, message = "Free minute could not be negative")
-        Integer freeMinute,
 
         @Schema(
                 description = "Grace period in minutes after the paid time expires before penalties apply",
@@ -84,7 +66,7 @@ public record PricingRuleUpdateRequest(
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
         @Min(value = 0, message = "Grace period minute could not be negative")
-        Integer gracePeriodMinute,
+        Integer stepMinute,
 
         @Schema(
                 description = "Date and time when this pricing rule becomes effective",
@@ -111,13 +93,6 @@ public record PricingRuleUpdateRequest(
                 example = "1",
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
-        Long areaId,
-
-        @Schema(
-                description = "Scope for this pricing rule",
-                example = "AREA_SPECIFIC",
-                allowableValues = {"LOT_WIDE", "AREA_SPECIFIC"}
-        )
-        RuleScope ruleScope
+        Long areaId
 ) {
 }

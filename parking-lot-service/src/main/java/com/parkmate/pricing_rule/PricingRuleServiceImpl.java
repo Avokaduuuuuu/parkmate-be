@@ -5,7 +5,6 @@ import com.parkmate.pricing_rule.dto.req.PricingRuleUpdateRequest;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
 import com.parkmate.area.AreaEntity;
 import com.parkmate.parking_lot.ParkingLotEntity;
-import com.parkmate.pricing_rule.enums.RuleScope;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.area.AreaRepository;
@@ -52,25 +51,14 @@ public class PricingRuleServiceImpl implements PricingRuleService {
         PricingRuleEntity pricingRuleEntity = PricingRuleEntity.builder()
                 .ruleName(request.ruleName())
                 .vehicleType(request.vehicleType())
-                .baseRate(request.baseRate())
-                .depositFee(request.depositFee())
+                .stepRate(request.stepRate())
                 .initialCharge(request.initialCharge())
                 .initialDurationMinute(request.initialDurationMinute())
-                .freeMinute(request.freeMinute())
-                .gracePeriodMinute(request.gracePeriodMinute())
+                .stepMinute(request.stepMinute())
                 .validFrom(request.validFrom())
                 .validUntil(request.validTo())
                 .parkingLot(parkingLotEntity)
                 .build();
-
-        if (request.areaId() != null) {
-            AreaEntity parkingAreaEntity = areaRepository.findById(request.areaId())
-                    .orElseThrow(() -> new AppException(ErrorCode.PARKING_AREA_NOT_FOUND));
-            pricingRuleEntity.setRuleScope(RuleScope.AREA_SPECIFIC);
-            pricingRuleEntity.setParkingArea(parkingAreaEntity);
-        }else {
-            pricingRuleEntity.setRuleScope(RuleScope.LOT_WIDE);
-        }
         return PricingRuleMapper.INSTANCE.toResponse(pricingRuleRepository.save(pricingRuleEntity));
     }
 
@@ -80,22 +68,12 @@ public class PricingRuleServiceImpl implements PricingRuleService {
                 .orElseThrow(() -> new AppException(ErrorCode.PRICING_RULE_NOT_FOUND));
         if (request.ruleName() != null) pricingRuleEntity.setRuleName(request.ruleName());
         if (request.vehicleType() != null) pricingRuleEntity.setVehicleType(request.vehicleType());
-        if (request.baseRate() != null) pricingRuleEntity.setBaseRate(request.baseRate());
-        if (request.depositFee() != null) pricingRuleEntity.setDepositFee(request.depositFee());
+        if (request.stepRate() != null) pricingRuleEntity.setStepRate(request.stepRate());
         if (request.initialCharge() != null) pricingRuleEntity.setInitialCharge(request.initialCharge());
         if (request.initialDurationMinute() != null) pricingRuleEntity.setInitialDurationMinute(request.initialDurationMinute());
-        if (request.freeMinute() != null) pricingRuleEntity.setFreeMinute(request.freeMinute());
+        if (request.stepMinute() != null) pricingRuleEntity.setStepMinute(request.stepMinute());
         if (request.validFrom() != null) pricingRuleEntity.setValidFrom(request.validFrom());
         if (request.validTo() != null) pricingRuleEntity.setValidFrom(request.validTo());
-        if (request.areaId() != null) {
-            AreaEntity parkingAreaEntity = areaRepository.findById(request.areaId())
-                    .orElseThrow(() -> new AppException(ErrorCode.PARKING_AREA_NOT_FOUND));
-            pricingRuleEntity.setParkingArea(parkingAreaEntity);
-            pricingRuleEntity.setRuleScope(RuleScope.AREA_SPECIFIC);
-        } else {
-            pricingRuleEntity.setParkingArea(null);
-            pricingRuleEntity.setRuleScope(RuleScope.LOT_WIDE);
-        }
         return PricingRuleMapper.INSTANCE.toResponse(pricingRuleRepository.save(pricingRuleEntity));
     }
 

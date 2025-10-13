@@ -1,31 +1,24 @@
-package com.parkmate.area.dto.resp;
+package com.parkmate.default_pricing_rule.dto.resp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.common.enums.VehicleType;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
-import com.parkmate.spot.dto.resp.SpotResponse;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class AreaResponse {
-    Long id;
-    String name;
+public class DefaultPricingRuleResponse {
+    Long lotId;
+    String lotName;
+    PricingRuleResponse pricingRule;
     VehicleType vehicleType;
-    Integer totalSpots;
-    Double areaTopLeftX;
-    Double areaTopLeftY;
-    Double areaWidth;
-    Double areaHeight;
-    Boolean isActive;
-    Boolean supportElectricVehicle;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
