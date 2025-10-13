@@ -12,7 +12,6 @@ import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.pricing_rule.PricingRuleEntity;
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
-import com.parkmate.pricing_rule.enums.RuleScope;
 import com.parkmate.s3.S3Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -95,14 +94,11 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                 .map(req -> PricingRuleEntity.builder()
                         .parkingLot(parkingLotEntity)
                         .ruleName(req.ruleName())
-                        .baseRate(req.baseRate())
-                        .depositFee(req.depositFee())
-                        .freeMinute(req.freeMinute())
-                        .gracePeriodMinute(req.gracePeriodMinute())
+                        .stepRate(req.stepRate())
+                        .stepMinute(req.stepMinute())
                         .initialDurationMinute(req.initialDurationMinute())
                         .vehicleType(req.vehicleType())
                         .initialCharge(req.initialCharge())
-                        .ruleScope(RuleScope.LOT_WIDE)
                         .validFrom(req.validFrom())
                         .validUntil(req.validTo())
                         .build()

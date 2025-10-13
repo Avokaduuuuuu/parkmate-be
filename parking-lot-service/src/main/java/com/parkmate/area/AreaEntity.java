@@ -60,6 +60,7 @@ public class AreaEntity extends BaseEntity {
     @OneToMany(mappedBy = "parkingArea", cascade = CascadeType.ALL)
     List<SpotEntity> spots;
 
-    @OneToOne(mappedBy = "parkingArea")
-    PricingRuleEntity pricingRuleEntity;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pricing_rule_id")
+    PricingRuleEntity pricingRule;
 }

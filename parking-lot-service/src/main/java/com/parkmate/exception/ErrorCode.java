@@ -12,6 +12,7 @@ public enum ErrorCode {
     INVALID_REQUEST(1002, "Invalid request", HttpStatus.BAD_REQUEST),
     INVALID_ENUM(1003, "Invalid enum", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(1004, "Unauthorized", HttpStatus.UNAUTHORIZED),
+    VEHICLE_TYPE_MISMATCH(1005, "Vehicle type mismatch", HttpStatus.BAD_REQUEST),
 
     // ParkingLot errors
     PARKING_NOT_FOUND(3101, "Parking Lot not found", HttpStatus.NOT_FOUND),
@@ -27,6 +28,8 @@ public enum ErrorCode {
 
     // PricingRule errors
     PRICING_RULE_NOT_FOUND(3401, "Pricing Rule not found", HttpStatus.NOT_FOUND),
+    INVALID_RULE_SCOPE(3402, "Invalid rule scope", HttpStatus.BAD_REQUEST),
+    PRICING_RULE_LOT_MISMATCH(3403, "Pricing Rule lot mismatch", HttpStatus.BAD_REQUEST),
 
     // Spot errors
     SPOT_NOT_FOUND(3501, "Spot not found", HttpStatus.NOT_FOUND),
@@ -38,7 +41,11 @@ public enum ErrorCode {
     SESSION_NOT_FOUND(3601, "Session Not found", HttpStatus.NOT_FOUND),
 
     // Image errors
-    INVALID_IMAGE(3602, "Invalid image", HttpStatus.BAD_REQUEST);
+    INVALID_IMAGE(3602, "Invalid image", HttpStatus.BAD_REQUEST),
+
+    // Default Pricing Rule
+    DEFAULT_PRICING_RULE_NOT_FOUND(3701, "Default Pricing Rule not found", HttpStatus.NOT_FOUND),
+    DUPLICATE_PRICING_RULE(3702, "Duplicate Pricing Rule", HttpStatus.CONFLICT);
 
     private final int code;
     private final String message;

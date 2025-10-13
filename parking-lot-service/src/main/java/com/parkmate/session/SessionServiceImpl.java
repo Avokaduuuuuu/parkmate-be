@@ -80,19 +80,15 @@ public class SessionServiceImpl implements SessionService{
         SessionEntity sessionEntity = sessionRepository.findByCardUUIDAndStatus(cardUUID, SessionStatus.ACTIVE)
                 .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND, "Session with Card UUID " + cardUUID + " not found"));
         PricingRuleEntity pricingRuleEntity = sessionEntity.getPricingRule();
-        Long durationMinutes = ChronoUnit.MINUTES.between(sessionEntity.getEntryTime(), request.exitTime());
-        if (pricingRuleEntity.getFreeMinute() < durationMinutes) {
-            long remainingMinutes = durationMinutes - pricingRuleEntity.getInitialDurationMinute();
-            if (remainingMinutes > 0) {
-                BigDecimal total = sessionEntity.getTotalAmount();
-                Long block = (long) Math.ceil((double) remainingMinutes / pricingRuleEntity.getGracePeriodMinute());
-                total = total.add(BigDecimal.valueOf(block * pricingRuleEntity.getBaseRate()));
-                sessionEntity.setTotalAmount(total);
-            } else {
-                sessionEntity.setTotalAmount(BigDecimal.valueOf(pricingRuleEntity.getInitialCharge()));
-            }
+        long durationMinutes = ChronoUnit.MINUTES.between(sessionEntity.getEntryTime(), request.exitTime());
+        long remainingMinutes = durationMinutes - pricingRuleEntity.getInitialDurationMinute();
+        if (remainingMinutes > 0) {
+            BigDecimal total = sessionEntity.getTotalAmount();
+            Long block = (long) Math.ceil((double) remainingMinutes / pricingRuleEntity.getStepMinute());
+            total = total.add(BigDecimal.valueOf(block * pricingRuleEntity.getStepRate()));
+            sessionEntity.setTotalAmount(total);
         } else {
-            sessionEntity.setTotalAmount(BigDecimal.ZERO);
+            sessionEntity.setTotalAmount(BigDecimal.valueOf(pricingRuleEntity.getInitialCharge()));
         }
 
         sessionEntity.setExitTime(sessionEntity.getEntryTime());
