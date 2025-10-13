@@ -4,6 +4,7 @@ import com.parkmate.common.ApiResponse;
 import com.parkmate.default_pricing_rule.dto.req.DefaultPricingRuleCreateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/parking-service/default-rule")
 @RequiredArgsConstructor
+@Tag(name = "Default Pricing Rule API", description = "API for making, retrieving, update default pricing rule of a parking lot")
 public class DefaultPricingRuleController {
     private final DefaultPricingRuleService defaultPricingRuleService;
 
