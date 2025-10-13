@@ -19,6 +19,7 @@ public interface PartnerMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "partnerRegistration", ignore = true)
     @Mapping(target = "accounts", ignore = true)
+    @Mapping(target = "businessLicenseFileUrl", ignore = true)
     Partner toEntity(CreatePartnerRequest dto);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

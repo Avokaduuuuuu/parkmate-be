@@ -1,5 +1,6 @@
 package com.parkmate.area.dto.req;
 
+import com.parkmate.area.enums.AreaType;
 import com.parkmate.common.enums.VehicleType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
@@ -62,6 +63,13 @@ public record AreaUpdateRequest(
                 example = "true",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        Boolean supportElectricVehicle
+        Boolean supportElectricVehicle,
+
+        @Schema(
+                description = "Whether this area for Reservation or Walk_In customer",
+                example = "RESERVED_ONLy",
+                allowableValues = {"RESERVED_ONLY", "WALK_IN_ONLY"}
+        )
+        AreaType areaType
 ) {
 }

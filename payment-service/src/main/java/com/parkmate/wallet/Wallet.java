@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -27,7 +28,7 @@ public class Wallet {
     Long userId;
 
     @Column(name = "balance", nullable = false)
-    Long balance;
+    BigDecimal balance;
 
     @Column(name = "currency", nullable = false, length = 3)
     String currency;

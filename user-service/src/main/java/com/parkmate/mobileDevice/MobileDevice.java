@@ -1,7 +1,6 @@
 package com.parkmate.mobileDevice;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.github.f4b6a3.uuid.UuidCreator;
 import com.parkmate.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -44,6 +43,7 @@ public class MobileDevice {
     private String pushToken;
 
     @Column(name = "is_active")
+    @Builder.Default
     private Boolean isActive = true;
 
     @Column(name = "last_active_at")

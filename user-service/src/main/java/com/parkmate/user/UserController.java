@@ -5,6 +5,7 @@ import com.parkmate.user.dto.ImportUserResponse;
 import com.parkmate.user.dto.UpdateUserRequest;
 import com.parkmate.user.dto.UserResponse;
 import com.parkmate.user.dto.UserSearchCriteria;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -34,7 +35,7 @@ public class UserController {
             @RequestParam(value = "size", defaultValue = "10") int size,
             @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
             @RequestParam(value = "sortOrder", defaultValue = "asc") String sortOrder,
-            @RequestBody(required = false) UserSearchCriteria criteria
+            @ModelAttribute UserSearchCriteria criteria
     ) {
         Page<UserResponse> users = userService.getAllUsers(page, size, sortBy, sortOrder, criteria);
         return ResponseEntity.ok(ApiResponse.success(users, "Users retrieved successfully"));
@@ -57,25 +58,27 @@ public class UserController {
             @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
             @Parameter(hidden = true) Authentication authentication) {
 
-        UserResponse user = userService.getCurrentUser(authentication, userIdHeader);
+        UserResponse user = userService.getCurrentUser(userIdHeader);
         return ResponseEntity.ok(ApiResponse.success(user, "User profile retrieved successfully"));
     }
 
-    @PutMapping
+    @PutMapping(value = {"", "/{id}"})
     @Operation(
             summary = "Update user profile",
-            description = "Requires authentication. Click 'Authorize' button and enter JWT token.",
+            description = "If ID is provided: Admin updates specific user (requires ADMIN role). If no ID: User updates their own profile. Click 'Authorize' button and enter JWT token.",
             security = @SecurityRequirement(name = "Bearer Authentication")
     )
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+            @PathVariable(required = false) Long id,
             @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
-            @Parameter(hidden = true) Authentication authentication,
             @RequestBody UpdateUserRequest request) {
 
+        Long targetUserId = (id != null)
+                ? id
+                : userService.getCurrentUser(userIdHeader).id();
+
         return ResponseEntity.ok(ApiResponse.success(
-                userService.updateUser(
-                        userService.getCurrentUser(authentication, userIdHeader).id(),
-                        request),
+                userService.updateUser(targetUserId, request),
                 "User profile updated successfully"));
     }
 
@@ -110,6 +113,20 @@ public class UserController {
         response.setContentType("application/octet-stream");
         response.setHeader("Content-Disposition", "attachment; filename=users.xlsx");
         userService.exportUsersToExcel(criteria, response.getOutputStream());
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete user by ID")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.ok(ApiResponse.success("User deleted successfully"));
+    }
+
+    @GetMapping("/internal/account/{accountId}")
+    @Operation(summary = "Get User ID by Account ID (Internal Use Only)")
+    @Hidden
+    public Long getUserIdByAccountId(@PathVariable Long accountId) {
+        return userService.getUserIdByAccountId(accountId);
     }
 
 }

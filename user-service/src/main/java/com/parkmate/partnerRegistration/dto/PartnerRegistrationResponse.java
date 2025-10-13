@@ -75,4 +75,10 @@ public class PartnerRegistrationResponse {
 
     @Schema(description = "Partner ID created from this request (if approved)", example = "789")
     private Long partnerId;
+
+    @Schema(description = "ID of reviewer account", example = "456")
+    private Long reviewerId;
+
+    @Schema(description = "ID of account that submitted this registration request", example = "123")
+    private Long submittedByAccountId;
 }

@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 @Data
 public class UpdateUserRequest {
 
+    boolean ownedByMe;
+
     @NotBlank(message = "Phone is required")
     @Pattern(regexp = "^[0-9]{10,12}$", message = "Phone number must be 10-12 digits")
     @Schema(description = "Phone number (10-12 digits, numbers only)", example = "0123456789", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -34,19 +36,16 @@ public class UpdateUserRequest {
     @Schema(description = "Residential address (optional, max 100 chars)", example = "123 Main Street, District 1, HCMC")
     String address;
 
-    @Size(max = 500, message = "Profile picture URL must not exceed 500 characters")
-    @Schema(description = "s3 key of the profile picture")
-    String profilePictureUrl;
-
-    @Schema(description = "S3 key of the identity document front photo")
-    String frontPhotoPath;
-
-    @Schema(description = "S3 key of the identity document back photo")
-    String backPhotoPath;
-
     @Size(max = 150, message = "Full name must not exceed 150 characters")
     @Schema(description = "User's full name (, max 150 chars)", example = "Trịnh Trần Phương Tuấn")
     private String fullName;
+
+    @Pattern(regexp = "^(Male|Female|Other)?$")
+    @Schema(description = "")
+    private String gender;
+
+    @Schema(description = "")
+    private String nationality;
 
     @Pattern(regexp = "^[0-9]{9,12}$", message = "ID number must be 9-12 digits")
     @Schema(description = "[MUST BE UNIQUE] National ID number (, 9-12 digits if provided)", example = "079012345678")
@@ -65,17 +64,6 @@ public class UpdateUserRequest {
     @Schema(description = "ID card expiry date", example = "2030-01-15T00:00:00")
     private LocalDateTime expiryDate;
 
-    @Schema(
-            description = "s3 key of front side of ID card image",
-            requiredMode = Schema.RequiredMode.NOT_REQUIRED
-    )
-    private String frontIdPath;
-
-    @Schema(
-            description = "s3 key of back side of ID card image",
-            requiredMode = Schema.RequiredMode.NOT_REQUIRED
-    )
-    private String backIdImgPath;
 
 }
 

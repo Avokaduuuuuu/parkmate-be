@@ -1,5 +1,6 @@
 package com.parkmate.parking_lot;
 
+import com.parkmate.default_pricing_rule.DefaultPricingRuleMapper;
 import com.parkmate.floor.FloorMapper;
 import com.parkmate.image.ImageMapper;
 import com.parkmate.lot_capacity.LotCapacityMapper;
@@ -15,7 +16,7 @@ import org.mapstruct.factory.Mappers;
 @Mapper(
         unmappedTargetPolicy = ReportingPolicy.IGNORE,
         unmappedSourcePolicy = ReportingPolicy.IGNORE,
-        uses = {FloorMapper.class, PricingRuleMapper.class, LotCapacityMapper.class, ImageMapper.class}
+        uses = {FloorMapper.class, PricingRuleMapper.class, LotCapacityMapper.class, ImageMapper.class, DefaultPricingRuleMapper.class}
 )
 public interface ParkingLotMapper {
     ParkingLotMapper INSTANCE = Mappers.getMapper(ParkingLotMapper.class);

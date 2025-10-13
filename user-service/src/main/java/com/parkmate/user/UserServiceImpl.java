@@ -20,7 +20,6 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,14 +71,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserResponse getCurrentUser(Authentication authentication, String userIdHeader) {
+    public UserResponse getCurrentUser(String userIdHeader) {
         long accountId;
 
         // Try to get userId from header first (from gateway)
         if (userIdHeader != null && !userIdHeader.isEmpty()) {
             accountId = Long.parseLong(userIdHeader);
-        } else if (authentication != null) {
-            accountId = Long.parseLong(authentication.getName());
         } else {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
@@ -104,7 +101,13 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, id));
         userMapper.updateEntity(request, user);
-        createWalletIfNotExists(user);
+        try {
+            createWalletIfNotExists(user);
+        } catch (Exception e) {
+            log.error("Error creating wallet for user ID {}: {}", user.getId(), e.getMessage());
+            // Proceed without failing the entire update
+        }
+
         return responseWithPresignedURL(userMapper.toResponse(userRepository.save(user)), user);
     }
 
@@ -112,14 +115,13 @@ public class UserServiceImpl implements UserService {
         return getUserResponse(response, user, s3Service);
     }
 
-    private boolean hasWallet(User user) {
-        return user.getIdNumber() == null && user.getIssueDate() == null && user.getExpiryDate() == null;
+    private boolean hasIdentityInfo(User user) {
+        return user.getIdNumber() != null || user.getIssueDate() != null || user.getExpiryDate() != null;
     }
 
     private void createWalletIfNotExists(User user) {
-        if (!hasWallet(user)) {
+        if (hasIdentityInfo(user)) {
             // Call wallet service to create wallet
-            // walletService.createWallet(user.getId());
             CreateWalletRequest createWalletRequest = CreateWalletRequest.builder()
                     .userId(user.getId())
                     .build();
@@ -362,6 +364,20 @@ public class UserServiceImpl implements UserService {
         // Write to output stream
         workbook.write(outputStream);
         workbook.close();
+    }
+
+    @Override
+    public void deleteUser(Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, id));
+        user.getAccount().setStatus(AccountStatus.DELETED);
+        accountRepository.save(user.getAccount());
+    }
+
+    @Override
+    public Long getUserIdByAccountId(Long accountId) {
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_INFO_NOT_FOUND));
+        return user.getId();
     }
 
     private String validateFile(MultipartFile file) {

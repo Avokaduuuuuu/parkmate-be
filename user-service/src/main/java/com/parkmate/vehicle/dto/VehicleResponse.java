@@ -14,6 +14,7 @@ public record VehicleResponse(
         String vehicleBrand,
         String vehicleModel,
         String vehicleColor,
+        String vehiclePhotoUrl,
         boolean isElectric,
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         LocalDateTime createdAt,

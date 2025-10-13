@@ -9,6 +9,9 @@ import com.parkmate.common.enums.AccountStatus;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.email.EmailService;
+import com.parkmate.partner.Partner;
+import com.parkmate.partner.PartnerMapper;
+import com.parkmate.partner.dto.PartnerResponse;
 import com.parkmate.s3.S3Service;
 import com.parkmate.user.User;
 import com.parkmate.user.UserMapper;
@@ -46,10 +49,10 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final S3Service s3Service;
-    private final UserService userService;
+    private final PartnerMapper partnerMapper;
 
     @Override
-    public AuthResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
 
         Account account = accountRepository.findAccountByEmail(
                 request.email()
@@ -75,12 +78,70 @@ public class AuthServiceImpl implements AuthService {
 
         log.info("User logged in successfully: {}", account.getEmail());
 
-        return AuthResponse.builder()
+        AuthResponse authResponse = AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .tokenType(TOKEN_TYPE)
-                .expiresIn(ACCESS_TOKEN_EXPIRATION) // 48 hours
+                .expiresIn(ACCESS_TOKEN_EXPIRATION)
                 .build();
+
+        // Return different response based on role
+        switch (account.getRole()) {
+            case PARTNER_OWNER:
+                Partner partner = account.getPartner();
+                if (partner == null) {
+                    return LoginResponse.builder()
+                            .authResponse(authResponse)
+                            .partnerResponse(null)
+                            .build();
+                }
+
+                PartnerResponse partnerResponse = partnerMapper.toDto(partner);
+                String presignedUrl = partner.getBusinessLicenseFileUrl() != null
+                        ? s3Service.generatePresignedUrl(partner.getBusinessLicenseFileUrl())
+                        : null;
+
+                PartnerResponse partnerWithPresignedUrl = new PartnerResponse(
+                        partnerResponse.id(),
+                        partnerResponse.companyName(),
+                        partnerResponse.taxNumber(),
+                        partnerResponse.businessLicenseNumber(),
+                        presignedUrl,
+                        partnerResponse.companyAddress(),
+                        partnerResponse.companyPhone(),
+                        partnerResponse.companyEmail(),
+                        partnerResponse.businessDescription(),
+                        partnerResponse.status(),
+                        partnerResponse.suspensionReason(),
+                        partnerResponse.createdAt(),
+                        partnerResponse.updatedAt(),
+                        partnerResponse.accounts()
+                );
+
+                return LoginResponse.builder()
+                        .authResponse(authResponse)
+                        .partnerResponse(partnerWithPresignedUrl)
+                        .build();
+
+            case MEMBER:
+                User user = account.getUser();
+                if (user == null) {
+                    throw new AppException(ErrorCode.USER_NOT_FOUND, "User not found for account");
+                }
+
+                UserResponse userResponse = responseWithPresignedURL(userMapper.toResponse(user), user);
+
+                return LoginResponse.builder()
+                        .authResponse(authResponse)
+                        .userResponse(userResponse)
+                        .build();
+
+            default:
+                // ADMIN, PARTNER_STAFF, and other roles - only return auth response
+                return LoginResponse.builder()
+                        .authResponse(authResponse)
+                        .build();
+        }
     }
 
     @Override
@@ -177,7 +238,11 @@ public class AuthServiceImpl implements AuthService {
 
     private Map<String, Object> buildClaims(Account account) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", account.getId());
+        if (account.getRole() == AccountRole.PARTNER_OWNER && account.getPartner() != null) {
+            claims.put("userId", account.getPartner().getId());
+        } else {
+            claims.put("userId", account.getId());
+        }
         claims.put("email", account.getEmail());
         claims.put("role", account.getRole().toString());
         return claims;
@@ -293,7 +358,9 @@ public class AuthServiceImpl implements AuthService {
 
         AccountBasicResponse accountBasicResponse = new AccountBasicResponse(
                 user.getAccount().getId(),
-                user.getAccount().getEmail()
+                user.getAccount().getEmail(),
+                user.getAccount().getStatus(),
+                user.getAccount().getRole()
         );
 
         return new UserResponse(
@@ -305,6 +372,8 @@ public class AuthServiceImpl implements AuthService {
                 response.fullName(),
                 response.dateOfBirth(),
                 response.address(),
+                response.gender(),
+                response.nationality(),
                 response.profilePictureUrl(),
                 response.idNumber(),
                 response.issuePlace(),

@@ -10,6 +10,8 @@ public interface WalletService {
 
     WalletResponse getById(Long id);
 
+    WalletResponse getByUserId(String userHeaderId);
+
     Page<WalletResponse> getAll(int page, int size, String sortBy, String sortOrder, String userHeaderId);
 
     WalletResponse updateWallet(Long id, WalletResponse walletResponse);

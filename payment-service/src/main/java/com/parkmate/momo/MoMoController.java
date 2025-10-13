@@ -3,6 +3,7 @@ package com.parkmate.momo;
 import com.parkmate.momo.dto.MoMoIPNRequest;
 import com.parkmate.momo.dto.MoMoIPNResponse;
 import com.parkmate.momo.dto.MoMoPaymentResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/payment-service/momo")
 @RequiredArgsConstructor
 @Slf4j
+@Hidden
 public class MoMoController {
 
     private final MomoService momoService;

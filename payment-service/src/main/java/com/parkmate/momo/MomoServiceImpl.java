@@ -141,7 +141,7 @@ public class MomoServiceImpl implements MomoService {
                 Wallet wallet = walletRepository.findById(transaction.getWalletId())
                         .orElseThrow(() -> new IllegalArgumentException("Wallet not found: " + transaction.getWalletId()));
 
-                wallet.setBalance(wallet.getBalance() + request.getAmount());
+                wallet.setBalance(wallet.getBalance().add(BigDecimal.valueOf(request.getAmount())));
                 wallet.setUpdatedAt(LocalDateTime.now());
                 walletRepository.save(wallet);
 

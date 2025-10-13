@@ -1,7 +1,6 @@
 package com.parkmate.user;
 
 import com.parkmate.common.config.MapStructConfig;
-import com.parkmate.user.dto.CreateUserRequest;
 import com.parkmate.user.dto.UpdateUserRequest;
 import com.parkmate.user.dto.UserResponse;
 import org.mapstruct.*;
@@ -17,6 +16,9 @@ public interface UserMapper {
             @Mapping(target = "updatedAt", ignore = true),
             @Mapping(target = "vehicles", ignore = true),
             @Mapping(target = "account", ignore = true),
+            @Mapping(target = "profilePictureUrl", ignore = true),
+            @Mapping(target = "frontPhotoPath", ignore = true),
+            @Mapping(target = "backPhotoPath", ignore = true)
     })
     void updateEntity(UpdateUserRequest req, @MappingTarget User user);
 

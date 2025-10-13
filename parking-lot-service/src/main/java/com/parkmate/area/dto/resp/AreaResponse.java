@@ -1,7 +1,9 @@
 package com.parkmate.area.dto.resp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.parkmate.area.enums.AreaType;
 import com.parkmate.common.enums.VehicleType;
+import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
 import com.parkmate.spot.dto.resp.SpotResponse;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -25,9 +27,9 @@ public class AreaResponse {
     Double areaHeight;
     Boolean isActive;
     Boolean supportElectricVehicle;
+    AreaType areaType;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
-    List<SpotResponse> spots;
 }

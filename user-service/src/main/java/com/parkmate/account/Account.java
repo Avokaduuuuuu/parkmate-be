@@ -45,6 +45,7 @@ public class Account {
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "status", nullable = false)
+    @Builder.Default
     private AccountStatus status = AccountStatus.PENDING_VERIFICATION;
 
     @Column(name = "email_verified")

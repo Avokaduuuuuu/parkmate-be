@@ -54,6 +54,11 @@ public class SecurityConfig {
             "/api/v1/parking-service/lots",
             "/api/v1/parking-service/lots/{id}",
             "/api/v1/parking-service/floors/{id}",
+            "/api/v1/parking-service/floors",
+            "/api/v1/parking-service/areas",
+            "/api/v1/parking-service/areas/{id}",
+            "/api/v1/parking-service/spots",
+            "/api/v1/parking-service/spots/{id}",
             "/api/v1/payment-service/momo/**",
             "/api/v1/parking-service/sessions/**"
     };
@@ -72,7 +77,8 @@ public class SecurityConfig {
             "/api/v1/user-service/reservations/**",
             "/api/v1/user-service/mobile-devices/**",
             "/api/v1/payment-service/**",
-            "/api/v1/payment-service/wallets/**"
+            "/api/v1/payment-service/wallets/**",
+            "/api/v1/user-service/reservations/**",
     };
 
     @Value("${jwt.secret}")

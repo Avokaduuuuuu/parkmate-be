@@ -41,7 +41,9 @@ public enum ErrorCode {
     WALLET_TRANSACTION_ALREADY_EXISTS(3206, "Wallet transaction with ID '{0}' already exists", HttpStatus.CONFLICT),
     INVALID_WALLET_OPERATION(3207, "Invalid wallet operation", HttpStatus.BAD_REQUEST),
     WALLET_IS_INACTIVE(3208, "Wallet is inactive", HttpStatus.BAD_REQUEST),
-    USER_NOT_FOUND(3209, "User with ID '{0}' not found", HttpStatus.NOT_FOUND);
+    USER_NOT_FOUND(3209, "User with ID '{0}' not found", HttpStatus.NOT_FOUND),
+    INVALID_TRANSACTION_TYPE(3210, "Invalid transaction type '{0}'", HttpStatus.BAD_REQUEST),
+    ;
 
 
     private final int code;
