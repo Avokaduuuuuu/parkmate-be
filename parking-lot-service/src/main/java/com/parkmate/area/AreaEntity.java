@@ -1,5 +1,6 @@
 package com.parkmate.area;
 
+import com.parkmate.area.enums.AreaType;
 import com.parkmate.common.BaseEntity;
 import com.parkmate.common.enums.VehicleType;
 import com.parkmate.spot.SpotEntity;
@@ -52,6 +53,11 @@ public class AreaEntity extends BaseEntity {
 
     @Column(name = "support_electric_vehicle")
     Boolean supportElectricVehicle;
+
+    @Column(name = "area_type")
+    @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    AreaType areaType;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "floor_id")
