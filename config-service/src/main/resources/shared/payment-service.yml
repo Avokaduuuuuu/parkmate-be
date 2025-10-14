@@ -18,6 +18,13 @@ momo:
   lang: vi
   timeout: 30000
 
+payos:
+  client-id: ${PAYOS_CLIENT_ID:paste-client-id-here}
+  api-key: ${PAYOS_API_KEY:paste-api-key-here}
+  checksum-key: ${PAYOS_CHECKSUM_KEY:paste-checksum-key-here}
+  return-url: ${PAYOS_RETURN_URL:http://localhost:8080/api/v1/payment-service/payos/return}
+  cancel-url: ${PAYOS_CANCEL_URL:http://localhost:8080/api/v1/payment-service/payos/cancel}
+
 springdoc:
   api-docs:
     path: /v3/api-docs

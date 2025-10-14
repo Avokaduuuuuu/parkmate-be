@@ -43,8 +43,17 @@ public enum ErrorCode {
     WALLET_IS_INACTIVE(3208, "Wallet is inactive", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND(3209, "User with ID '{0}' not found", HttpStatus.NOT_FOUND),
     INVALID_TRANSACTION_TYPE(3210, "Invalid transaction type '{0}'", HttpStatus.BAD_REQUEST),
-    ;
 
+
+    //PAYOS ERROR 33
+    PAYOS_PAYMENT_CREATION_FAILED(3301, "Failed to create PayOS payment", HttpStatus.INTERNAL_SERVER_ERROR),
+    PAYOS_INVALID_SIGNATURE(3302, "Invalid PayOS webhook signature", HttpStatus.UNAUTHORIZED),
+    PAYOS_WEBHOOK_VERIFICATION_FAILED(3303, "Failed to verify PayOS webhook", HttpStatus.BAD_REQUEST),
+    WEBHOOK_PROCESS_FAILED(3304, "Failed to process webhook", HttpStatus.INTERNAL_SERVER_ERROR),
+    PAYOS_INVALID_AMOUNT(3305, "Payment amount must be at least 1000 VND", HttpStatus.BAD_REQUEST),
+    PAYOS_ORDER_NOT_FOUND(3306, "PayOS order not found", HttpStatus.NOT_FOUND),
+
+    ;
 
     private final int code;
     private final String message;
