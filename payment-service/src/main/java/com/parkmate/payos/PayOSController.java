@@ -1,6 +1,8 @@
 package com.parkmate.payos;
 
 import com.parkmate.common.ApiResponse;
+import com.parkmate.payos.dto.PaymentCancelResponse;
+import com.parkmate.payos.dto.PaymentStatusResponse;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -62,6 +64,7 @@ public class PayOSController {
      */
     @GetMapping("/return")
     @Operation(summary = "PayOS return URL", description = "Handles user redirect after payment completion")
+    @Hidden
     public ResponseEntity<ApiResponse<String>> handleReturnUrl(
             @RequestParam @Parameter(description = "Order code") Long orderCode,
             @RequestParam @Parameter(description = "Payment status code") String code,
@@ -88,6 +91,7 @@ public class PayOSController {
      */
     @GetMapping("/cancel")
     @Operation(summary = "PayOS cancel URL", description = "Handles user cancellation of payment")
+    @Hidden
     public ResponseEntity<ApiResponse<String>> handleCancelUrl(
             @RequestParam @Parameter(description = "Order code") Long orderCode,
             @RequestParam(required = false) @Parameter(description = "Cancel reason") String reason) {
@@ -97,5 +101,20 @@ public class PayOSController {
         return ResponseEntity.ok(
                 ApiResponse.error("PAYMENT_CANCELLED", "Payment cancelled for order: " + orderCode)
         );
+    }
+
+    @PostMapping("/cancel")
+    @Operation(summary = "PayOS cancel URL", description = "Handles user cancellation of payment")
+    public ResponseEntity<ApiResponse<PaymentCancelResponse>> cancelPayment(
+            @RequestParam @Parameter(description = "Order code") Long orderCode,
+            @RequestParam(required = false) @Parameter(description = "Cancel reason") String reason) {
+
+        log.info("PayOS payment cancelled - orderCode: {}, reason: {}", orderCode, reason);
+        return ResponseEntity.ok(ApiResponse.success(payOSService.cancelPayment(orderCode, reason)));
+    }
+
+    @GetMapping("/status/{orderCode}")
+    public ResponseEntity<ApiResponse<PaymentStatusResponse>> statusPayment(@PathVariable Long orderCode) {
+        return ResponseEntity.ok(ApiResponse.success(payOSService.retrievePaymentStatus(orderCode)));
     }
 }

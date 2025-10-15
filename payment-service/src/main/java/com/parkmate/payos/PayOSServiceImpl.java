@@ -1,8 +1,10 @@
 package com.parkmate.payos;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.parkmate.common.QRCodeGenerator;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
+import com.parkmate.payos.dto.PaymentCancelResponse;
+import com.parkmate.payos.dto.PaymentStatusResponse;
 import com.parkmate.wallet.Wallet;
 import com.parkmate.wallet.WalletRepository;
 import com.parkmate.walletTransaction.TransactionStatus;
@@ -32,6 +34,8 @@ public class PayOSServiceImpl implements PayOSService {
     private final PayOSConfig payOSConfig;
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
+    private final QRCodeGenerator qrCodeGenerator;
+
 
     @Override
     @Transactional
@@ -90,6 +94,17 @@ public class PayOSServiceImpl implements PayOSService {
             log.info("Created PayOS payment - orderCode: {}, checkoutUrl: {}", orderCode, response.getCheckoutUrl());
 
             // Return the original response from PayOS SDK (contains all required fields)
+            String qrBase64;
+            try {
+                String vietQRString = response.getQrCode();
+                qrBase64 = qrCodeGenerator.generateQRCodeBase64(vietQRString);
+                log.info("QR code generated successfully for order: {}",
+                        response.getOrderCode());
+            } catch (Exception e) {
+                log.error("Failed to generate QR code", e);
+                qrBase64 = response.getQrCode();
+            }
+            response.setQrCode(qrBase64);
             return response;
 
         } catch (Exception e) {
@@ -100,7 +115,7 @@ public class PayOSServiceImpl implements PayOSService {
 
     @Override
     @Transactional
-    public boolean processWebhook(String webhookBody, String signature) {
+    public void processWebhook(String webhookBody, String signature) {
         try {
             // Log raw webhook for debugging
             log.info("Processing PayOS webhook - signature present: {}", signature != null);
@@ -121,23 +136,20 @@ public class PayOSServiceImpl implements PayOSService {
             if (transaction == null) {
                 log.warn("Transaction not found for orderCode: {} - This might be a test webhook or invalid order",
                         webhookData.getOrderCode());
-
+                throw new AppException(ErrorCode.TRANSACTION_NOT_FOUND, webhookData.getOrderCode());
                 // Return true to acknowledge test webhooks without throwing error
                 // PayOS expects 200 OK even for test webhooks
-                return true;
+
             }
 
-            // Check idempotency - prevent duplicate processing
             if (transaction.getStatus() == TransactionStatus.COMPLETED) {
                 log.info("Transaction already completed - orderCode: {}, ignoring duplicate webhook",
                         webhookData.getOrderCode());
-                return true;
             }
 
             if (transaction.getStatus() == TransactionStatus.FAILED) {
                 log.info("Transaction already marked as failed - orderCode: {}, ignoring webhook",
                         webhookData.getOrderCode());
-                return true;
             }
 
             // Update with webhook data
@@ -167,8 +179,6 @@ public class PayOSServiceImpl implements PayOSService {
             }
 
             walletTransactionRepository.save(transaction);
-            return true;
-
         } catch (AppException e) {
             log.error("Business error processing PayOS webhook: {}", e.getMessage());
             throw e;
@@ -176,5 +186,53 @@ public class PayOSServiceImpl implements PayOSService {
             log.error("Error processing PayOS webhook: {}", e.getMessage(), e);
             throw new AppException(ErrorCode.WEBHOOK_PROCESS_FAILED, e.getMessage());
         }
+    }
+
+    @Override
+    public PaymentCancelResponse cancelPayment(Long orderCode, String reason) {
+        WalletTransaction walletTransaction = walletTransactionRepository.findByExternalTransactionId(String.valueOf(orderCode))
+                .orElseThrow(() -> new AppException(ErrorCode.TRANSACTION_NOT_FOUND, orderCode));
+
+
+        if (walletTransaction.getStatus() != TransactionStatus.PENDING) {
+            throw new AppException(ErrorCode.PAYMENT_ALREADY_PAID, "Cannot cancel payment with status: " + walletTransaction.getStatus());
+        }
+
+
+        try {
+            payOS.paymentRequests().cancel(orderCode, reason);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.CANCEL_FAILED, "Failed to cancel with PayOS: " + e.getMessage());
+        }
+
+
+        String jsonResponse = String.format(
+                "{\"status\":\"cancelled\",\"reason\":\"%s\",\"cancelledBy\":\"user\",\"timestamp\":\"%s\"}",
+                reason.replace("\"", "\\\""), // Escape quotes
+                LocalDateTime.now().toString()
+        );
+        walletTransaction.setStatus(TransactionStatus.CANCELLED);
+        walletTransaction.setMetadata(jsonResponse);
+        walletTransaction.setProcessedAt(LocalDateTime.now());
+        walletTransactionRepository.save(walletTransaction);
+
+        return PaymentCancelResponse.builder()
+                .message("Canceled payment successfully")
+                .orderCode(orderCode)
+                .reason(reason)
+                .build();
+    }
+
+    @Override
+    public PaymentStatusResponse retrievePaymentStatus(Long orderCode) {
+        WalletTransaction walletTransaction = walletTransactionRepository.findByExternalTransactionId(String.valueOf(orderCode))
+                .orElseThrow(() -> new AppException(ErrorCode.TRANSACTION_NOT_FOUND, orderCode));
+        return PaymentStatusResponse.builder()
+                .amount(walletTransaction.getAmount())
+                .orderCode(orderCode)
+                .transactionStatus(walletTransaction.getStatus())
+                .build();
+
+
     }
 }
