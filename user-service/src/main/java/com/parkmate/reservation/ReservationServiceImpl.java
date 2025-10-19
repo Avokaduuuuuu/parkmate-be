@@ -163,17 +163,21 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public Page<ReservationResponse> getReservations(int page, int size, String sortBy, String sortOrder, ReservationSearchCriteria criteria, String userIdHeader) {
-        // Handle ownedByMe flag
-        if (criteria != null && criteria.isOwnedByMe() && userIdHeader != null) {
-            long userIdLong = Long.parseLong(userIdHeader);
-            criteria.setUserId(userIdLong);
+        // Parse userId from header
+        Long userId = null;
+        if (userIdHeader != null) {
+            try {
+                userId = Long.parseLong(userIdHeader);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid user ID in header: {}", userIdHeader);
+            }
         }
 
         // Create pageable
         Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
 
-        // Build predicate from criteria
-        com.querydsl.core.types.Predicate predicate = ReservationSpecification.buildPredicate(criteria);
+        // Build predicate from criteria and userId
+        com.querydsl.core.types.Predicate predicate = ReservationSpecification.buildPredicate(criteria, userId);
 
         // Query with predicate
         Page<Reservation> reservations = reservationRepository.findAll(predicate, pageable);
