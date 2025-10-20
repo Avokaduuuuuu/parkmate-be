@@ -3,7 +3,6 @@ package com.parkmate.pricing_rule;
 
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.parkmate.area.AreaEntity;
-import com.parkmate.default_pricing_rule.DefaultPricingRuleEntity;
 import com.parkmate.common.enums.VehicleType;
 import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.session.SessionEntity;
@@ -86,6 +85,4 @@ public class PricingRuleEntity {
     @OneToMany(mappedBy = "pricingRule")
     List<SessionEntity> sessions;
 
-    @OneToMany(mappedBy = "pricingRule")
-    List<DefaultPricingRuleEntity> defaultPricingRules;
 }
