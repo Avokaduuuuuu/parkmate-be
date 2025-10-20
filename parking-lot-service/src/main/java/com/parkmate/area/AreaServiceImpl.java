@@ -2,13 +2,15 @@ package com.parkmate.area;
 
 import com.parkmate.area.dto.req.AreaCreateRequest;
 import com.parkmate.area.dto.req.AreaUpdateRequest;
-import com.parkmate.area.dto.resp.AreaDetailedResponse;
 import com.parkmate.area.dto.resp.AreaResponse;
 import com.parkmate.common.enums.VehicleType;
+import com.parkmate.default_pricing_rule.DefaultPricingRuleRepository;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.floor.FloorEntity;
 import com.parkmate.floor.FloorRepository;
+import com.parkmate.pricing_rule.PricingRuleEntity;
+import com.parkmate.pricing_rule.PricingRuleMapper;
 import com.parkmate.spot.SpotEntity;
 import com.parkmate.spot.SpotMapper;
 import com.parkmate.spot.dto.req.SpotCreateRequest;
@@ -29,6 +31,8 @@ import java.util.List;
 public class AreaServiceImpl implements AreaService {
     private final AreaRepository areaRepository;
     private final FloorRepository floorRepository;
+    private final DefaultPricingRuleRepository defaultPricingRuleRepository;
+
     /**
      *
      * @param page the page number of retrieve (zero-based-index)
@@ -47,11 +51,12 @@ public class AreaServiceImpl implements AreaService {
     }
 
     @Override
-    public AreaDetailedResponse findAreaById(Long id) {
+    public AreaResponse findAreaById(Long id) {
         AreaEntity area = areaRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_AREA_NOT_FOUND));
+        AreaResponse areaResponse = AreaMapper.INSTANCE.toResponse(area);
 
-        return AreaMapper.INSTANCE.toDetailResponse(area);
+        return areaResponse;
     }
 
     @Override

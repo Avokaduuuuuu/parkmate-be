@@ -2,7 +2,7 @@ package com.parkmate.parking_lot;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.common.BaseEntity;
-
+import com.parkmate.default_pricing_rule.DefaultPricingRuleEntity;
 import com.parkmate.floor.FloorEntity;
 import com.parkmate.image.ImageEntity;
 import com.parkmate.lot_capacity.LotCapacityEntity;
@@ -26,7 +26,7 @@ import java.util.List;
 @Entity
 @Table(name = "parking_lot")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class    ParkingLotEntity extends BaseEntity {
+public class ParkingLotEntity extends BaseEntity {
 
     @Column(name = "partner_id")
     Long partnerId;
@@ -90,6 +90,8 @@ public class    ParkingLotEntity extends BaseEntity {
     @OneToMany(mappedBy = "parkingLot", cascade = CascadeType.ALL)
     List<PricingRuleEntity> pricingRules;
 
+    @OneToMany(mappedBy = "parkingLot")
+    List<DefaultPricingRuleEntity> defaultPricingRules;
 
     @OneToMany(mappedBy = "parkingLot", cascade = CascadeType.ALL)
     List<LotCapacityEntity> lotCapacity;

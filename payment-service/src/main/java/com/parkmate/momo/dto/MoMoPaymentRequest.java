@@ -60,10 +60,4 @@ public class MoMoPaymentRequest {
     @JsonProperty("signature")
     private String signature;
 
-    @JsonProperty("autoCapture")
-    private Boolean autoCapture;  // true/false
-
-    @JsonProperty("orderGroupId")
-    private String orderGroupId;
-
 }

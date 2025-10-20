@@ -6,7 +6,7 @@ import com.querydsl.core.types.Predicate;
 
 public class ReservationSpecification {
 
-    public static Predicate buildPredicate(ReservationSearchCriteria criteria, Long userId) {
+    public static Predicate buildPredicate(ReservationSearchCriteria criteria) {
         QReservation reservation = QReservation.reservation;
         BooleanBuilder builder = new BooleanBuilder();
 
@@ -14,26 +14,14 @@ public class ReservationSpecification {
             return builder;
         }
 
-        // Filter by user ID from header (applies when ownedByMe is true)
-        if (userId != null && Boolean.TRUE.equals(criteria.getOwnedByMe())) {
-            builder.and(reservation.userId.eq(userId));
-        }
-        // Filter by specific user ID (only when ownedByMe is explicitly false - for admin/partner use)
-        else if (criteria.getUserId() != null && Boolean.FALSE.equals(criteria.getOwnedByMe())) {
-            builder.and(reservation.userId.eq(criteria.getUserId()));
-        }
-        // Filter by user ID when ownedByMe is null
-        else if (criteria.getUserId() != null && criteria.getOwnedByMe() == null) {
-            builder.and(reservation.userId.eq(criteria.getUserId()));
-        }
-        // Default: when userId from header is present and ownedByMe is null, filter by header userId
-        else if (userId != null && criteria.getOwnedByMe() == null && criteria.getUserId() == null) {
-            builder.and(reservation.userId.eq(userId));
-        }
-
         // Filter by reservation ID
         if (criteria.getId() != null) {
             builder.and(reservation.id.eq(criteria.getId()));
+        }
+
+        // Filter by user ID
+        if (criteria.getUserId() != null) {
+            builder.and(reservation.userId.eq(criteria.getUserId()));
         }
 
         // Filter by vehicle ID
@@ -80,7 +68,7 @@ public class ReservationSpecification {
      * @param userId User ID
      * @return Predicate filtering by user ID
      */
-    public static Predicate forUser(Long userId) {
+    public static Predicate forUer(Long userId) {
         QReservation reservation = QReservation.reservation;
         return reservation.userId.eq(userId);
     }

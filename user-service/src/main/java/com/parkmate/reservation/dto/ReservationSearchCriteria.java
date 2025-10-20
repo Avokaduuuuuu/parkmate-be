@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Data
 public class ReservationSearchCriteria {
 
-    Boolean ownedByMe;
+    boolean ownedByMe;
 
     Long id;
 

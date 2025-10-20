@@ -2,7 +2,6 @@ package com.parkmate.pricing_rule.dto.resp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.common.enums.VehicleType;
-import com.parkmate.override_pricing_rule.dto.resp.OverridePricingRuleResponse;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -31,6 +30,4 @@ public class PricingRuleResponse {
     LocalDateTime createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
-
-    OverridePricingRuleResponse overridePricingRule;
 }

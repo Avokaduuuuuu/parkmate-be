@@ -1,6 +1,5 @@
 package com.parkmate.walletTransaction.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,10 +26,8 @@ public class WalletTransactionResponse {
     String externalTransactionId;
     String gatewayResponse;
     String status; // String instead of enum
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime processedAt;
     String description;
     String metadata;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
 }

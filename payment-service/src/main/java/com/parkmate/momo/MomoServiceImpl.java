@@ -62,8 +62,6 @@ public class MomoServiceImpl implements MomoService {
                 .requestType(momoConfig.getRequestType())
                 .extraData("")
                 .lang(momoConfig.getLang())
-                .autoCapture(true)       // Capture ngay, không giữ tiền
-                .orderGroupId("")
                 .signature("")
                 .build();
 
@@ -89,8 +87,6 @@ public class MomoServiceImpl implements MomoService {
             walletTransactionRepository.save(transaction);
 
             // Call MoMo API
-            log.info("=== MoMo Request ===");
-            log.info("Request body: {}", objectMapper.writeValueAsString(momoRequest));
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -102,8 +98,7 @@ public class MomoServiceImpl implements MomoService {
                     entity,
                     MoMoPaymentResponse.class
             );
-            log.info("=== MoMo Response ===");
-            log.info("Response body: {}", objectMapper.writeValueAsString(response.getBody()));
+
             MoMoPaymentResponse momoResponse = response.getBody();
 
             if (momoResponse != null && !momoResponse.isSuccess()) {

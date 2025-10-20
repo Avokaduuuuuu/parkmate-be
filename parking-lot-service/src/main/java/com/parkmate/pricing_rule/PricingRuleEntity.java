@@ -3,8 +3,8 @@ package com.parkmate.pricing_rule;
 
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.parkmate.area.AreaEntity;
+import com.parkmate.default_pricing_rule.DefaultPricingRuleEntity;
 import com.parkmate.common.enums.VehicleType;
-import com.parkmate.override_pricing_rule.OverridePricingRuleEntity;
 import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.session.SessionEntity;
 import jakarta.persistence.*;
@@ -54,6 +54,7 @@ public class PricingRuleEntity {
     @Column(name = "initial_duration_minute", columnDefinition = "How long initial charge covers")
     Integer initialDurationMinute;
 
+
     @Column(name = "is_active")
     @Builder.Default
     Boolean isActive = true;
@@ -85,6 +86,6 @@ public class PricingRuleEntity {
     @OneToMany(mappedBy = "pricingRule")
     List<SessionEntity> sessions;
 
-    @OneToOne(mappedBy = "pricingRule")
-    OverridePricingRuleEntity overridePricingRule;
+    @OneToMany(mappedBy = "pricingRule")
+    List<DefaultPricingRuleEntity> defaultPricingRules;
 }
