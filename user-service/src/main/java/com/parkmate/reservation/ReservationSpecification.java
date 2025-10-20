@@ -14,13 +14,21 @@ public class ReservationSpecification {
             return builder;
         }
 
-        // Filter by user ID from header (applies when ownedByMe is null or true)
-        if (userId != null && (criteria.getOwnedByMe())) {
+        // Filter by user ID from header (applies when ownedByMe is true)
+        if (userId != null && Boolean.TRUE.equals(criteria.getOwnedByMe())) {
             builder.and(reservation.userId.eq(userId));
         }
         // Filter by specific user ID (only when ownedByMe is explicitly false - for admin/partner use)
         else if (criteria.getUserId() != null && Boolean.FALSE.equals(criteria.getOwnedByMe())) {
             builder.and(reservation.userId.eq(criteria.getUserId()));
+        }
+        // Filter by user ID when ownedByMe is null
+        else if (criteria.getUserId() != null && criteria.getOwnedByMe() == null) {
+            builder.and(reservation.userId.eq(criteria.getUserId()));
+        }
+        // Default: when userId from header is present and ownedByMe is null, filter by header userId
+        else if (userId != null && criteria.getOwnedByMe() == null && criteria.getUserId() == null) {
+            builder.and(reservation.userId.eq(userId));
         }
 
         // Filter by reservation ID
