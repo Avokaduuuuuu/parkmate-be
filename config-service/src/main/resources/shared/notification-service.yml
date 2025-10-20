@@ -1,0 +1,66 @@
+server:
+  port: ${NOTIFICATION_PORT}
+
+
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    disable-swagger-default-url: true
+    URLs:
+      - name: User Service via Gateway
+        url: /v3/api-docs
+  use-management-port: false
+  show-actuator: false
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+    tags:
+      application: parking-lot-service
+    export:
+      prometheus:
+        enabled: true
+
+  observations:
+    key-values:
+      application: parking-lot-service
+    # ADD THESE - Enable HTTP observations
+    http:
+      server:
+        requests:
+          enabled: true
+    annotations:
+      enabled: true
+
+  tracing:
+    sampling:
+      probability: 1.0
+    enabled: true  # ADD THIS
+
+  zipkin:
+    tracing:
+      endpoint: http://${ZIPKIN_URL:http://localhost:9411}/api/v2/spans
+
+# ADD LOGGING PATTERN WITH TRACE IDs
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  level:
+    root: INFO
+    com.parkmate: DEBUG
+    io.micrometer.tracing: DEBUG  # Temporary - to see tracing activity

@@ -8,7 +8,7 @@ import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 public interface PayOSService {
     CreatePaymentLinkResponse createPayment(Long userId, Long amount, String description);
 
-    void processWebhook(String webhookBody, String signature);
+    Boolean processWebhook(String webhookBody, String signature);
 
     PaymentCancelResponse cancelPayment(Long orderCode, String reason);
 

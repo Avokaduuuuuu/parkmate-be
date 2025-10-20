@@ -115,7 +115,7 @@ public class PayOSServiceImpl implements PayOSService {
 
     @Override
     @Transactional
-    public void processWebhook(String webhookBody, String signature) {
+    public Boolean processWebhook(String webhookBody, String signature) {
         try {
             // Log raw webhook for debugging
             log.info("Processing PayOS webhook - signature present: {}", signature != null);
@@ -136,20 +136,21 @@ public class PayOSServiceImpl implements PayOSService {
             if (transaction == null) {
                 log.warn("Transaction not found for orderCode: {} - This might be a test webhook or invalid order",
                         webhookData.getOrderCode());
-                throw new AppException(ErrorCode.TRANSACTION_NOT_FOUND, webhookData.getOrderCode());
                 // Return true to acknowledge test webhooks without throwing error
                 // PayOS expects 200 OK even for test webhooks
-
+                return true;
             }
 
             if (transaction.getStatus() == TransactionStatus.COMPLETED) {
                 log.info("Transaction already completed - orderCode: {}, ignoring duplicate webhook",
                         webhookData.getOrderCode());
+                return true;
             }
 
             if (transaction.getStatus() == TransactionStatus.FAILED) {
                 log.info("Transaction already marked as failed - orderCode: {}, ignoring webhook",
                         webhookData.getOrderCode());
+                return true;
             }
 
             // Update with webhook data
@@ -178,7 +179,10 @@ public class PayOSServiceImpl implements PayOSService {
                         webhookData.getOrderCode(), webhookData.getCode(), webhookData.getDesc());
             }
 
+            // Save transaction for both success and failure cases
             walletTransactionRepository.save(transaction);
+
+            return true;
         } catch (AppException e) {
             log.error("Business error processing PayOS webhook: {}", e.getMessage());
             throw e;

@@ -47,15 +47,13 @@ public class PayOSController {
     @PostMapping("/payos_transfer_handler")
     @Hidden
     @Operation(summary = "PayOS webhook callback", description = "Receives payment status notifications from PayOS")
-    public ResponseEntity<ApiResponse<String>> handleWebhook(
+    public ResponseEntity<ApiResponse<Boolean>> handleWebhook(
             @RequestBody String webhookBody,
             @RequestHeader(value = "x-payos-signature", required = false) String signature) {
 
         log.info("Received PayOS webhook with signature: {}", signature);
 
-        payOSService.processWebhook(webhookBody, signature);
-
-        return ResponseEntity.ok(ApiResponse.success("Webhook processed successfully"));
+        return ResponseEntity.ok(ApiResponse.success(payOSService.processWebhook(webhookBody, signature), "Webhook processed successfully"));
     }
 
     /**
