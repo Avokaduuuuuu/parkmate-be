@@ -1,43 +1,28 @@
-package com.parkmate.pricing_rule;
+package com.parkmate.override_pricing_rule;
 
-
-import com.github.f4b6a3.uuid.UuidCreator;
-import com.parkmate.area.AreaEntity;
-import com.parkmate.common.enums.VehicleType;
-import com.parkmate.override_pricing_rule.OverridePricingRuleEntity;
-import com.parkmate.parking_lot.ParkingLotEntity;
-import com.parkmate.session.SessionEntity;
+import com.parkmate.pricing_rule.PricingRuleEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.JdbcType;
-import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "pricing_rule")
+@Table(name = "override_pricing_rule")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @EntityListeners(AuditingEntityListener.class)
-public class PricingRuleEntity {
+public class OverridePricingRuleEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
-
-    @Column(name = "vehicle_type")
-    @Enumerated(EnumType.STRING)
-    @JdbcType(PostgreSQLEnumJdbcType.class)
-    VehicleType vehicleType;
 
     @Column(name = "rule_name", length = 100)
     String ruleName;
@@ -53,6 +38,7 @@ public class PricingRuleEntity {
 
     @Column(name = "initial_duration_minute", columnDefinition = "How long initial charge covers")
     Integer initialDurationMinute;
+
 
     @Column(name = "is_active")
     @Builder.Default
@@ -75,16 +61,7 @@ public class PricingRuleEntity {
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lot_id")
-    ParkingLotEntity parkingLot;
-
-    @OneToMany(mappedBy = "pricingRule")
-    List<AreaEntity> areas;
-
-    @OneToMany(mappedBy = "pricingRule")
-    List<SessionEntity> sessions;
-
-    @OneToOne(mappedBy = "pricingRule")
-    OverridePricingRuleEntity overridePricingRule;
+    @OneToOne
+    @JoinColumn(name = "pricing_rule_id")
+    PricingRuleEntity pricingRule;
 }
