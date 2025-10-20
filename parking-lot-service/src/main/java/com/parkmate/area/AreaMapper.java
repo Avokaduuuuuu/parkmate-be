@@ -1,5 +1,6 @@
 package com.parkmate.area;
 
+import com.parkmate.area.dto.resp.AreaDetailedResponse;
 import com.parkmate.area.dto.resp.AreaResponse;
 import com.parkmate.pricing_rule.PricingRuleMapper;
 import com.parkmate.spot.SpotMapper;
@@ -16,4 +17,5 @@ public interface AreaMapper {
     AreaMapper INSTANCE = Mappers.getMapper(AreaMapper.class);
 
     AreaResponse toResponse(AreaEntity entity);
+    AreaDetailedResponse toDetailResponse(AreaEntity entity);
 }

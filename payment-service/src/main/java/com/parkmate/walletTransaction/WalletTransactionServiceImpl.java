@@ -1,15 +1,21 @@
 package com.parkmate.walletTransaction;
 
 import com.github.f4b6a3.uuid.UuidCreator;
+import com.parkmate.client.UserServiceClient;
+import com.parkmate.common.PaginationUtil;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.wallet.Wallet;
 import com.parkmate.wallet.WalletRepository;
 import com.parkmate.walletTransaction.dto.CreateTransactionRequest;
+import com.parkmate.walletTransaction.dto.TransactionSearchCriteria;
 import com.parkmate.walletTransaction.dto.WalletTransactionResponse;
+import feign.FeignException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -22,6 +28,7 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
     private final WalletTransactionRepository walletTransactionRepository;
     private final WalletRepository walletRepository;
     private final WalletTransactionMapper walletTransactionMapper;
+    private final UserServiceClient userClient;
 
     @Override
     @Transactional
@@ -93,6 +100,44 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
         response.setBalanceAfter(newBalance);
 
         return response;
+    }
+
+    @Override
+    public Page<WalletTransactionResponse> getTransactions(int page, int size, String sortBy, String sortOrder, TransactionSearchCriteria criteria, String userHeaderId) {
+        // Parse userId from header
+        Long userId = null;
+        if (userHeaderId != null) {
+            try {
+                userId = getUserIdFromAccountId(Long.parseLong(userHeaderId));
+                log.info("Parsed user ID from header: {}", userId);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid user ID in header: {}", userHeaderId);
+            }
+        }
+
+        // Create pageable
+        Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
+
+        // Build predicate from criteria and userId
+        com.querydsl.core.types.Predicate predicate = TransactionSpecification.buildPredicate(criteria, userId);
+
+        // Query with predicate
+        Page<WalletTransaction> transactions = walletTransactionRepository.findAll(predicate, pageable);
+
+        // Map to response
+        return transactions.map(walletTransactionMapper::toResponse);
+    }
+
+    Long getUserIdFromAccountId(Long accountId) {
+        try {
+            return userClient.getUserIdByAccountId(accountId);
+        } catch (FeignException.NotFound e) {
+            log.error("User not found for account ID: {}", accountId);
+            throw new AppException(ErrorCode.USER_NOT_FOUND, accountId);
+        } catch (FeignException e) {
+            log.error("Error calling user-service: {}", e.getMessage());
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 
 }

@@ -163,17 +163,37 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public Page<ReservationResponse> getReservations(int page, int size, String sortBy, String sortOrder, ReservationSearchCriteria criteria, String userIdHeader) {
-        // Handle ownedByMe flag
-        if (criteria != null && criteria.isOwnedByMe() && userIdHeader != null) {
-            long userIdLong = Long.parseLong(userIdHeader);
-            criteria.setUserId(userIdLong);
+        // Parse accountId from header and convert to User ID if needed
+        Long accountId = null;
+        if (userIdHeader != null) {
+            try {
+                accountId = Long.parseLong(userIdHeader);
+                log.info("Parsed account ID from header: {}", accountId);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid account ID in header: {}", userIdHeader);
+            }
+        }
+
+        // If ownedByMe is true, convert accountId to userId
+        Long userId = null;
+        if (accountId != null && Boolean.TRUE.equals(criteria.getOwnedByMe())) {
+            User user = userRepository.findByAccountId(accountId)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            userId = user.getId();
+            log.info("Converted account ID {} to user ID {}", accountId, userId);
+        } else if (accountId != null && criteria.getOwnedByMe() == null) {
+            // Default behavior: if no ownedByMe flag, treat it as user's own reservations
+            User user = userRepository.findByAccountId(accountId)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            userId = user.getId();
+            log.info("Default: Converted account ID {} to user ID {}", accountId, userId);
         }
 
         // Create pageable
         Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
 
-        // Build predicate from criteria
-        com.querydsl.core.types.Predicate predicate = ReservationSpecification.buildPredicate(criteria);
+        // Build predicate from criteria and userId
+        com.querydsl.core.types.Predicate predicate = ReservationSpecification.buildPredicate(criteria, userId);
 
         // Query with predicate
         Page<Reservation> reservations = reservationRepository.findAll(predicate, pageable);

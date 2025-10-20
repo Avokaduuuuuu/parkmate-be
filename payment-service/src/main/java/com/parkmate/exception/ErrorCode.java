@@ -31,20 +31,46 @@ public enum ErrorCode {
     FRAUD_DETECTED(3113, "Potential fraud detected", HttpStatus.FORBIDDEN),
     PAYMENT_GATEWAY_UNAVAILABLE(3114, "Payment gateway is currently unavailable", HttpStatus.SERVICE_UNAVAILABLE),
     INVALID_PAYMENT_DETAILS(3115, "Invalid payment details provided", HttpStatus.BAD_REQUEST),
+    PAYMENT_ALREADY_PAID(3116, "Cannot cancel paid payment", HttpStatus.BAD_REQUEST),
+
 
     //WALLET errors 32
     WALLET_NOT_FOUND(3201, "Wallet not found", HttpStatus.NOT_FOUND),
-    WALLET_ALREADY_EXISTS(3202, "Wallet with ID '{0}' already exists", HttpStatus.CONFLICT),
-    INSUFFICIENT_WALLET_BALANCE(3203, "Insufficient wallet balance", HttpStatus.BAD_REQUEST),
-    WALLET_TOPUP_FAILED(3204, "Wallet top-up failed", HttpStatus.INTERNAL_SERVER_ERROR),
-    WALLET_TRANSACTION_NOT_FOUND(3205, "Wallet transaction not found", HttpStatus.NOT_FOUND),
-    WALLET_TRANSACTION_ALREADY_EXISTS(3206, "Wallet transaction with ID '{0}' already exists", HttpStatus.CONFLICT),
-    INVALID_WALLET_OPERATION(3207, "Invalid wallet operation", HttpStatus.BAD_REQUEST),
-    WALLET_IS_INACTIVE(3208, "Wallet is inactive", HttpStatus.BAD_REQUEST),
-    USER_NOT_FOUND(3209, "User with ID '{0}' not found", HttpStatus.NOT_FOUND),
-    INVALID_TRANSACTION_TYPE(3210, "Invalid transaction type '{0}'", HttpStatus.BAD_REQUEST),
-    ;
 
+    WALLET_ALREADY_EXISTS(3202, "Wallet with ID '{0}' already exists", HttpStatus.CONFLICT),
+
+    INSUFFICIENT_WALLET_BALANCE(3203, "Insufficient wallet balance", HttpStatus.BAD_REQUEST),
+
+    WALLET_TOPUP_FAILED(3204, "Wallet top-up failed", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    WALLET_TRANSACTION_NOT_FOUND(3205, "Wallet transaction not found", HttpStatus.NOT_FOUND),
+
+    WALLET_TRANSACTION_ALREADY_EXISTS(3206, "Wallet transaction with ID '{0}' already exists", HttpStatus.CONFLICT),
+
+    INVALID_WALLET_OPERATION(3207, "Invalid wallet operation", HttpStatus.BAD_REQUEST),
+
+    WALLET_IS_INACTIVE(3208, "Wallet is inactive", HttpStatus.BAD_REQUEST),
+
+    USER_NOT_FOUND(3209, "User with ID '{0}' not found", HttpStatus.NOT_FOUND),
+
+    INVALID_TRANSACTION_TYPE(3210, "Invalid transaction type '{0}'", HttpStatus.BAD_REQUEST),
+
+
+    //PAYOS ERROR 33
+    PAYOS_PAYMENT_CREATION_FAILED(3301, "Failed to create PayOS payment", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    PAYOS_INVALID_SIGNATURE(3302, "Invalid PayOS webhook signature", HttpStatus.UNAUTHORIZED),
+
+    PAYOS_WEBHOOK_VERIFICATION_FAILED(3303, "Failed to verify PayOS webhook", HttpStatus.BAD_REQUEST),
+
+    WEBHOOK_PROCESS_FAILED(3304, "Failed to process webhook", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    PAYOS_INVALID_AMOUNT(3305, "Payment amount must be at least 1000 VND", HttpStatus.BAD_REQUEST),
+
+    PAYOS_ORDER_NOT_FOUND(3306, "PayOS order not found", HttpStatus.NOT_FOUND),
+
+    CANCEL_FAILED(3307, "Failed to cancel with PayOS", HttpStatus.INTERNAL_SERVER_ERROR),
+    ;
 
     private final int code;
     private final String message;

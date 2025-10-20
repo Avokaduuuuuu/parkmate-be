@@ -19,8 +19,9 @@ public class ExcelGenerator {
             // generateUsersExcel("users_5000.xlsx", 5000);
 
             // Generate Vehicles Excel for user with phone 0910000001
-            generateVehiclesExcel("vehicles_5000.xlsx", 5000, "1241413123");
+            //generateVehiclesExcel("vehicles_5000.xlsx", 5000, "1241413123");
 
+            generatePartnersExcel("partners_5000_batch2.xlsx", 5000, 5000);
             System.out.println("Excel file generated successfully!");
         } catch (IOException e) {
             e.printStackTrace();
@@ -84,9 +85,9 @@ public class ExcelGenerator {
 
             // Address
             String address = (random.nextInt(999) + 1) + " " +
-                           streets[random.nextInt(streets.length)] + " Street, " +
-                           districts[random.nextInt(districts.length)] + ", " +
-                           cities[random.nextInt(cities.length)];
+                    streets[random.nextInt(streets.length)] + " Street, " +
+                    districts[random.nextInt(districts.length)] + ", " +
+                    cities[random.nextInt(cities.length)];
             row.createCell(5).setCellValue(address);
 
             // ID Number (12 digits)
@@ -234,6 +235,114 @@ public class ExcelGenerator {
             // Is Electric (10% true for cars, 5% for motorbikes)
             boolean isElectric = isCar ? random.nextInt(100) < 10 : random.nextInt(100) < 5;
             row.createCell(7).setCellValue(isElectric ? "Yes" : "No");
+
+            if (i % 100 == 0) {
+                System.out.println("Generated " + i + " rows");
+            }
+        }
+
+        // Auto-size
+        for (int i = 0; i < headers.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        // Write file
+        try (FileOutputStream out = new FileOutputStream(filename)) {
+            workbook.write(out);
+        }
+
+        workbook.close();
+    }
+
+    public static void generatePartnersExcel(String filename, int rows, int offset) throws IOException {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Partners");
+        Random random = new Random();
+
+        // Header
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {
+                "Company Name", "Tax Number", "Business License Number",
+                "Business License File URL", "Company Address", "Company Phone",
+                "Company Email", "Business Description"
+        };
+
+        CellStyle headerStyle = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        headerStyle.setFont(font);
+
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
+        }
+
+        // Company types and prefixes
+        String[] companyTypes = {"Parking Solutions", "Smart Park", "Auto Park", "Park & Go", "City Parking", "Metro Park", "Premium Parking", "Urban Park", "Eco Parking", "Drive & Park"};
+        String[] companySuffixes = {"Ltd.", "Co., Ltd.", "JSC", "Corporation", "Company", "Group"};
+
+        String[] cities = {"Ho Chi Minh City", "Hanoi", "Da Nang", "Can Tho", "Hai Phong", "Bien Hoa", "Vung Tau", "Nha Trang", "Hue"};
+        String[] districts = {"District 1", "District 2", "District 3", "District 5", "District 7", "Binh Thanh", "Phu Nhuan", "Tan Binh", "Go Vap"};
+        String[] streets = {"Nguyen Hue", "Le Loi", "Tran Hung Dao", "Vo Thi Sau", "Hai Ba Trung", "Ly Thuong Kiet", "Nguyen Trai", "Phan Chu Trinh"};
+
+        String[] businessDescriptions = {
+                "Providing smart parking solutions",
+                "Modern parking lot management services",
+                "Automated parking systems and solutions",
+                "Premium parking management services",
+                "Eco-friendly parking solutions",
+                "Technology-driven parking management",
+                "24/7 parking facility operations",
+                "Integrated parking management systems",
+                "Sustainable urban parking solutions",
+                "Advanced parking technology provider"
+        };
+
+        // Data rows
+        for (int i = 1; i <= rows; i++) {
+            Row row = sheet.createRow(i);
+            int actualId = offset + i;
+
+            // Company Name
+            String companyType = companyTypes[random.nextInt(companyTypes.length)];
+            String companySuffix = companySuffixes[random.nextInt(companySuffixes.length)];
+            String companyName = companyType + " " + actualId + " " + companySuffix;
+            row.createCell(0).setCellValue(companyName);
+
+            // Tax Number (10 digits, unique)
+            String taxNumber = String.format("1%09d", actualId);
+            row.createCell(1).setCellValue(taxNumber);
+
+            // Business License Number (Format: BL-YYYY-XXXXXX)
+            String businessLicenseNumber = String.format("BL-2024-%06d", actualId);
+            row.createCell(2).setCellValue(businessLicenseNumber);
+
+            // Business License File URL (optional - leave empty for now)
+            row.createCell(3).setCellValue("");
+
+            // Company Address
+            String address = (random.nextInt(999) + 1) + " " +
+                    streets[random.nextInt(streets.length)] + " Street, " +
+                    districts[random.nextInt(districts.length)] + ", " +
+                    cities[random.nextInt(cities.length)];
+            row.createCell(4).setCellValue(address);
+
+            // Company Phone (10 digits: 0 + 9 digits)
+            // Pattern: ^(\\+84|0)[0-9]{9,10}$
+            String phonePrefix = new String[]{"09", "08", "07"}[random.nextInt(3)];
+            // Ensure phone is exactly 10 digits: prefix (2 digits) + 8 more digits
+            int phoneNumber = actualId % 100000000; // Keep within 8 digits (max 99999999)
+            String companyPhone = phonePrefix + String.format("%08d", phoneNumber);
+            row.createCell(5).setCellValue(companyPhone);
+
+            // Company Email
+            String companyEmail = "partner" + actualId + "@parkmate.com";
+            row.createCell(6).setCellValue(companyEmail);
+
+            // Business Description
+            String description = businessDescriptions[random.nextInt(businessDescriptions.length)];
+            row.createCell(7).setCellValue(description);
 
             if (i % 100 == 0) {
                 System.out.println("Generated " + i + " rows");
