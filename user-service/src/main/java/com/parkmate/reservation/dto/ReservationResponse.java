@@ -1,5 +1,6 @@
 package com.parkmate.reservation.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -26,6 +27,7 @@ public record ReservationResponse(
         BigDecimal reservationFee,
 
         @Schema(description = "Reserved from timestamp", example = "2024-07-01 10:00:00")
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         String reservedFrom,
 
         @Schema(description = "Reservation status", example = "PENDING")
