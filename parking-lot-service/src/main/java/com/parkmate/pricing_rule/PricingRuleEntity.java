@@ -7,6 +7,7 @@ import com.parkmate.common.enums.VehicleType;
 import com.parkmate.override_pricing_rule.OverridePricingRuleEntity;
 import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.session.SessionEntity;
+import com.parkmate.session.enums.SyncStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -64,6 +65,11 @@ public class PricingRuleEntity {
 
     @Column(name = "valid_until", columnDefinition = "This price rule will be disable after this time")
     LocalDateTime validUntil;
+
+    @Column(name = "sync_status")
+    @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    SyncStatus syncStatus;
 
     @Column(name = "created_at")
     @CreatedDate
