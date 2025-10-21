@@ -39,5 +39,9 @@ public class CreateReservationRequest {
     @NotNull
     LocalDateTime reservedFrom;
 
+    @Schema(description = "End time of the reservation", example = "2024-07-01T11:00:00")
+    @NotNull
+    LocalDateTime reservedUntil;
+
 }
 
