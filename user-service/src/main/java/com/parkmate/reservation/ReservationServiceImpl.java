@@ -1,6 +1,7 @@
 package com.parkmate.reservation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.parkmate.client.ParkingLotClient;
 import com.parkmate.client.PaymentClient;
 import com.parkmate.client.constants.TransactionConstants;
 import com.parkmate.client.dto.request.CreateTransactionRequest;
@@ -35,6 +36,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final PaymentClient paymentClient;
+    private final ParkingLotClient parkingLotClient;
     private final ReservationMapper reservationMapper;
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
@@ -54,12 +56,17 @@ public class ReservationServiceImpl implements ReservationService {
             throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
         }
 
+        if (request.getReservedFrom().isAfter(request.getReservedUntil())) {
+            throw new AppException(ErrorCode.INVALID_RESERVATION_TIME, "From must be < to");
+        }
+
         // Create reservation with PENDING_PAYMENT status
         Reservation reservation = Reservation.builder()
                 .userId(request.getUserId())
                 .spotId(request.getSpotId())
                 .reservedFrom(request.getReservedFrom())
-                .reservationFee(request.getReservationFee())
+                .reservedUntil(request.getReservedUntil())
+                .initialFee(request.getReservationFee())
                 .vehicleId(request.getVehicleId())
                 .parkingLotId(request.getParkingLotId())
                 .status(ReservationStatus.PENDING)
@@ -134,7 +141,7 @@ public class ReservationServiceImpl implements ReservationService {
             qrData.put("vehicleId", reservation.getVehicleId());
             qrData.put("parkingLotId", reservation.getParkingLotId());
             qrData.put("spotId", reservation.getSpotId());
-            qrData.put("reservationFee", reservation.getReservationFee());
+            qrData.put("initialFee", reservation.getInitialFee());
             qrData.put("reservedFrom", reservation.getReservedFrom().toString());
             qrData.put("status", reservation.getStatus().name());
             qrData.put("createdAt", reservation.getCreatedAt() != null ? reservation.getCreatedAt().toString() : null);
@@ -204,21 +211,11 @@ public class ReservationServiceImpl implements ReservationService {
 
     @NonNull
     private ReservationResponse getReservationResponse(Reservation reservation) {
-        ReservationResponse response = reservationMapper.toResponse(reservation);
+        ReservationResponse response = reservationMapper.toResponse(reservation, parkingLotClient);
         String qrCodeContent = generateQRCodeContent(reservation);
         String qrCodeBase64 = QRCodeGenerator.generateQRCodeBase64(qrCodeContent);
-
-        return new ReservationResponse(
-                response.id(),
-                response.userId(),
-                response.vehicleId(),
-                response.parkingLotId(),
-                response.spotId(),
-                response.reservationFee(),
-                response.reservedFrom(),
-                response.status(),
-                qrCodeBase64
-        );
+        response.setQrCode(qrCodeBase64);
+        return response;
     }
 
 }
