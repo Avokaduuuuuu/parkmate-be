@@ -65,7 +65,9 @@ public class SecurityConfig {
             // PayOS webhook endpoints (must be public for PayOS callbacks)
             "/api/v1/payment-service/payos/payos_transfer_handler",
             "/api/v1/payment-service/payos/return",
-            "/api/v1/payment-service/payos/cancel"
+            "/api/v1/payment-service/payos/cancel",
+
+            "/api/v1/parking-service/pricing-rules/{lotId}/sync"
     };
 
 

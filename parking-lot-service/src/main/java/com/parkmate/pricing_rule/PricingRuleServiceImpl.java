@@ -9,6 +9,7 @@ import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.area.AreaRepository;
 import com.parkmate.parking_lot.ParkingLotRepository;
+import com.parkmate.session.enums.SyncStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,7 +18,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -88,5 +91,11 @@ public class PricingRuleServiceImpl implements PricingRuleService {
     @Override
     public Long count() {
         return pricingRuleRepository.count();
+    }
+
+    @Override
+    public List<PricingRuleResponse> findAllSyncPricingRules(Long lotId, SyncStatus status) {
+        return pricingRuleRepository.findAllByParkingLotIdAndSyncStatus(lotId, status)
+                .stream().map(PricingRuleMapper.INSTANCE::toResponse).collect(Collectors.toList());
     }
 }
