@@ -1,10 +1,7 @@
 package com.parkmate.session.dto.resp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.parkmate.session.enums.AuthMethod;
-import com.parkmate.session.enums.SessionStatus;
-import com.parkmate.session.enums.SessionType;
-import com.parkmate.session.enums.SyncStatus;
+import com.parkmate.session.enums.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -20,10 +17,7 @@ import java.util.UUID;
 public class SessionResponse {
     UUID id;
     Long userId;
-    Long vehicleId;
     String licensePlate;
-    SessionType sessionType;
-    AuthMethod authMethod;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime entryTime;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -43,5 +37,6 @@ public class SessionResponse {
     Long spotId;
     String cardUUID;
     Long pricingRuleId;
-
+    Long reference_id;
+    ReferenceType referenceType;
 }

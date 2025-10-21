@@ -4,10 +4,7 @@ import com.github.f4b6a3.uuid.UuidCreator;
 import com.github.f4b6a3.uuid.util.UuidUtil;
 import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.pricing_rule.PricingRuleEntity;
-import com.parkmate.session.enums.AuthMethod;
-import com.parkmate.session.enums.SessionStatus;
-import com.parkmate.session.enums.SessionType;
-import com.parkmate.session.enums.SyncStatus;
+import com.parkmate.session.enums.*;
 import com.parkmate.spot.SpotEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -39,8 +36,13 @@ public class SessionEntity {
     @Column(name = "user_id")
     Long userId;
 
-    @Column(name = "vehicle_id")
-    Long vehicleId;
+    @Column(name = "reference_id")
+    Long referenceId;
+
+    @Column(name = "reference_type")
+    @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    ReferenceType referenceType;
 
     @Column(name = "license_plate")
     String licensePlate;

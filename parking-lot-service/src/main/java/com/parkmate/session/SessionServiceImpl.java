@@ -39,7 +39,6 @@ public class SessionServiceImpl implements SessionService{
         }else {
             sessionEntity.setSessionType(SessionType.OCCASIONAL);
         }
-        sessionEntity.setVehicleId(request.vehicleId());
         sessionEntity.setLicensePlate(request.licensePlate());
         sessionEntity.setEntryTime(request.entryTime());
         sessionEntity.setAuthMethod(request.authMethod());
