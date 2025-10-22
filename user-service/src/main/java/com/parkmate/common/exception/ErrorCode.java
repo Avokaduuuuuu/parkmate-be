@@ -70,7 +70,14 @@ public enum ErrorCode {
     WALLET_TRANSACTION_ALREADY_EXISTS(3206, "Wallet transaction with ID '{0}' already exists", HttpStatus.CONFLICT),
     INVALID_WALLET_OPERATION(3207, "Invalid wallet operation", HttpStatus.BAD_REQUEST),
     WALLET_IS_INACTIVE(3208, "Wallet is inactive", HttpStatus.BAD_REQUEST),
-    WALLET_DEDUCTION_FAILED(3209, "Wallet deduction failed", HttpStatus.INTERNAL_SERVER_ERROR),;
+    WALLET_DEDUCTION_FAILED(3209, "Wallet deduction failed", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    // Reservation errors 33
+    INVALID_RESERVATION_TIME(3301, "Reserved from time must be before reserved until time", HttpStatus.BAD_REQUEST),
+    RESERVATION_NOT_FOUND(3302, "Reservation not found", HttpStatus.NOT_FOUND),
+
+    //
+    ;
 
     private final int code;
     private final String message;

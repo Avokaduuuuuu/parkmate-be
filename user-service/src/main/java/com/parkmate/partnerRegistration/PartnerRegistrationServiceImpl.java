@@ -2,13 +2,13 @@ package com.parkmate.partnerRegistration;
 
 import com.parkmate.account.Account;
 import com.parkmate.account.AccountRepository;
+import com.parkmate.account.publisher.AccountEventPublisher;
 import com.parkmate.common.enums.AccountRole;
 import com.parkmate.common.enums.AccountStatus;
 import com.parkmate.common.enums.RequestStatus;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.common.util.PaginationUtil;
-import com.parkmate.email.EmailService;
 import com.parkmate.partner.Partner;
 import com.parkmate.partner.PartnerRepository;
 import com.parkmate.partner.PartnerStatus;
@@ -37,7 +37,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
     private final PartnerRegistrationMapper mapper;
     private final PartnerRepository partnerRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
+    private final AccountEventPublisher accountEventPublisher;
 
     @Override
     public PartnerRegistrationResponse registerPartner(CreatePartnerRegistrationRequest request) {
@@ -65,8 +65,9 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         PartnerRegistration savedEntity = partnerRegistrationRepository.save(partnerRegistration);
 
         try {
-            emailService.sendPartnerVerificationEmail(
+            accountEventPublisher.publishPartnerVerificationEvent(
                     savedAccount.getEmail(),
+                    partnerRegistration.getCompanyName(),
                     verificationToken
             );
         } catch (Exception e) {
@@ -74,6 +75,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         }
         return mapper.toDto(savedEntity);
     }
+
 
     @Override
     public PartnerRegistrationResponse getPartnerRegistrationById(Long id) {
