@@ -3,6 +3,7 @@ package com.parkmate.pricing_rule;
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import com.parkmate.pricing_rule.dto.req.PricingRuleUpdateRequest;
 import com.parkmate.common.ApiResponse;
+import com.parkmate.pricing_rule.dto.req.SyncedPricingRulesUpdateRequest;
 import com.parkmate.session.enums.SyncStatus;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -101,6 +102,19 @@ public class PricingRuleController {
                         ApiResponse.success(
                                 "Fetch pricing rules of a parking lot",
                                 pricingRuleService.findAllSyncPricingRules(lotId, status)
+                        )
+                );
+    }
+
+    @PutMapping("/sync")
+    public ResponseEntity<?> syncPricingRules(
+            @RequestBody SyncedPricingRulesUpdateRequest request
+            ) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(
+                        ApiResponse.success(
+                                "Update Synced Pricing Rules",
+                                pricingRuleService.updateSyncedPricingRules(request)
                         )
                 );
     }
