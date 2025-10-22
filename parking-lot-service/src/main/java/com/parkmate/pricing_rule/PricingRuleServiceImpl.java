@@ -2,6 +2,7 @@ package com.parkmate.pricing_rule;
 
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import com.parkmate.pricing_rule.dto.req.PricingRuleUpdateRequest;
+import com.parkmate.pricing_rule.dto.req.SyncedPricingRulesUpdateRequest;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
 import com.parkmate.area.AreaEntity;
 import com.parkmate.parking_lot.ParkingLotEntity;
@@ -97,5 +98,10 @@ public class PricingRuleServiceImpl implements PricingRuleService {
     public List<PricingRuleResponse> findAllSyncPricingRules(Long lotId, SyncStatus status) {
         return pricingRuleRepository.findAllByParkingLotIdAndSyncStatus(lotId, status)
                 .stream().map(PricingRuleMapper.INSTANCE::toResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public Integer updateSyncedPricingRules(SyncedPricingRulesUpdateRequest request) {
+        return pricingRuleRepository.updateSyncedPricingRules(request.ruleIds(), request.status());
     }
 }

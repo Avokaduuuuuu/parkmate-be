@@ -2,6 +2,7 @@ package com.parkmate.pricing_rule;
 
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import com.parkmate.pricing_rule.dto.req.PricingRuleUpdateRequest;
+import com.parkmate.pricing_rule.dto.req.SyncedPricingRulesUpdateRequest;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
 import com.parkmate.session.enums.SyncStatus;
 import org.springframework.data.domain.Page;
@@ -19,4 +20,5 @@ public interface PricingRuleService {
     PricingRuleResponse deletePricingRule(Long id);
     Long count();
     List<PricingRuleResponse> findAllSyncPricingRules(Long lotId, SyncStatus status);
+    Integer updateSyncedPricingRules(SyncedPricingRulesUpdateRequest request);
 }
