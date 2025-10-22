@@ -1,15 +1,16 @@
 package com.parkmate.reservation;
 
 import com.parkmate.common.dto.ApiResponse;
-import com.parkmate.reservation.dto.CreateReservationRequest;
-import com.parkmate.reservation.dto.ReservationResponse;
-import com.parkmate.reservation.dto.ReservationSearchCriteria;
+import com.parkmate.common.enums.ReservationStatus;
+import com.parkmate.reservation.dto.*;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/user-service/reservations")
@@ -36,6 +37,22 @@ public class ReservationController {
             @ModelAttribute ReservationSearchCriteria criteria) {
 
         return ResponseEntity.ok(ApiResponse.success(reservationService.getReservations(page, size, sortBy, sortOrder, criteria, userIdHeader)));
+    }
+
+    @GetMapping("/{lotId}/sync")
+    public ResponseEntity<ApiResponse<List<SyncReservationResponse>>> syncReservation(
+            @PathVariable Long lotId,
+            @RequestParam ReservationStatus status
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(reservationService.getReservationForSyncing(lotId, status)));
+    }
+
+    @PutMapping("/{id}/sync")
+    public ResponseEntity<ApiResponse<ReservationResponse>> updateReservationFromSyncing(
+            @PathVariable Long id,
+            @RequestBody SyncReservationUpdateRequest request) {
+        reservationService.updateReservation(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Reservation updated successfully"));
     }
 
 
