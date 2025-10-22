@@ -67,7 +67,10 @@ public class SecurityConfig {
             "/api/v1/payment-service/payos/return",
             "/api/v1/payment-service/payos/cancel",
 
-            "/api/v1/parking-service/pricing-rules/{lotId}/sync"
+            // Sync API
+            "/api/v1/parking-service/pricing-rules/{lotId}/sync",
+            "/api/v1/user-service/reservations/{lotId}/sync",
+            "/api/v1/user-service/reservations/{id}/sync"
     };
 
 

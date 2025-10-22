@@ -12,11 +12,11 @@ import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.common.util.PaginationUtil;
 import com.parkmate.common.util.QRCodeGenerator;
-import com.parkmate.reservation.dto.CreateReservationRequest;
-import com.parkmate.reservation.dto.ReservationResponse;
-import com.parkmate.reservation.dto.ReservationSearchCriteria;
+import com.parkmate.reservation.dto.*;
 import com.parkmate.user.User;
 import com.parkmate.user.UserRepository;
+import com.parkmate.user.UserService;
+import com.parkmate.vehicle.VehicleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -40,6 +41,8 @@ public class ReservationServiceImpl implements ReservationService {
     private final ReservationMapper reservationMapper;
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
+    private final UserService userService;
+    private final VehicleService vehicleService;
 
     @Override
     @Transactional
@@ -209,6 +212,24 @@ public class ReservationServiceImpl implements ReservationService {
         return reservations.map(this::getReservationResponse);
     }
 
+    @Override
+    public List<SyncReservationResponse> getReservationForSyncing(Long lotId, ReservationStatus status) {
+        List<Reservation> reservations = reservationRepository.findAllByParkingLotIdAndStatus(lotId, status);
+        return reservations.stream()
+                .map(reservation -> reservationMapper.toSyncResponse(reservation, userService, vehicleService))
+                .toList();
+    }
+
+    @Override
+    public void updateReservation(Long id, SyncReservationUpdateRequest request) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.RESERVATION_NOT_FOUND, "Reservation not found: " + id));
+        reservation.setStatus(request.getStatus());
+        reservation.setTotalFee(request.getTotalFee());
+        reservation.setSessionId(request.getSessionId());
+        reservationRepository.save(reservation);
+    }
+
     @NonNull
     private ReservationResponse getReservationResponse(Reservation reservation) {
         ReservationResponse response = reservationMapper.toResponse(reservation, parkingLotClient);
@@ -217,5 +238,6 @@ public class ReservationServiceImpl implements ReservationService {
         response.setQrCode(qrCodeBase64);
         return response;
     }
+
 
 }

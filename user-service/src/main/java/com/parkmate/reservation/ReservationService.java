@@ -1,9 +1,10 @@
 package com.parkmate.reservation;
 
-import com.parkmate.reservation.dto.CreateReservationRequest;
-import com.parkmate.reservation.dto.ReservationResponse;
-import com.parkmate.reservation.dto.ReservationSearchCriteria;
+import com.parkmate.common.enums.ReservationStatus;
+import com.parkmate.reservation.dto.*;
 import org.springframework.data.domain.Page;
+
+import java.util.List;
 
 public interface ReservationService {
 
@@ -14,4 +15,8 @@ public interface ReservationService {
     void cancelReservation(Long id);
 
     Page<ReservationResponse> getReservations(int page, int size, String sortBy, String sortOrder, ReservationSearchCriteria criteria, String userIdHeader);
+
+    List<SyncReservationResponse> getReservationForSyncing(Long lotId, ReservationStatus status);
+
+    void updateReservation(Long id, SyncReservationUpdateRequest request);
 }
