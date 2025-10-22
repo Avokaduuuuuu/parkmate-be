@@ -71,7 +71,13 @@ public enum ErrorCode {
     INVALID_WALLET_OPERATION(3207, "Invalid wallet operation", HttpStatus.BAD_REQUEST),
     WALLET_IS_INACTIVE(3208, "Wallet is inactive", HttpStatus.BAD_REQUEST),
     WALLET_DEDUCTION_FAILED(3209, "Wallet deduction failed", HttpStatus.INTERNAL_SERVER_ERROR),
-    INVALID_RESERVATION_TIME(3210,"Invalid reservation time" , HttpStatus.BAD_REQUEST);
+
+    // Reservation errors 29
+    INVALID_RESERVATION_TIME(2910, "Invalid reservation time", HttpStatus.BAD_REQUEST),
+    RESERVATION_NOT_FOUND(2911, "Reservation not found", HttpStatus.NOT_FOUND),
+    RESERVATION_ALREADY_USED(2912, "This reservation has already been used", HttpStatus.BAD_REQUEST),
+    RESERVATION_EXPIRED(2913, "Reservation has expired", HttpStatus.BAD_REQUEST),
+    ;
 
     private final int code;
     private final String message;
