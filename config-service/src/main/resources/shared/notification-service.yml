@@ -25,7 +25,9 @@ kafka:
   bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
   consumer-group-id: ${KAFKA_CONSUMER_GROUP_ID:notification-service-group}
 
-
+firebase:
+  credential-path: classpath:firebase/parkmate-firebase-adminsdk.json
+  project-id: parkmate-3636  # Từ Firebase console
 
 springdoc:
   api-docs:

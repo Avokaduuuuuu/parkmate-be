@@ -38,6 +38,24 @@ public class KafkaProducerConfig {
         return new KafkaTemplate<>(producerFactory);
     }
 
+    // Producer Factory for String values (used for JSON serialized strings)
+    @Bean
+    public ProducerFactory<String, String> stringProducerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        configProps.put(ProducerConfig.ACKS_CONFIG, "all");
+        configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
+        return new DefaultKafkaProducerFactory<>(configProps);
+    }
+
+    // KafkaTemplate for String values (used when manually serializing to JSON)
+    @Bean
+    public KafkaTemplate<String, String> stringKafkaTemplate(
+            ProducerFactory<String, String> stringProducerFactory) {
+        return new KafkaTemplate<>(stringProducerFactory);
+    }
 
 }
 

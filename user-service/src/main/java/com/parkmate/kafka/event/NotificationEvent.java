@@ -26,4 +26,5 @@ public class NotificationEvent {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
     String sourceService;
+
 }

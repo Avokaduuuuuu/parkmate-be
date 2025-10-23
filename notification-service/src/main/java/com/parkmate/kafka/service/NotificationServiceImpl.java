@@ -1,12 +1,17 @@
 package com.parkmate.kafka.service;
 
+import com.google.firebase.messaging.BatchResponse;
 import com.parkmate.email.EmailService;
+import com.parkmate.fcm.FCMService;
 import com.parkmate.kafka.event.NotificationEvent;
 import com.parkmate.kafka.event.NotificationEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -14,6 +19,7 @@ import org.springframework.stereotype.Service;
 public class NotificationServiceImpl implements NotificationService {
 
     private final EmailService emailService;
+    private final FCMService fcmService;
 
     @Override
     public void sendNotification(NotificationEvent notificationEvent) {
@@ -60,6 +66,46 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void sendPushNotification(NotificationEvent notificationEvent) {
+        try {
+            List<String> deviceTokens = notificationEvent.getDeviceTokens();
+
+            if (deviceTokens == null || deviceTokens.isEmpty()) {
+                log.warn("No device tokens found for event: {}", notificationEvent.getEventId());
+                return;
+            }
+
+            log.info("Sending push notification to {} device tokens", deviceTokens.size());
+
+            String title = notificationEvent.getTitle();
+            String body = notificationEvent.getMessage();
+
+            Map<String, String> data = buildDataPayload(notificationEvent);
+
+            if (deviceTokens.size() == 1) {
+                String messageId = fcmService.sendToDevice(deviceTokens.get(0), title, body, data);
+                log.info("Message ID: {}", messageId);
+
+                if (messageId != null) {
+                    log.info("Push notification sent successfully to: {}", deviceTokens.get(0));
+                } else {
+                    log.error("Failed to send push notification to: {}", deviceTokens.get(0));
+                }
+
+            } else {
+                BatchResponse response = fcmService.sendToMultipleDevices(deviceTokens, title, body, data);
+
+                if (response != null) {
+                    log.info("Push notification sent successfully to {} device tokens", deviceTokens.size());
+                } else {
+                    log.error("Failed to send push notification to {} device tokens", deviceTokens.size());
+                }
+            }
+        } catch (Exception e) {
+            log.error("❌ Error sending push notification for event: {}",
+                    notificationEvent.getEventId(), e);
+        }
+
+
     }
 
     private String getRecipientEmail(NotificationEvent event) {
@@ -86,11 +132,74 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private boolean isEmailNotification(NotificationEvent event) {
-        return "EMAIL".equalsIgnoreCase(event.getNotificationType());
+        String type = event.getNotificationType();
+        return "EMAIL".equalsIgnoreCase(type) || "BOTH".equalsIgnoreCase(type);
     }
 
     private boolean isPushNotification(NotificationEvent event) {
-        return "PUSH".equalsIgnoreCase(event.getNotificationType());
+        String type = event.getNotificationType();
+        return "PUSH".equalsIgnoreCase(type) || "BOTH".equalsIgnoreCase(type);
     }
 
+    private Map<String, String> buildDataPayload(NotificationEvent event) {
+        Map<String, String> data = new HashMap<>();
+
+        data.put("eventId", event.getEventId());
+        data.put("eventType", event.getEventType());
+        if (event.getSourceService() != null) {
+            data.put("sourceService", event.getSourceService());
+        }
+
+        if (event.getCreatedAt() != null) {
+            data.put("createdAt", event.getCreatedAt().toString());
+        }
+
+        if (event.getData() != null && !event.getData().isEmpty()) {
+            data.put("customData", event.getData());
+        }
+
+        if (event.getRecipientId() != null) {
+            data.put("recipientId", event.getRecipientId().toString());
+        }
+
+        // Deep link for mobile app navigation
+        String deepLink = getDeepLinkForEventType(event.getEventType(), event.getData());
+        data.put("deepLink", deepLink);
+        data.put("clickAction", "FLUTTER_NOTIFICATION_CLICK");
+
+        return data;
+    }
+
+    private String getDeepLinkForEventType(String eventType, String eventData) {
+        return switch (eventType) {
+            case "RESERVATION_CREATED", "RESERVATION_UPDATED", "RESERVATION_COMPLETED" ->
+                    "parkmate://reservation/" + extractId(eventData);
+
+            case "VEHICLE_ENTERED", "VEHICLE_EXITED" -> "parkmate://parking-session/" + extractId(eventData);
+
+            case "PARKING_REMINDER" -> "parkmate://reservations";
+
+            case "PARTNER_APPROVED", "PARTNER_REJECTED" -> "parkmate://partner/status";
+
+            default -> "parkmate://home";
+        };
+    }
+
+    private String extractId(String eventData) {
+        if (eventData == null || eventData.isEmpty()) {
+            return "";
+        }
+
+        try {
+            // Simple extraction for format: {"key":"value"}
+            String[] parts = eventData.split(":");
+            if (parts.length >= 2) {
+                return parts[1].replaceAll("[\"{}]", "").trim();
+            }
+        } catch (Exception e) {
+            log.debug("Could not extract ID from data: {}", eventData);
+        }
+
+        return "";
+    }
 }
