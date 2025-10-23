@@ -43,6 +43,14 @@ public class EmailConfig {
         props.put("mail.smtp.starttls.enable", starttlsEnable);
         props.put("mail.transport.protocol", "smtp");
 
+        // Performance optimization
+        props.put("mail.smtp.connectiontimeout", 5000); // 5s timeout
+        props.put("mail.smtp.timeout", 5000); // 5s timeout
+        props.put("mail.smtp.writetimeout", 5000); // 5s write timeout
+        props.put("mail.smtp.connectionpool.max", 20); // Connection pool
+        props.put("mail.smtp.connectionpool.timeout", 60000); // 1 min idle timeout
+        props.put("mail.smtp.sendpartial", true); // Send partial on error
+
         return mailSender;
     }
 }

@@ -3,20 +3,20 @@ package com.parkmate.auth;
 import com.parkmate.account.Account;
 import com.parkmate.account.AccountRepository;
 import com.parkmate.account.dto.AccountBasicResponse;
+import com.parkmate.account.publisher.AccountEventPublisher;
 import com.parkmate.auth.dto.*;
 import com.parkmate.common.enums.AccountRole;
 import com.parkmate.common.enums.AccountStatus;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
-import com.parkmate.email.EmailService;
 import com.parkmate.partner.Partner;
 import com.parkmate.partner.PartnerMapper;
 import com.parkmate.partner.dto.PartnerResponse;
+import com.parkmate.partnerRegistration.PartnerRegistrationRepository;
 import com.parkmate.s3.S3Service;
 import com.parkmate.user.User;
 import com.parkmate.user.UserMapper;
 import com.parkmate.user.UserRepository;
-import com.parkmate.user.UserService;
 import com.parkmate.user.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,11 +45,12 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RedisTokenService redisTokenService;
-    private final EmailService emailService;
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final S3Service s3Service;
     private final PartnerMapper partnerMapper;
+    private final AccountEventPublisher accountEventPublisher;
+    private final PartnerRegistrationRepository partnerRegistrationRepository;
 
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -211,7 +212,8 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepository.save(user);
 
         // Send verification email
-        sendVerificationEmail(savedAccount.getEmail(), verificationToken, savedUser.getFullName());
+        String fullName = savedUser.getFirstName() + " " + savedUser.getLastName();
+        sendVerificationEmail(savedAccount.getEmail(), verificationToken, fullName);
 
         // Generate tokens
         Map<String, Object> claims = buildClaims(savedAccount);
@@ -305,17 +307,23 @@ public class AuthServiceImpl implements AuthService {
         try {
 
             if (account.getRole() == AccountRole.PARTNER_OWNER) {
-                emailService.sendPartnerVerificationEmail(
+                String partnerName = partnerRegistrationRepository.findByContactPersonEmail(email)
+                        .orElseThrow(() -> new AppException(ErrorCode.PARTNER_REGISTRATION_NOT_FOUND))
+                        .getContactPersonName();
+                accountEventPublisher.publishPartnerVerificationEvent(
                         account.getEmail(),
+                        partnerName,
                         newToken
                 );
 
-            } else {
+            } else if (account.getRole().equals(AccountRole.MEMBER)) {
+                User user = userRepository.findByAccountId(account.getId())
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
                 String fullName = account.getUser().getFirstName() + " " + account.getUser().getLastName();
-                emailService.sendMemberVerificationEmail(
+                accountEventPublisher.publishMemberVerificationEvent(
                         account.getEmail(),
-                        newToken,
-                        account.getRole().equals(AccountRole.MEMBER) ? fullName : account.getPartner().getCompanyName()
+                        fullName,
+                        newToken
                 );
             }
 
@@ -328,10 +336,10 @@ public class AuthServiceImpl implements AuthService {
 
     private void sendVerificationEmail(String toEmail, String token, String recipientName) {
         try {
-            emailService.sendMemberVerificationEmail(
+            accountEventPublisher.publishMemberVerificationEvent(
                     toEmail,
-                    token,
-                    recipientName
+                    recipientName,
+                    token
             );
         } catch (Exception e) {
             log.error("Failed to send verification email to: {}", toEmail, e);
