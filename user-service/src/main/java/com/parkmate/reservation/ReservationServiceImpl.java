@@ -12,6 +12,10 @@ import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.common.util.PaginationUtil;
 import com.parkmate.common.util.QRCodeGenerator;
+import com.parkmate.kafka.KafkaTopics;
+import com.parkmate.kafka.event.NotificationEvent;
+import com.parkmate.kafka.event.NotificationEventType;
+import com.parkmate.mobileDevice.MobileDeviceRepository;
 import com.parkmate.reservation.dto.*;
 import com.parkmate.user.User;
 import com.parkmate.user.UserRepository;
@@ -23,12 +27,15 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +43,7 @@ import java.util.Map;
 public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationRepository reservationRepository;
+    private final MobileDeviceRepository mobileDeviceRepository;
     private final PaymentClient paymentClient;
     private final ParkingLotClient parkingLotClient;
     private final ReservationMapper reservationMapper;
@@ -43,6 +51,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final UserRepository userRepository;
     private final UserService userService;
     private final VehicleService vehicleService;
+    private final KafkaTemplate<String, NotificationEvent> kafkaTemplate;
 
     @Override
     @Transactional
@@ -221,6 +230,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    @Transactional
     public void updateReservation(Long id, SyncReservationUpdateRequest request) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.RESERVATION_NOT_FOUND, "Reservation not found: " + id));
@@ -228,6 +238,7 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setTotalFee(request.getTotalFee());
         reservation.setSessionId(request.getSessionId());
         reservationRepository.save(reservation);
+        sendReservationNotification(id, request.getStatus());
     }
 
     @NonNull
@@ -239,5 +250,185 @@ public class ReservationServiceImpl implements ReservationService {
         return response;
     }
 
+    private void sendReservationNotification(Long id, ReservationStatus status) {
+        switch (status) {
+            case ACTIVE:
+                sendActiveReservationNotification(id);
+                break;
+            case COMPLETED:
+                sendCompletedReservationNotification(id);
+                break;
+            case CANCELLED:
+                sendCancelledReservationNotification(id);
+                break;
+            default:
+                log.debug("No notification configured for status: {}", status);
+        }
+    }
+
+    private void sendActiveReservationNotification(Long reservationId) {
+        long startTime = System.currentTimeMillis();
+        log.info("Starting ACTIVE notification for reservation: {}", reservationId);
+
+        sendReservationNotificationWithContent(
+                reservationId,
+                NotificationEventType.RESERVATION_CREATED,
+                "Vehicle Entered Parking Lot",
+                reservation -> {
+                    long feignStartTime = System.currentTimeMillis();
+                    String parkingLotName = reservationMapper.getParkingLotName(parkingLotClient, reservation.getParkingLotId());
+                    long feignEndTime = System.currentTimeMillis();
+
+                    log.info("Feign call to get parking lot name took: {}ms", (feignEndTime - feignStartTime));
+
+                    String lotName = (parkingLotName != null) ? parkingLotName : "the parking lot";
+                    String time = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"));
+
+                    long totalTime = System.currentTimeMillis() - startTime;
+                    log.info("ACTIVE notification completed for reservation: {} in {}ms", reservationId, totalTime);
+
+                    return String.format("Your vehicle has entered %s at %s", lotName, time);
+                }
+        );
+    }
+
+    private void sendCompletedReservationNotification(Long reservationId) {
+        long startTime = System.currentTimeMillis();
+        log.info("Starting COMPLETED notification for reservation: {}", reservationId);
+
+        sendReservationNotificationWithContent(
+                reservationId,
+                NotificationEventType.RESERVATION_COMPLETED,
+                "Reservation Completed",
+                reservation -> {
+                    String time = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"));
+                    String totalFee = (reservation.getTotalFee() != null) ? reservation.getTotalFee().toString() : "0";
+
+                    long totalTime = System.currentTimeMillis() - startTime;
+                    log.info("COMPLETED notification completed for reservation: {} in {}ms", reservationId, totalTime);
+
+                    return String.format(
+                            "Reservation completed and your vehicle has exited at %s. Total fee charged: %s VND",
+                            time, totalFee
+                    );
+                }
+        );
+    }
+
+    private void sendCancelledReservationNotification(Long reservationId) {
+        long startTime = System.currentTimeMillis();
+        log.info("Starting CANCELLED notification for reservation: {}", reservationId);
+
+        sendReservationNotificationWithContent(
+                reservationId,
+                NotificationEventType.RESERVATION_CANCELLED,
+                "Reservation Cancelled",
+                reservation -> {
+                    String refundAmount = (reservation.getInitialFee() != null) ? reservation.getInitialFee().toString() : "0";
+
+                    long totalTime = System.currentTimeMillis() - startTime;
+                    log.info("CANCELLED notification completed for reservation: {} in {}ms", reservationId, totalTime);
+
+                    return String.format(
+                            "Your reservation has been cancelled. Refund of %s VND will be processed to your wallet.",
+                            refundAmount
+                    );
+                }
+        );
+    }
+
+    /**
+     * Generic method to send reservation notification
+     *
+     * @param reservationId  Reservation ID
+     * @param eventType      Event type (CREATED, COMPLETED, CANCELLED)
+     * @param title          Notification title
+     * @param messageBuilder Function to build message based on reservation
+     */
+    private void sendReservationNotificationWithContent(
+            Long reservationId,
+            NotificationEventType eventType,
+            String title,
+            java.util.function.Function<Reservation, String> messageBuilder) {
+        try {
+            // 1. Get reservation info
+            Reservation reservation = reservationRepository.findById(reservationId)
+                    .orElseThrow(() -> new AppException(ErrorCode.RESERVATION_NOT_FOUND, "Reservation not found: " + reservationId));
+
+            // 2. Get user info
+            User user = userRepository.findById(reservation.getUserId())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found: " + reservation.getUserId()));
+
+            // 3. Get all FCM tokens for the user
+            List<String> deviceTokens = mobileDeviceRepository.findActivePushTokensByUserId(user.getId());
+
+            if (deviceTokens.isEmpty()) {
+                log.warn("No active device tokens found for user: {} - notification type: {}",
+                        user.getId(), eventType.getValue());
+                return;
+            }
+
+            // 4. Build common notification data
+            Map<String, Object> notificationData = buildReservationNotificationData(reservation);
+
+            String dataJson;
+            try {
+                dataJson = objectMapper.writeValueAsString(notificationData);
+            } catch (Exception e) {
+                log.error("Failed to serialize notification data", e);
+                dataJson = null;
+            }
+
+            // 5. Create NotificationEvent
+            NotificationEvent event = NotificationEvent.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType(eventType.getValue())
+                    .recipientId(user.getAccount().getId())
+                    .recipientEmail(user.getAccount().getEmail())
+                    .title(title)
+                    .message(messageBuilder.apply(reservation))
+                    .notificationType("PUSH")
+                    .deviceTokens(deviceTokens)
+                    .data(dataJson)
+                    .createdAt(LocalDateTime.now())
+                    .sourceService("user-service")
+                    .build();
+
+            // 6. Send event via Kafka
+            kafkaTemplate.send(
+                    KafkaTopics.NOTIFICATION.getTopicName(),
+                    event.getEventId(),
+                    event);
+
+            log.info("{} notification published for reservation: {} to {} devices",
+                    eventType.getValue(), reservationId, deviceTokens.size());
+        } catch (Exception e) {
+            log.error("Failed to publish {} notification for reservation: {}",
+                    eventType.getValue(), reservationId, e);
+        }
+    }
+
+    /**
+     * Build common notification data for all reservation notifications
+     */
+    private Map<String, Object> buildReservationNotificationData(Reservation reservation) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("reservationId", reservation.getId());
+        data.put("spotId", reservation.getSpotId());
+        data.put("parkingLotId", reservation.getParkingLotId());
+        data.put("reservedFrom", reservation.getReservedFrom().toString());
+        data.put("reservedUntil", reservation.getReservedUntil().toString());
+        data.put("initialFee", reservation.getInitialFee().toString());
+
+        // Add totalFee if available
+        if (reservation.getTotalFee() != null) {
+            data.put("totalFee", reservation.getTotalFee().toString());
+        }
+
+        // Add current status
+        data.put("status", reservation.getStatus().name());
+
+        return data;
+    }
 
 }
