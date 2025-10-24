@@ -75,7 +75,7 @@ public class SecurityConfig {
 
             // Test
             "/api/v1/fcm/test",
-            "/api/v1/user-service/mobile-device/**"
+            "/api/v1/payment-service/wallets/sync"
     };
 
 

@@ -25,5 +25,4 @@ public class WalletInternalController {
         return ResponseEntity.ok(
                 ApiResponse.success(walletService.getByUserId(userIdHeader)));
     }
-
 }

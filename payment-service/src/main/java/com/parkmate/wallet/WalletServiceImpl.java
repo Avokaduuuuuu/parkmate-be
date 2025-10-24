@@ -15,6 +15,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -90,6 +95,31 @@ public class WalletServiceImpl implements WalletService {
     @Override
     public void deleteById(Long id) {
 
+    }
+
+    @Override
+    public Map<Long, BigDecimal> getUserWallets(List<Long> userIds) {
+
+        Set<Long> requestedUserIds = new HashSet<>(userIds);
+
+        List<Wallet> wallets = walletRepository.findByUserIdIn(userIds);
+
+        Set<Long> foundUserIds = wallets.stream().map(Wallet::getUserId).collect(Collectors.toSet());
+
+
+        Set<Long> missingUserIds = new HashSet<>(requestedUserIds);
+        missingUserIds.removeAll(foundUserIds);
+
+        if (!missingUserIds.isEmpty()) {
+            log.info("Found {} users without wallet: {}", missingUserIds.size(), missingUserIds);
+        }
+
+
+        return wallets.stream()
+                .collect(Collectors.toMap(
+                        Wallet::getUserId,
+                        Wallet::getBalance
+                ));
     }
 
     void validateUserId(Long userId) {
