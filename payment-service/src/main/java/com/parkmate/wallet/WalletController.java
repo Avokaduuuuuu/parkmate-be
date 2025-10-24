@@ -10,6 +10,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/payment-service/wallets")
 @RequiredArgsConstructor
@@ -38,5 +42,10 @@ public class WalletController {
             @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader) {
         return ResponseEntity.ok(
                 ApiResponse.success(walletService.getByUserId(userIdHeader)));
+    }
+
+    @GetMapping("/sync")
+    public ResponseEntity<ApiResponse<Map<Long, BigDecimal>>> syncWallets(@RequestParam List<Long> userIds) {
+        return ResponseEntity.ok(ApiResponse.success(walletService.getUserWallets(userIds)));
     }
 }
