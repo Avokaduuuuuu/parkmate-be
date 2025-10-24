@@ -62,3 +62,8 @@ management:
   zipkin:
     tracing:
       endpoint: http://${ZIPKIN_URL:http://localhost:9411}/api/v2/spans
+
+  logging:
+    level:
+      com.parkmate.wallet.WalletServiceImpl: DEBUG
+

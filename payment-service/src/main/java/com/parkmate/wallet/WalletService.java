@@ -4,6 +4,10 @@ import com.parkmate.wallet.dto.CreateWalletRequest;
 import com.parkmate.wallet.dto.WalletResponse;
 import org.springframework.data.domain.Page;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+
 public interface WalletService {
 
     WalletResponse createWallet(CreateWalletRequest createWalletRequest);
@@ -17,6 +21,8 @@ public interface WalletService {
     WalletResponse updateWallet(Long id, WalletResponse walletResponse);
 
     void deleteById(Long id);
+
+    Map<Long, BigDecimal> getUserWallets(List<Long> userIds);
 
 
 }
