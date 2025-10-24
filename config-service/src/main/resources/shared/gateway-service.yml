@@ -13,10 +13,6 @@ spring:
         enabled: false
 
     gateway:
-      # Enable tracing in gateway
-      observability:
-        enabled: true
-
       routes:
         # ============================================
         # USER SERVICE ROUTES
@@ -132,7 +128,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus,gateway
+        include: health,info,metrics,gateway
 
   metrics:
     distribution:
@@ -142,43 +138,14 @@ management:
             requests: true
     tags:
       application: gateway-service
-    export:
-      prometheus:
-        enabled: true
 
-  # Enable HTTP request observations
-  observations:
-    key-values:
-      application: gateway-service
-    http:
-      server:
-        requests:
-          enabled: true
-    annotations:
-      enabled: true
-
-  # Tracing configuration
-  tracing:
-    sampling:
-      probability: 1.0
-    enabled: true
-    propagation:
-      type: b3
-
-  # Zipkin configuration
-  zipkin:
-    tracing:
-      endpoint: http://${SERVER_HOST:localhost}:${ZIPKIN_PORT:9411}/api/v2/spans
-
-# Logging with trace IDs
+# Logging
 logging:
   pattern:
-    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+    level: "%5p [${spring.application.name}]"
   level:
     org.springframework.cloud.gateway: DEBUG
     org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: TRACE
     org.springframework.security: DEBUG
     org.springframework.web.cors: DEBUG
     com.avocado.parkmate: DEBUG
-    io.micrometer.tracing: DEBUG
-    brave.Tracer: DEBUG

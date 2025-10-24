@@ -69,6 +69,7 @@ public class SecurityConfig {
 
             // Sync API
             "/api/v1/parking-service/pricing-rules/{lotId}/sync",
+            "/api/v1/parking-service/pricing-rules/sync",
             "/api/v1/user-service/reservations/{lotId}/sync",
             "/api/v1/user-service/reservations/{id}/sync",
 

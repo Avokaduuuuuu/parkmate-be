@@ -29,7 +29,6 @@ spring:
           timeout: 5000
           writetimeout: 5000
 
-
   data:
     redis:
       port: 6379
@@ -61,36 +60,33 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
-    # Disable auto-generated server URL
     disable-swagger-default-url: true
     default-consumes-media-type: application/json
     default-produces-media-type: application/json
-    # Set default server to Gateway
     URLs:
       - name: User Service via Gateway
         url: /v3/api-docs
-  # Disable server generation from context
   use-management-port: false
   show-actuator: false
-
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics
+
   metrics:
     distribution:
       percentiles-histogram:
         http:
           server:
             requests: true
-  observations:
-    key-values:
+    tags:
       application: user-service
-  tracing:
-    sampling:
-      probability: 1.0
-  zipkin:
-    tracing:
-      endpoint: http://${ZIPKIN_URL:http://localhost:9411}/api/v2/spans
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name}]"
+  level:
+    root: INFO
+    com.parkmate: DEBUG
