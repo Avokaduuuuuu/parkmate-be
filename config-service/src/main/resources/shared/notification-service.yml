@@ -19,15 +19,15 @@ spring:
           writetimeout: 5000
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
 
 kafka:
-  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
   consumer-group-id: ${KAFKA_CONSUMER_GROUP_ID:notification-service-group}
 
 firebase:
   credential-path: classpath:firebase/parkmate-firebase-adminsdk.json
-  project-id: parkmate-3636  # Từ Firebase console
+  project-id: parkmate-3636
 
 springdoc:
   api-docs:
@@ -43,12 +43,11 @@ springdoc:
   use-management-port: false
   show-actuator: false
 
-
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics
 
   metrics:
     distribution:
@@ -57,36 +56,11 @@ management:
           server:
             requests: true
     tags:
-      application: parking-lot-service
-    export:
-      prometheus:
-        enabled: true
+      application: notification-service
 
-  observations:
-    key-values:
-      application: parking-lot-service
-    # ADD THESE - Enable HTTP observations
-    http:
-      server:
-        requests:
-          enabled: true
-    annotations:
-      enabled: true
-
-  tracing:
-    sampling:
-      probability: 1.0
-    enabled: true  # ADD THIS
-
-  zipkin:
-    tracing:
-      endpoint: http://${ZIPKIN_URL:http://localhost:9411}/api/v2/spans
-
-# ADD LOGGING PATTERN WITH TRACE IDs
 logging:
   pattern:
-    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+    level: "%5p [${spring.application.name}]"
   level:
     root: INFO
     com.parkmate: DEBUG
-    io.micrometer.tracing: DEBUG  # Temporary - to see tracing activity
