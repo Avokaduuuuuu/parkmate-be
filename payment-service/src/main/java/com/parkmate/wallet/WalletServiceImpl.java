@@ -106,14 +106,14 @@ public class WalletServiceImpl implements WalletService {
 
         Set<Long> foundUserIds = wallets.stream().map(Wallet::getUserId).collect(Collectors.toSet());
 
-        if (log.isDebugEnabled()) {
-            Set<Long> missingUserIds = new HashSet<>(requestedUserIds);
-            missingUserIds.removeAll(foundUserIds);
 
-            if (!missingUserIds.isEmpty()) {
-                log.info("Found {} users without wallet: {}", missingUserIds.size(), missingUserIds);
-            }
+        Set<Long> missingUserIds = new HashSet<>(requestedUserIds);
+        missingUserIds.removeAll(foundUserIds);
+
+        if (!missingUserIds.isEmpty()) {
+            log.info("Found {} users without wallet: {}", missingUserIds.size(), missingUserIds);
         }
+
 
         return wallets.stream()
                 .collect(Collectors.toMap(
