@@ -6,6 +6,7 @@ import com.parkmate.client.PaymentClient;
 import com.parkmate.client.constants.TransactionConstants;
 import com.parkmate.client.dto.request.CreateTransactionRequest;
 import com.parkmate.client.dto.response.WalletTransactionResponse;
+import com.parkmate.client.enums.TransactionStatus;
 import com.parkmate.common.dto.ApiResponse;
 import com.parkmate.common.enums.ReservationStatus;
 import com.parkmate.common.exception.AppException;
@@ -31,7 +32,10 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +76,7 @@ public class ReservationServiceImpl implements ReservationService {
             throw new AppException(ErrorCode.INVALID_RESERVATION_TIME, "From must be < to");
         }
 
-        // Create reservation with PENDING_PAYMENT status
+        // Create a reservation with PENDING_PAYMENT status
         Reservation reservation = Reservation.builder()
                 .userId(request.getUserId())
                 .spotId(request.getSpotId())
@@ -94,6 +98,8 @@ public class ReservationServiceImpl implements ReservationService {
                             .amount(request.getReservationFee())
                             .transactionType(TransactionConstants.TYPE_DEDUCTION)
                             .referenceId(reservation.getId().toString())
+                            .reservationId(reservation.getId())
+                            .processedAt(LocalDateTime.now())
                             .description("Reservation fee for spot ID: " + request.getSpotId())
                             .build()
             );
@@ -234,11 +240,23 @@ public class ReservationServiceImpl implements ReservationService {
     public void updateReservation(Long id, SyncReservationUpdateRequest request) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.RESERVATION_NOT_FOUND, "Reservation not found: " + id));
-        reservation.setStatus(request.getStatus());
-        reservation.setTotalFee(request.getTotalFee());
+
+        ReservationStatus newStatus = request.getStatus();
+        reservation.setStatus(newStatus);
         reservation.setSessionId(request.getSessionId());
-        reservationRepository.save(reservation);
-        sendReservationNotification(id, request.getStatus());
+
+        // Save reservation first
+        reservation = reservationRepository.save(reservation);
+
+        // Handle payment/refund logic within transaction
+        if (newStatus == ReservationStatus.COMPLETED) {
+            deductWalletAfterCompletingReservation(reservation);
+        } else if (newStatus == ReservationStatus.CANCELLED) {
+            logCancelledReservation(reservation);
+        }
+
+        // Send notifications after transaction commits (notifications are async via Kafka anyway)
+        sendNotificationForStatus(reservation.getId(), newStatus);
     }
 
     @NonNull
@@ -250,16 +268,16 @@ public class ReservationServiceImpl implements ReservationService {
         return response;
     }
 
-    private void sendReservationNotification(Long id, ReservationStatus status) {
+    private void sendNotificationForStatus(Long reservationId, ReservationStatus status) {
         switch (status) {
             case ACTIVE:
-                sendActiveReservationNotification(id);
+                sendActiveReservationNotification(reservationId);
                 break;
             case COMPLETED:
-                sendCompletedReservationNotification(id);
+                sendCompletedReservationNotification(reservationId);
                 break;
             case CANCELLED:
-                sendCancelledReservationNotification(id);
+                sendCancelledReservationNotification(reservationId);
                 break;
             default:
                 log.debug("No notification configured for status: {}", status);
@@ -282,7 +300,7 @@ public class ReservationServiceImpl implements ReservationService {
                     log.info("Feign call to get parking lot name took: {}ms", (feignEndTime - feignStartTime));
 
                     String lotName = (parkingLotName != null) ? parkingLotName : "the parking lot";
-                    String time = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"));
+                    String time = ZonedDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"));
 
                     long totalTime = System.currentTimeMillis() - startTime;
                     log.info("ACTIVE notification completed for reservation: {} in {}ms", reservationId, totalTime);
@@ -301,7 +319,7 @@ public class ReservationServiceImpl implements ReservationService {
                 NotificationEventType.RESERVATION_COMPLETED,
                 "Reservation Completed",
                 reservation -> {
-                    String time = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"));
+                    String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("h:mm a"));
                     String totalFee = (reservation.getTotalFee() != null) ? reservation.getTotalFee().toString() : "0";
 
                     long totalTime = System.currentTimeMillis() - startTime;
@@ -337,14 +355,7 @@ public class ReservationServiceImpl implements ReservationService {
         );
     }
 
-    /**
-     * Generic method to send reservation notification
-     *
-     * @param reservationId  Reservation ID
-     * @param eventType      Event type (CREATED, COMPLETED, CANCELLED)
-     * @param title          Notification title
-     * @param messageBuilder Function to build message based on reservation
-     */
+
     private void sendReservationNotificationWithContent(
             Long reservationId,
             NotificationEventType eventType,
@@ -379,7 +390,6 @@ public class ReservationServiceImpl implements ReservationService {
                 dataJson = null;
             }
 
-            // 5. Create NotificationEvent
             NotificationEvent event = NotificationEvent.builder()
                     .eventId(UUID.randomUUID().toString())
                     .eventType(eventType.getValue())
@@ -394,7 +404,6 @@ public class ReservationServiceImpl implements ReservationService {
                     .sourceService("user-service")
                     .build();
 
-            // 6. Send event via Kafka
             kafkaTemplate.send(
                     KafkaTopics.NOTIFICATION.getTopicName(),
                     event.getEventId(),
@@ -408,9 +417,6 @@ public class ReservationServiceImpl implements ReservationService {
         }
     }
 
-    /**
-     * Build common notification data for all reservation notifications
-     */
     private Map<String, Object> buildReservationNotificationData(Reservation reservation) {
         Map<String, Object> data = new HashMap<>();
         data.put("reservationId", reservation.getId());
@@ -420,15 +426,89 @@ public class ReservationServiceImpl implements ReservationService {
         data.put("reservedUntil", reservation.getReservedUntil().toString());
         data.put("initialFee", reservation.getInitialFee().toString());
 
-        // Add totalFee if available
         if (reservation.getTotalFee() != null) {
             data.put("totalFee", reservation.getTotalFee().toString());
         }
 
-        // Add current status
         data.put("status", reservation.getStatus().name());
 
         return data;
+    }
+
+    private void logCancelledReservation(Reservation reservation) {
+        log.info("Reservation {} cancelled. Initial fee: {} VND (TODO: implement refund policy)",
+                reservation.getId(),
+                reservation.getInitialFee() != null ? reservation.getInitialFee() : BigDecimal.ZERO);
+    }
+
+    private void deductWalletAfterCompletingReservation(Reservation reservation) {
+        // Validate inputs
+        if (reservation.getTotalFee() == null) {
+            log.error("Total fee is null for reservation: {}", reservation.getId());
+            return;
+        }
+
+        if (reservation.getInitialFee() == null) {
+            log.error("Initial fee is null for reservation: {}", reservation.getId());
+            return;
+        }
+
+        BigDecimal deductionAmount = reservation.getTotalFee().subtract(reservation.getInitialFee());
+
+        log.info("Deduction calculation for reservation {}: totalFee={}, initialFee={}, deduction={}",
+                reservation.getId(), reservation.getTotalFee(), reservation.getInitialFee(), deductionAmount);
+
+        // Case 1: Need to deduct more money (totalFee > initialFee) - HAPPY CASE
+        if (deductionAmount.compareTo(BigDecimal.ZERO) > 0) {
+            try {
+                ResponseEntity<ApiResponse<WalletTransactionResponse>> response = paymentClient.deductWallet(
+                        CreateTransactionRequest.builder()
+                                .userId(reservation.getUserId())
+                                .amount(deductionAmount)
+                                .transactionType(TransactionConstants.TYPE_DEDUCTION)
+                                .referenceId(reservation.getId().toString())
+                                .description(String.format("Additional charge for reservation %d (Total: %s VND - Prepaid: %s VND)",
+                                        reservation.getId(), reservation.getTotalFee(), reservation.getInitialFee()))
+                                .build()
+                );
+
+                // Validate response
+                if (!response.hasBody() || response.getBody() == null) {
+                    log.error("Payment service returned empty response for reservation {}", reservation.getId());
+                    return;
+                }
+
+                ApiResponse<WalletTransactionResponse> paymentResponse = response.getBody();
+
+                if (!paymentResponse.success()) {
+                    log.error("Failed to deduct wallet for reservation {}: {}",
+                            reservation.getId(), paymentResponse.message());
+                    return;
+                }
+
+                WalletTransactionResponse txn = paymentResponse.data();
+                if (txn == null || !TransactionStatus.COMPLETED.toString().equals(txn.getStatus())) {
+                    log.error("Transaction not completed for reservation {}: status={}",
+                            reservation.getId(), txn != null ? txn.getStatus() : "null");
+                    return;
+                }
+
+                log.info("Successfully deducted {} VND for reservation {}", deductionAmount, reservation.getId());
+
+            } catch (Exception e) {
+                log.error("Unexpected error deducting wallet for reservation {}", reservation.getId(), e);
+            }
+        }
+        // Case 2: User paid more than actual cost (totalFee < initialFee) - TODO: implement refund policy
+        else if (deductionAmount.compareTo(BigDecimal.ZERO) < 0) {
+            BigDecimal refundAmount = deductionAmount.abs();
+            log.info("User overpaid for reservation {}. Refund amount: {} VND (TODO: implement refund policy)",
+                    reservation.getId(), refundAmount);
+        }
+        // Case 3: Exact match (totalFee == initialFee)
+        else {
+            log.info("No additional charge needed for reservation {} (exact match)", reservation.getId());
+        }
     }
 
 }

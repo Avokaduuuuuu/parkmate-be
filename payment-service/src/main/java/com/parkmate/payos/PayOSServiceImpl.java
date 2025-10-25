@@ -1,5 +1,6 @@
 package com.parkmate.payos;
 
+import com.parkmate.client.UserServiceClient;
 import com.parkmate.common.QRCodeGenerator;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
@@ -35,19 +36,27 @@ public class PayOSServiceImpl implements PayOSService {
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
     private final QRCodeGenerator qrCodeGenerator;
+    private final UserServiceClient userServiceClient;
 
+    private final String TOP_UP_DESCRIPTION = "TOP UP WALLET";
 
     @Override
     @Transactional
-    public CreatePaymentLinkResponse createPayment(Long userId, Long amount, String description) {
+    public CreatePaymentLinkResponse createPayment(String userHeadId, Long amount) {
         try {
+
+
             // Validate
-            if (userId == null || userId <= 0) {
+            if (userHeadId == null) {
                 throw new IllegalArgumentException("Invalid userId");
             }
             if (amount == null || amount < 1000) {
                 throw new IllegalArgumentException("Amount must be at least 1000 VND");
             }
+
+            Long accountId = Long.parseLong(userHeadId);
+
+            Long userId = userServiceClient.getUserIdByAccountId(accountId);
 
             // Find wallet
             Wallet wallet = walletRepository.findByUserId(userId)
@@ -58,7 +67,7 @@ public class PayOSServiceImpl implements PayOSService {
 
             // Create item data (required by PayOS)
             PaymentLinkItem item = PaymentLinkItem.builder()
-                    .name(description != null ? description : "Top up wallet")
+                    .name("Top up wallet")
                     .quantity(1)
                     .price(amount)
                     .build();
@@ -67,7 +76,7 @@ public class PayOSServiceImpl implements PayOSService {
             CreatePaymentLinkRequest request = CreatePaymentLinkRequest.builder()
                     .orderCode(orderCode)
                     .amount(amount)
-                    .description(description != null ? description : "Top up wallet")
+                    .description(TOP_UP_DESCRIPTION)
                     .items(List.of(item))
                     .returnUrl(payOSConfig.getReturnUrl())
                     .cancelUrl(payOSConfig.getCancelUrl())
@@ -78,7 +87,7 @@ public class PayOSServiceImpl implements PayOSService {
 
             // Create pending transaction
             WalletTransaction transaction = WalletTransaction.builder()
-                    .userId(userId)
+                    .userId(accountId)
                     .walletId(wallet.getId())
                     .transactionType(TransactionType.TOP_UP)
                     .amount(BigDecimal.valueOf(amount))
@@ -86,7 +95,7 @@ public class PayOSServiceImpl implements PayOSService {
                     .netAmount(BigDecimal.valueOf(amount))
                     .externalTransactionId(String.valueOf(orderCode))
                     .status(TransactionStatus.PENDING)
-                    .description(description)
+                    .description(TOP_UP_DESCRIPTION)
                     .build();
 
             walletTransactionRepository.save(transaction);
@@ -108,7 +117,7 @@ public class PayOSServiceImpl implements PayOSService {
             return response;
 
         } catch (Exception e) {
-            log.error("Error creating PayOS payment for userId: {}, amount: {}", userId, amount, e);
+            log.error("Error creating PayOS payment for userId: {}, amount: {}", userHeadId, amount, e);
             throw new AppException(ErrorCode.WALLET_TOPUP_FAILED, e.getMessage());
         }
     }
@@ -213,7 +222,7 @@ public class PayOSServiceImpl implements PayOSService {
         String jsonResponse = String.format(
                 "{\"status\":\"cancelled\",\"reason\":\"%s\",\"cancelledBy\":\"user\",\"timestamp\":\"%s\"}",
                 reason.replace("\"", "\\\""), // Escape quotes
-                LocalDateTime.now().toString()
+                LocalDateTime.now()
         );
         walletTransaction.setStatus(TransactionStatus.CANCELLED);
         walletTransaction.setMetadata(jsonResponse);

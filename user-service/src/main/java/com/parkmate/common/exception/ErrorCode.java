@@ -77,7 +77,7 @@ public enum ErrorCode {
     RESERVATION_NOT_FOUND(2911, "Reservation not found", HttpStatus.NOT_FOUND),
     RESERVATION_ALREADY_USED(2912, "This reservation has already been used", HttpStatus.BAD_REQUEST),
     RESERVATION_EXPIRED(2913, "Reservation has expired", HttpStatus.BAD_REQUEST),
-    ;
+    INVALID_RESERVATION_DATA(2914, "Invalid reservation", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;
