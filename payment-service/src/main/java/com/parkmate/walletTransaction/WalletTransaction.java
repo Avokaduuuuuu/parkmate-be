@@ -66,6 +66,12 @@ public class WalletTransaction {
     @Column(name = "external_transaction_id", nullable = false, length = 3)
     String externalTransactionId;
 
+    @Column(name = "reservation_id")
+    Long reservationId;
+
+    @Column(name = "user_subscription_id")
+    Long subscriptionId;
+
     @Column(name = "gateway_response")
     @JdbcTypeCode(SqlTypes.JSON)
     String gatewayResponse;
@@ -79,7 +85,7 @@ public class WalletTransaction {
     @LastModifiedDate
     LocalDateTime processedAt;
 
-    @Column(name = "description", length = 255)
+    @Column(name = "description")
     String description;
 
     @Column(name = "metadata")
