@@ -50,12 +50,9 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
         } catch (IllegalArgumentException e) {
             throw new AppException(ErrorCode.INVALID_TRANSACTION_TYPE);
         }
-
-        // 3. Calculate new balance based on transaction type
         BigDecimal newBalance;
         switch (transactionType) {
-            case DEDUCTION, PENALTY, SUBSCRIPTION -> {
-                // Check sufficient balance for deduction
+            case DEDUCTION -> {
                 if (currentBalance.compareTo(amount) < 0) {
                     log.warn("Insufficient balance for user {}. Current: {}, Required: {}",
                             request.getUserId(), currentBalance, amount);
@@ -67,7 +64,11 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
                 // Add money to wallet
                 newBalance = currentBalance.add(amount);
             }
+            case SUBSCRIPTION -> {
+                newBalance = currentBalance.subtract(amount);
+            }
             default -> throw new AppException(ErrorCode.INVALID_TRANSACTION_TYPE);
+            // TODO: Add more transaction types
         }
 
         // 4. Update wallet balance
@@ -90,6 +91,12 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
                 .status(TransactionStatus.COMPLETED)
                 .description(request.getDescription())
                 .build();
+
+        if (transactionType == TransactionType.DEDUCTION) {
+            walletTransaction.setReservationId(request.getReservationId());
+        } else if (transactionType == TransactionType.SUBSCRIPTION) {
+            walletTransaction.setSubscriptionId(request.getSubscriptionId());
+        }
 
         walletTransaction = walletTransactionRepository.save(walletTransaction);
 

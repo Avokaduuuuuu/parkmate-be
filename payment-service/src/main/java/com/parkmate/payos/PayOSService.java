@@ -6,7 +6,7 @@ import com.parkmate.payos.dto.PaymentStatusResponse;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 
 public interface PayOSService {
-    CreatePaymentLinkResponse createPayment(Long userId, Long amount, String description);
+    CreatePaymentLinkResponse createPayment(String userId, Long amount);
 
     Boolean processWebhook(String webhookBody, String signature);
 
