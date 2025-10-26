@@ -43,9 +43,8 @@ public enum ErrorCode {
     // Image errors
     INVALID_IMAGE(3602, "Invalid image", HttpStatus.BAD_REQUEST),
 
-    // Default Pricing Rule
-    DEFAULT_PRICING_RULE_NOT_FOUND(3701, "Default Pricing Rule not found", HttpStatus.NOT_FOUND),
-    DUPLICATE_PRICING_RULE(3702, "Duplicate Pricing Rule", HttpStatus.CONFLICT);
+    // Subscription errors
+    SUBSCRIPTION_NOT_FOUND(3701, "Subscription not found", HttpStatus.NOT_FOUND),;
 
     private final int code;
     private final String message;

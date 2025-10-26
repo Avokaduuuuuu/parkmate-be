@@ -61,6 +61,7 @@ public class SecurityConfig {
             "/api/v1/parking-service/spots/{id}",
             "/api/v1/payment-service/momo/**",
             "/api/v1/parking-service/sessions/**",
+            "/api/v1/parking-service/subscriptions/**",
 
             // PayOS webhook endpoints (must be public for PayOS callbacks)
             "/api/v1/payment-service/payos/payos_transfer_handler",
