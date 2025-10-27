@@ -1,10 +1,12 @@
-package com.parkmate.spot.dto.resp;
+package com.parkmate.subscription.dto.resp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.parkmate.spot.enums.SpotStatus;
+import com.parkmate.common.enums.VehicleType;
+import com.parkmate.subscription.enums.DurationType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -12,18 +14,18 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class SpotResponse {
+public class SubscriptionResponse {
     Long id;
+    Long lotId;
     String name;
-    Double spotTopLeftX;
-    Double spotTopLeftY;
-    Double spotWidth;
-    Double spotHeight;
-    SpotStatus status;
-    String blockReason;
+    String description;
+    VehicleType vehicleType;
+    DurationType durationType;
+    Integer durationValue;
+    BigDecimal price;
+    Boolean isActive;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
-    Boolean hasSession;
 }

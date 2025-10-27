@@ -36,6 +36,8 @@ public enum ErrorCode {
     SPOT_COUNT_MISS_MATCH(3502, "Spot count mismatch", HttpStatus.CONFLICT),
     VEHICLE_TYPE_MISS_MATCH(3503, "Spot can not be added to this area", HttpStatus.CONFLICT),
     BLOCK_REASON_REQUIRED(3504, "Block Reason required", HttpStatus.BAD_REQUEST),
+    SPOT_RELEASED_FAILED(3505, "Fail to release session for this spot", HttpStatus.CONFLICT),
+    SPOT_HELD_FAILED(3506, "Fail to create session for this spot", HttpStatus.CONFLICT),
 
     // Session errors
     SESSION_NOT_FOUND(3601, "Session Not found", HttpStatus.NOT_FOUND),
@@ -43,9 +45,8 @@ public enum ErrorCode {
     // Image errors
     INVALID_IMAGE(3602, "Invalid image", HttpStatus.BAD_REQUEST),
 
-    // Default Pricing Rule
-    DEFAULT_PRICING_RULE_NOT_FOUND(3701, "Default Pricing Rule not found", HttpStatus.NOT_FOUND),
-    DUPLICATE_PRICING_RULE(3702, "Duplicate Pricing Rule", HttpStatus.CONFLICT);
+    // Subscription errors
+    SUBSCRIPTION_NOT_FOUND(3701, "Subscription not found", HttpStatus.NOT_FOUND),;
 
     private final int code;
     private final String message;

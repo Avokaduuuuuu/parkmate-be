@@ -10,7 +10,9 @@ import com.parkmate.exception.ErrorCode;
 import com.parkmate.floor.FloorEntity;
 import com.parkmate.floor.FloorRepository;
 import com.parkmate.spot.SpotEntity;
+import com.parkmate.spot.SpotHoldService;
 import com.parkmate.spot.SpotMapper;
+import com.parkmate.spot.SpotRepository;
 import com.parkmate.spot.dto.req.SpotCreateRequest;
 import com.parkmate.spot.enums.SpotStatus;
 import jakarta.transaction.Transactional;
@@ -29,6 +31,7 @@ import java.util.List;
 public class AreaServiceImpl implements AreaService {
     private final AreaRepository areaRepository;
     private final FloorRepository floorRepository;
+    private final SpotHoldService spotHoldService;
     /**
      *
      * @param page the page number of retrieve (zero-based-index)
@@ -50,8 +53,11 @@ public class AreaServiceImpl implements AreaService {
     public AreaDetailedResponse findAreaById(Long id) {
         AreaEntity area = areaRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_AREA_NOT_FOUND));
-
-        return AreaMapper.INSTANCE.toDetailResponse(area);
+        AreaDetailedResponse response = AreaMapper.INSTANCE.toDetailResponse(area);
+        response.getSpots().forEach(spot -> {
+            spot.setHasSession(spotHoldService.isSpotHold(spot.getId()));
+        });
+        return response;
     }
 
     @Override
