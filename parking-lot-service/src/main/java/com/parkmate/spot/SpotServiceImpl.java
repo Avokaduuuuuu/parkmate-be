@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 public class SpotServiceImpl implements SpotService {
     private final SpotRepository spotRepository;
     private final AreaRepository areaRepository;
+    private final SpotHoldService spotHoldService;
 
     @Override
     public SpotResponse findById(Long id) {
@@ -90,6 +91,28 @@ public class SpotServiceImpl implements SpotService {
         );
         spotEntity.setStatus(SpotStatus.DISABLED);
         return SpotMapper.INSTANCE.toResponse(spotRepository.save(spotEntity));
+    }
+
+    @Override
+    public SpotResponse holdSpot(Long id, Long userId) {
+        SpotEntity spotEntity = spotRepository.findById(id).orElseThrow(
+                () -> new AppException(ErrorCode.SPOT_NOT_FOUND)
+        );
+        if (!spotHoldService.holdSpot(userId, id)) throw new AppException(ErrorCode.SPOT_HELD_FAILED);
+        SpotResponse spotResponse = SpotMapper.INSTANCE.toResponse(spotEntity);
+        spotResponse.setHasSession(true);
+        return spotResponse;
+    }
+
+    @Override
+    public SpotResponse releaseSpot(Long id, Long userId) {
+        SpotEntity spotEntity = spotRepository.findById(id).orElseThrow(
+                () -> new AppException(ErrorCode.SPOT_NOT_FOUND)
+        );
+        spotHoldService.releaseHold(userId, id);
+        SpotResponse spotResponse = SpotMapper.INSTANCE.toResponse(spotEntity);
+        spotResponse.setHasSession(false);
+        return spotResponse;
     }
 
     @Override

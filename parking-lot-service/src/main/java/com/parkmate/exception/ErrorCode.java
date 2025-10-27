@@ -36,6 +36,8 @@ public enum ErrorCode {
     SPOT_COUNT_MISS_MATCH(3502, "Spot count mismatch", HttpStatus.CONFLICT),
     VEHICLE_TYPE_MISS_MATCH(3503, "Spot can not be added to this area", HttpStatus.CONFLICT),
     BLOCK_REASON_REQUIRED(3504, "Block Reason required", HttpStatus.BAD_REQUEST),
+    SPOT_RELEASED_FAILED(3505, "Fail to release session for this spot", HttpStatus.CONFLICT),
+    SPOT_HELD_FAILED(3506, "Fail to create session for this spot", HttpStatus.CONFLICT),
 
     // Session errors
     SESSION_NOT_FOUND(3601, "Session Not found", HttpStatus.NOT_FOUND),

@@ -86,6 +86,10 @@ public class SecurityConfig {
             "/api/v1/parking-service/**",
     };
 
+    public static final String[] MEMBER_PARKING_ENDPOINTS = {
+            "/api/v1/parking-service/spots/*/session",
+    };
+
     // Member endpoints (regular users)
     public static final String[] MEMBER_ENDPOINTS = {
             "/api/v1/user-service/users/**",
@@ -107,6 +111,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Changed this line
                 .authorizeExchange(ex -> ex
                         .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .pathMatchers(MEMBER_PARKING_ENDPOINTS).hasAnyRole("MEMBER", "ADMIN")
                         .pathMatchers(PARTNER_ENDPOINTS).hasAnyRole("PARTNER_OWNER", "PARTNER_STAFF", "ADMIN")
                         .pathMatchers(MEMBER_ENDPOINTS).hasAnyRole("MEMBER", "ADMIN")
                         .anyExchange().authenticated()
