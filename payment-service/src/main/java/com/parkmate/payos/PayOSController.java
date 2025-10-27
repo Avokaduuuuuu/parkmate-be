@@ -100,7 +100,7 @@ public class PayOSController {
     public ResponseEntity<ApiResponse<PaymentCancelResponse>> cancelPayment(
             @RequestParam @Parameter(description = "Order code") Long orderCode) {
 
-        log.info("PayOS payment cancelled - orderCode: {}, reason: {}", orderCode);
+        log.info("PayOS payment cancelled - orderCode: {}", orderCode);
         return ResponseEntity.ok(ApiResponse.success(payOSService.cancelPayment(orderCode)));
     }
 

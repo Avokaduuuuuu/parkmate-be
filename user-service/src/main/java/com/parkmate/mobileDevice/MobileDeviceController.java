@@ -5,6 +5,7 @@ import com.parkmate.mobileDevice.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -100,8 +101,10 @@ public class MobileDeviceController {
                     **Returns:** Registered device information
                     """
     )
-    public ResponseEntity<ApiResponse<MobileDeviceResponse>> addMobileDevice(@RequestBody CreateMobileDeviceRequest req) {
-        MobileDeviceResponse mobileDeviceResponse = mobileDeviceService.createMobileDevice(req);
+    public ResponseEntity<ApiResponse<MobileDeviceResponse>> addMobileDevice(
+            @Valid @RequestBody CreateMobileDeviceRequest req,
+            @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader) {
+        MobileDeviceResponse mobileDeviceResponse = mobileDeviceService.createMobileDevice(req, userIdHeader);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Mobile device created successfully", mobileDeviceResponse));
     }
