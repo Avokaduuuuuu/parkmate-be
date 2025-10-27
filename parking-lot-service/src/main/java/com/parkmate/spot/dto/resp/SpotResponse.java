@@ -25,4 +25,5 @@ public class SpotResponse {
     LocalDateTime createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
+    Boolean hasSession;
 }
