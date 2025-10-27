@@ -10,7 +10,7 @@ public interface PayOSService {
 
     Boolean processWebhook(String webhookBody, String signature);
 
-    PaymentCancelResponse cancelPayment(Long orderCode, String reason);
+    PaymentCancelResponse cancelPayment(Long orderCode);
 
     PaymentStatusResponse retrievePaymentStatus(Long orderCode);
 }

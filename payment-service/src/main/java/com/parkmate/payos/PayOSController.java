@@ -98,11 +98,10 @@ public class PayOSController {
     @PostMapping("/cancel")
     @Operation(summary = "PayOS cancel URL", description = "Handles user cancellation of payment")
     public ResponseEntity<ApiResponse<PaymentCancelResponse>> cancelPayment(
-            @RequestParam @Parameter(description = "Order code") Long orderCode,
-            @RequestParam(required = false) @Parameter(description = "Cancel reason") String reason) {
+            @RequestParam @Parameter(description = "Order code") Long orderCode) {
 
-        log.info("PayOS payment cancelled - orderCode: {}, reason: {}", orderCode, reason);
-        return ResponseEntity.ok(ApiResponse.success(payOSService.cancelPayment(orderCode, reason)));
+        log.info("PayOS payment cancelled - orderCode: {}, reason: {}", orderCode);
+        return ResponseEntity.ok(ApiResponse.success(payOSService.cancelPayment(orderCode)));
     }
 
     @GetMapping("/status/{orderCode}")

@@ -72,15 +72,9 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public Page<WalletResponse> getAll(int page, int size, String sortBy, String sortOrder, String userHeaderId) {
+    public Page<WalletResponse> getAll(int page, int size, String sortBy, String sortOrder) {
 
         Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
-        if (userHeaderId != null && !userHeaderId.isEmpty()) {
-            Long userId = Long.parseLong(userHeaderId);
-            return walletRepository.findAllByUserId(userId, pageable)
-                    .map(walletMapper::toResponse);
-        }
-
         Page<Wallet> wallets = walletRepository.findAll(pageable);
         return wallets.map(walletMapper::toResponse);
 

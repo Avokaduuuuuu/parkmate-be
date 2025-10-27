@@ -16,7 +16,7 @@ public interface WalletService {
 
     WalletResponse getByUserId(String userHeaderId);
 
-    Page<WalletResponse> getAll(int page, int size, String sortBy, String sortOrder, String userHeaderId);
+    Page<WalletResponse> getAll(int page, int size, String sortBy, String sortOrder);
 
     WalletResponse updateWallet(Long id, WalletResponse walletResponse);
 

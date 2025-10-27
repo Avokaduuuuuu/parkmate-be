@@ -32,9 +32,8 @@ public class WalletController {
             @RequestParam int page,
             @RequestParam int size,
             @RequestParam String sortBy,
-            @RequestParam String sortOrder,
-            @RequestHeader(value = "X-User-Id") @Parameter(hidden = true) String userHeaderId) {
-        return ResponseEntity.ok(ApiResponse.success(walletService.getAll(page, size, sortBy, sortOrder, userHeaderId)));
+            @RequestParam String sortOrder) {
+        return ResponseEntity.ok(ApiResponse.success(walletService.getAll(page, size, sortBy, sortOrder)));
     }
 
     @GetMapping("/me")
