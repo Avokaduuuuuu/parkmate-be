@@ -202,7 +202,7 @@ public class PayOSServiceImpl implements PayOSService {
     }
 
     @Override
-    public PaymentCancelResponse cancelPayment(Long orderCode, String reason) {
+    public PaymentCancelResponse cancelPayment(Long orderCode) {
         WalletTransaction walletTransaction = walletTransactionRepository.findByExternalTransactionId(String.valueOf(orderCode))
                 .orElseThrow(() -> new AppException(ErrorCode.TRANSACTION_NOT_FOUND, orderCode));
 
@@ -211,7 +211,7 @@ public class PayOSServiceImpl implements PayOSService {
             throw new AppException(ErrorCode.PAYMENT_ALREADY_PAID, "Cannot cancel payment with status: " + walletTransaction.getStatus());
         }
 
-
+        String reason = "Cancel";
         try {
             payOS.paymentRequests().cancel(orderCode, reason);
         } catch (Exception e) {
