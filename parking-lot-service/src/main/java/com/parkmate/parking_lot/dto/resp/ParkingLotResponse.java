@@ -33,6 +33,7 @@ public class ParkingLotResponse {
     Double boundaryWidth;
     Double boundaryHeight;
     ParkingLotStatus status;
+    String reason;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

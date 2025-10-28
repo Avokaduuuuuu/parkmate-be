@@ -65,6 +65,10 @@ public class AreaServiceImpl implements AreaService {
         FloorEntity floorEntity = floorRepository.findById(floorId)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_FLOOR_NOT_FOUND));
 
+        if (!floorEntity.getIsActive()) {
+            throw new AppException(ErrorCode.INACTIVE_FLOOR, "Floor with id " + floorId + " is not active");
+        }
+
         if (!request.vehicleType().equals(VehicleType.BIKE) && !request.vehicleType().equals(VehicleType.MOTORBIKE)
             && request.totalSpots() != request.spotRequests().size()
         ) {
