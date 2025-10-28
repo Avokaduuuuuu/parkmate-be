@@ -1,10 +1,12 @@
 package com.parkmate.floor;
 
+import com.parkmate.common.enums.VehicleType;
 import com.parkmate.floor.dto.req.FloorCreateRequest;
 import com.parkmate.floor.dto.req.FloorUpdateRequest;
 import com.parkmate.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -97,6 +99,35 @@ public class FloorController {
                 .body(
                         ApiResponse.success(
                                 floorService.getFloorById(id)
+                        )
+                );
+    }
+
+    @GetMapping("/{id}/vehicle-type/{vehicleType}")
+    public ResponseEntity<?> findParkingFloorByVehicleType(
+            @Parameter(
+                    description = "Unique identifier of the floor",
+                    required = true,
+                    example = "1"
+            )
+            @PathVariable("id") Long id,
+
+            @Parameter(
+                    description = "Type of vehicle to filter floor information .",
+                    required = true,
+                    example = "CAR_UP_TO_9_SEATS",
+                    schema = @Schema(
+                            implementation = VehicleType.class,
+                            allowableValues = {"BIKE", "MOTORBIKE", "CAR_UP_TO_9_SEATS", "OTHER"}
+                    )
+            )
+            @PathVariable("vehicleType") VehicleType vehicleType
+    ){
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(
+                        ApiResponse.success(
+                                "Fetch floor by Id and Vehicle Type",
+                                floorService.getFloorByIdAndVehicleType(id, vehicleType)
                         )
                 );
     }

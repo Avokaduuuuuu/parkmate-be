@@ -10,6 +10,9 @@ import com.parkmate.exception.ErrorCode;
 import com.parkmate.floor.FloorEntity;
 import com.parkmate.floor.FloorRepository;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
+import com.parkmate.pricing_rule.PricingRuleEntity;
+import com.parkmate.pricing_rule.PricingRuleMapper;
+import com.parkmate.pricing_rule.PricingRuleRepository;
 import com.parkmate.spot.SpotEntity;
 import com.parkmate.spot.SpotHoldService;
 import com.parkmate.spot.SpotMapper;
@@ -33,6 +36,7 @@ public class AreaServiceImpl implements AreaService {
     private final AreaRepository areaRepository;
     private final FloorRepository floorRepository;
     private final SpotHoldService spotHoldService;
+    private final PricingRuleRepository pricingRuleRepository;
     /**
      *
      * @param page the page number of retrieve (zero-based-index)
@@ -58,6 +62,11 @@ public class AreaServiceImpl implements AreaService {
         response.getSpots().forEach(spot -> {
             spot.setHasSession(spotHoldService.isSpotHold(spot.getId()));
         });
+        if (area.getPricingRule() == null) {
+            PricingRuleEntity pricingRuleEntity = pricingRuleRepository.findByIsActiveAndVehicleType(true, area.getVehicleType())
+                    .orElseThrow(() -> new AppException(ErrorCode.PRICING_RULE_NOT_FOUND));
+            response.setPricingRule(PricingRuleMapper.INSTANCE.toResponse(pricingRuleEntity));
+        }
         return response;
     }
 

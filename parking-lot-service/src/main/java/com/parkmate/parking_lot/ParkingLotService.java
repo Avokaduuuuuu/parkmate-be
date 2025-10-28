@@ -1,5 +1,6 @@
 package com.parkmate.parking_lot;
 
+import com.parkmate.common.enums.VehicleType;
 import com.parkmate.parking_lot.dto.req.ParkingLotCreateRequest;
 import com.parkmate.parking_lot.dto.req.ParkingLotUpdateRequest;
 import com.parkmate.parking_lot.dto.resp.ParkingLotDetailedResponse;
@@ -23,7 +24,6 @@ public interface ParkingLotService {
     ParkingLotResponse addParkingLot(String userHeaderId, ParkingLotCreateRequest request);
     ParkingLotResponse updateParkingLot(Long id, ParkingLotUpdateRequest request);
     ParkingLotResponse deleteParkingLot(Long id);
-
-    List<ParkingLotResponse> fetchNearbyParkingLots(Double latitude, Double longitude, Double radiusKm);
+    ParkingLotDetailedResponse getParkingLotByIdAndVehicleType(Long id, VehicleType vehicleType);
     Long count();
 }

@@ -1,5 +1,6 @@
 package com.parkmate.parking_lot;
 
+import com.parkmate.common.enums.VehicleType;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.parking_lot.dto.req.ParkingLotCreateRequest;
 import com.parkmate.parking_lot.dto.req.ParkingLotUpdateRequest;
@@ -62,6 +63,11 @@ public class ParkingLotController {
                 - `size` (optional): Page size (default: 10)
                 - `sortBy` (optional): Sort field (default: id) - Available: id, name, city, totalFloors, status, createdAt, updatedAt
                 - `sortOrder` (optional): Sort direction ASC/DESC (default: ASC)
+                - latitude: 10.7756800
+                - longitude: 106.7004200
+                - radiusKm: 5
+                - vehicleType: MOTORBIKE
+                
                 
                 **Returns:** Paginated list of parking lots matching the filter criteria
                 """
@@ -115,6 +121,53 @@ public class ParkingLotController {
                         ApiResponse.success(
                                 "Fetch parking lot by id successfully",
                                 parkingLotService.getParkingLotById(id)
+                        )
+                );
+    }
+
+    @Operation(
+            summary = "Get parking lot by ID with vehicle type filter",
+            description = "Retrieve detailed information about a specific parking lot filtered by vehicle type. " +
+                    "Returns parking lot information including only the capacity, floors, areas, and spots " +
+                    "that support the specified vehicle type. This is useful for displaying relevant information " +
+                    "to users based on their vehicle. " +
+                    "\n\n**Use Cases:**\n" +
+                    "- Mobile app showing available parking options for user's registered vehicle\n" +
+                    "- Displaying only relevant floors and areas for a specific vehicle type\n" +
+                    "- Checking capacity and pricing for a particular vehicle type\n" +
+                    "\n**Filtered Information Includes:**\n" +
+                    "- Lot capacity for the specified vehicle type only\n" +
+                    "- Floors that have capacity for the vehicle type\n" +
+                    "- Areas configured for the vehicle type\n" +
+                    "- Available spots in those areas\n" +
+                    "- Pricing rules applicable to the vehicle type"
+    )
+    @GetMapping("/{id}/vehicle-type/{vehicleType}")
+    public ResponseEntity<?> fetchByIdAndVehicleType(
+            @Parameter(
+                    description = "Unique identifier of the parking lot",
+                    required = true,
+                    example = "1"
+            )
+            @PathVariable("id") Long id,
+
+            @Parameter(
+                    description = "Type of vehicle to filter parking lot information. " +
+                            "Only capacity, floors, areas, and spots for this vehicle type will be returned.",
+                    required = true,
+                    example = "CAR_UP_TO_9_SEATS",
+                    schema = @Schema(
+                            implementation = VehicleType.class,
+                            allowableValues = {"BIKE", "MOTORBIKE", "CAR_UP_TO_9_SEATS", "OTHER"}
+                    )
+            )
+            @PathVariable("vehicleType") VehicleType vehicleType
+    ) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(
+                        ApiResponse.success(
+                                "Fetch Parking Lot by Id " + id + " for vehicle type " + vehicleType,
+                                parkingLotService.getParkingLotByIdAndVehicleType(id, vehicleType)
                         )
                 );
     }
@@ -262,76 +315,6 @@ public class ParkingLotController {
                                 parkingLotService.deleteParkingLot(id)
                         )
                 );
-    }
-
-    @GetMapping("/nearby")
-    @Operation(
-            summary = "Get nearby parking lots based on location",
-            description = """
-                Find parking lots within a specified radius from a given geographic location.
-                Uses the Haversine formula to calculate distances between coordinates.
-                
-                **Query Parameters:**
-                - `latitude` (required): Latitude coordinate of the search center point (-90 to 90)
-                - `longitude` (required): Longitude coordinate of the search center point (-180 to 180)
-                - `radiusKm` (required): Search radius in kilometers (e.g., 5.0 for 5km radius)
-                
-                **How it works:**
-                - Calculates the straight-line distance from the provided coordinates to each parking lot
-                - Returns only parking lots within the specified radius
-                - Results are typically sorted by distance (nearest first)
-                - Only includes ACTIVE parking lots that are currently operational
-                
-                **Returns:** List of nearby parking lots including:
-                - Parking lot details (name, address, location)
-                - Distance from search point in kilometers
-                - Available capacity and pricing information
-                - Operating hours and 24-hour status
-                - Current availability status
-                
-                **Use Cases:**
-                - Mobile app "Find parking near me" feature
-                - Navigation and route planning
-                - Checking parking availability in a specific area
-                - Location-based parking recommendations
-                
-                **Example:**
-                - Search for parking within 2km of current location
-                - Find parking near a specific address or landmark
-                - Discover parking options in an unfamiliar area
-                """
-    )
-    public ResponseEntity<?> getNearbyParkingLots(
-            @Parameter(
-                    description = "Latitude coordinate of search center point (decimal degrees)",
-                    required = true,
-                    example = "10.7827500",
-                    schema = @Schema(type = "number", format = "double", minimum = "-90", maximum = "90")
-            )
-            @RequestParam("latitude") Double latitude,
-
-            @Parameter(
-                    description = "Longitude coordinate of search center point (decimal degrees)",
-                    required = true,
-                    example = "106.6986700",
-                    schema = @Schema(type = "number", format = "double", minimum = "-180", maximum = "180")
-            )
-            @RequestParam("longitude") Double longitude,
-
-            @Parameter(
-                    description = "Search radius in kilometers. Recommended values: 1-10 km for urban areas",
-                    required = true,
-                    example = "5.0",
-                    schema = @Schema(type = "number", format = "double", minimum = "0.1", maximum = "50")
-            )
-            @RequestParam("radiusKm") Double radiusKm
-    ) {
-        return ResponseEntity.status(HttpStatus.OK).body(
-                ApiResponse.success(
-                        "Fetch nearby Parking Lots successfully",
-                        parkingLotService.fetchNearbyParkingLots(latitude, longitude, radiusKm)
-                )
-        );
     }
 
     @GetMapping("/count")

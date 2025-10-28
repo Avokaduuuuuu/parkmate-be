@@ -1,5 +1,6 @@
 package com.parkmate.floor;
 
+import com.parkmate.common.enums.VehicleType;
 import com.parkmate.floor.dto.req.FloorCreateRequest;
 import com.parkmate.floor.dto.req.FloorUpdateRequest;
 import com.parkmate.floor.dto.resp.FloorDetailedResponse;
@@ -14,6 +15,8 @@ public interface FloorService {
     void deleteFloor(Long id);
 
     FloorResponse updateFloor(Long id, FloorUpdateRequest request);
+
+    FloorDetailedResponse getFloorByIdAndVehicleType(Long id, VehicleType vehicleType);
 
     Long count();
 }
