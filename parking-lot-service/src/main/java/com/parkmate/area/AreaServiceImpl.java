@@ -9,6 +9,7 @@ import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.floor.FloorEntity;
 import com.parkmate.floor.FloorRepository;
+import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import com.parkmate.spot.SpotEntity;
 import com.parkmate.spot.SpotHoldService;
 import com.parkmate.spot.SpotMapper;
@@ -101,16 +102,20 @@ public class AreaServiceImpl implements AreaService {
         if (request.areaWidth() != null) area.setAreaWidth(request.areaWidth());
         if (request.areaHeight() != null) area.setAreaHeight(request.areaHeight());
         if (request.supportElectricVehicle() != null) area.setSupportElectricVehicle(request.supportElectricVehicle());
+        if (request.isActive() != null) area.setIsActive(request.isActive());
 
         return AreaMapper.INSTANCE.toResponse(areaRepository.save(area));
     }
 
     @Override
-    public AreaResponse deleteArea(Long id) {
+    public void deleteArea(Long id) {
         AreaEntity area = areaRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_AREA_NOT_FOUND));
-        area.setIsActive(false);
-        return AreaMapper.INSTANCE.toResponse(areaRepository.save(area));
+        if (area.getParkingFloor().getParkingLot().getStatus().equals(ParkingLotStatus.PREPARING))
+            throw new AppException(ErrorCode.UNABLE_TO_DELETE_MAP, "Can not delete area map if not in PREPARING phase");
+
+        areaRepository.delete(area);
+
     }
 
     @Override

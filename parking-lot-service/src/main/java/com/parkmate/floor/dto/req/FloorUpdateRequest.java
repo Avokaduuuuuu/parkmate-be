@@ -11,7 +11,7 @@ public record FloorUpdateRequest(
                 example = "1",
                 minimum = "-100",
                 maximum = "100",
-                requiredMode = Schema.RequiredMode.REQUIRED
+                requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
         @Min(value = -100, message = "Floor number must be a number")
         Integer floorNumber,
@@ -20,10 +20,17 @@ public record FloorUpdateRequest(
                 description = "Display name of the floor",
                 example = "Ground Floor",
                 maxLength = 100,
-                requiredMode = Schema.RequiredMode.REQUIRED
+                requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
         @Length(max = 100, message = "Floor name must not over 100 characters")
         @NotEmpty(message = "Floor name must not be empty")
-        String floorName
+        String floorName,
+
+        @Schema(
+                description = "Status of floor",
+                example = "true",
+                requiredMode = Schema.RequiredMode.NOT_REQUIRED
+        )
+        Boolean isActive
 ) {
 }

@@ -33,7 +33,7 @@ public class FloorEntity extends BaseEntity {
     @JoinColumn(name = "lot_id")
     ParkingLotEntity parkingLot;
 
-    @OneToMany(mappedBy = "parkingFloor")
+    @OneToMany(mappedBy = "parkingFloor", cascade = CascadeType.ALL)
     List<AreaEntity> areas;
 
     @OneToMany(mappedBy = "parkingFloor", cascade = CascadeType.ALL)
