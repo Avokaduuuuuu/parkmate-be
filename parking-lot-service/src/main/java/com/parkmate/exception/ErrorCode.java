@@ -13,6 +13,7 @@ public enum ErrorCode {
     INVALID_ENUM(1003, "Invalid enum", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(1004, "Unauthorized", HttpStatus.UNAUTHORIZED),
     VEHICLE_TYPE_MISMATCH(1005, "Vehicle type mismatch", HttpStatus.BAD_REQUEST),
+    UNABLE_TO_DELETE_MAP(1006, "Unable to delete map", HttpStatus.CONFLICT),
 
     // ParkingLot errors
     PARKING_NOT_FOUND(3101, "Parking Lot not found", HttpStatus.NOT_FOUND),
@@ -23,6 +24,7 @@ public enum ErrorCode {
     PARKING_FLOOR_NOT_FOUND(3201, "Parking Floor not found", HttpStatus.NOT_FOUND),
     INVALID_PARKING_FLOOR_STATUS_TRANSITION(3202, "Parking Floor is disable", HttpStatus.CONFLICT),
     INACTIVE_FLOOR(3203, "Parking Floor is inactive", HttpStatus.BAD_REQUEST),
+
 
     // ParkingArea errors
     PARKING_AREA_NOT_FOUND(3301, "Parking Area not found", HttpStatus.NOT_FOUND),

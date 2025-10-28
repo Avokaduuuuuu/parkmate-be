@@ -11,6 +11,7 @@ import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.parking_lot.ParkingLotRepository;
+import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -61,13 +62,15 @@ public class FloorServiceImpl implements FloorService {
     }
 
     @Override
-    public FloorResponse deleteFloor(Long id) {
+    public void deleteFloor(Long id) {
         FloorEntity floorEntity = floorRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_FLOOR_NOT_FOUND));
 
-        if (!floorEntity.getIsActive()) throw new AppException(ErrorCode.INVALID_PARKING_FLOOR_STATUS_TRANSITION);
-        floorEntity.setIsActive(false);
-        return FloorMapper.INSTANCE.toResponse(floorRepository.save(floorEntity));
+        if (!floorEntity.getParkingLot().getStatus().equals(ParkingLotStatus.PREPARING)) {
+            throw new AppException(ErrorCode.UNABLE_TO_DELETE_MAP, "Can not delete floor if not in PREPARING phase");
+        }
+
+        floorRepository.delete(floorEntity);
     }
 
     @Override
@@ -77,6 +80,7 @@ public class FloorServiceImpl implements FloorService {
 
         if (request.floorName() != null) floorEntity.setFloorName(request.floorName());
         if (request.floorNumber() != null) floorEntity.setFloorNumber(request.floorNumber());
+        if (request.isActive() != null) floorEntity.setIsActive(request.isActive());
         return FloorMapper.INSTANCE.toResponse(floorRepository.save(floorEntity));
     }
 

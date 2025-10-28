@@ -11,7 +11,7 @@ public interface FloorService {
     FloorDetailedResponse getFloorById(Long parkingLotId);
 
     Page<FloorResponse> findAll(int page, int size, String sortBy, String sortOrder, FloorFilterParams params);
-    FloorResponse deleteFloor(Long id);
+    void deleteFloor(Long id);
 
     FloorResponse updateFloor(Long id, FloorUpdateRequest request);
 

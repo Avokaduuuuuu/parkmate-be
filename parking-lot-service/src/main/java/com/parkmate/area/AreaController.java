@@ -132,11 +132,11 @@ public class AreaController {
             @Positive(message = "Area ID must be positive")
             Long id
     ) {
+        areaService.deleteArea(id);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(
                         ApiResponse.success(
-                                "Area deleted successfully",
-                                areaService.deleteArea(id)
+                                "Area deleted successfully"
                         )
                 );
     }

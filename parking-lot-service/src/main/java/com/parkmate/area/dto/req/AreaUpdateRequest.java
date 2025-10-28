@@ -70,6 +70,12 @@ public record AreaUpdateRequest(
                 example = "RESERVED_ONLy",
                 allowableValues = {"RESERVED_ONLY", "WALK_IN_ONLY"}
         )
-        AreaType areaType
+        AreaType areaType,
+
+        @Schema(
+                description = "Status of this Area",
+                example = "true"
+        )
+        Boolean isActive
 ) {
 }

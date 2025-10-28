@@ -217,10 +217,11 @@ public class FloorController {
             @Parameter(description = "Unique identifier of the parking floor to delete", required = true, example = "1")
             @PathVariable @Positive Long id
     ) {
+        floorService.deleteFloor(id);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(
                         ApiResponse.success(
-                                floorService.deleteFloor(id)
+                                "Floor deleted successfully"
                         )
                 );
     }
