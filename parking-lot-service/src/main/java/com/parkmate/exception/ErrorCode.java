@@ -33,6 +33,7 @@ public enum ErrorCode {
     PRICING_RULE_NOT_FOUND(3401, "Pricing Rule not found", HttpStatus.NOT_FOUND),
     INVALID_RULE_SCOPE(3402, "Invalid rule scope", HttpStatus.BAD_REQUEST),
     PRICING_RULE_LOT_MISMATCH(3403, "Pricing Rule lot mismatch", HttpStatus.BAD_REQUEST),
+    EXISTING_SAME_PRICING_LOT(3404, "Existing Same Pricing lot", HttpStatus.CONFLICT),
 
     // Spot errors
     SPOT_NOT_FOUND(3501, "Spot not found", HttpStatus.NOT_FOUND),

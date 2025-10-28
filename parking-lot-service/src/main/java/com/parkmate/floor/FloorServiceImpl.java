@@ -1,12 +1,17 @@
 package com.parkmate.floor;
 
+import com.parkmate.area.AreaMapper;
+import com.parkmate.area.dto.resp.AreaResponse;
+import com.parkmate.common.enums.VehicleType;
 import com.parkmate.floor.dto.resp.FloorDetailedResponse;
+import com.parkmate.floor_capacity.FloorCapacityMapper;
 import com.parkmate.floor_capacity.dto.req.FloorCapacityCreateRequest;
 import com.parkmate.floor.dto.req.FloorCreateRequest;
 import com.parkmate.floor.dto.req.FloorUpdateRequest;
 import com.parkmate.floor.dto.resp.FloorResponse;
 
 import com.parkmate.floor_capacity.FloorCapacityEntity;
+import com.parkmate.floor_capacity.dto.resp.FloorCapacityResponse;
 import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
@@ -21,6 +26,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -82,6 +88,36 @@ public class FloorServiceImpl implements FloorService {
         if (request.floorNumber() != null) floorEntity.setFloorNumber(request.floorNumber());
         if (request.isActive() != null) floorEntity.setIsActive(request.isActive());
         return FloorMapper.INSTANCE.toResponse(floorRepository.save(floorEntity));
+    }
+
+    @Override
+    public FloorDetailedResponse getFloorByIdAndVehicleType(Long id, VehicleType vehicleType) {
+        FloorEntity floorEntity = floorRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_FLOOR_NOT_FOUND));
+
+        FloorDetailedResponse floorDetailedResponse = FloorDetailedResponse.builder()
+                .id(floorEntity.getId())
+                .floorName(floorEntity.getFloorName())
+                .floorNumber(floorEntity.getFloorNumber())
+                .isActive(floorEntity.getIsActive())
+                .build();
+
+        List<FloorCapacityResponse> floorCapacityResponses = floorEntity.getParkingFloorCapacity()
+                .stream()
+                .filter(capacity -> capacity.getVehicleType() == vehicleType)
+                .map(FloorCapacityMapper.INSTANCE::toResponse)
+                .toList();
+
+        floorDetailedResponse.setParkingFloorCapacity(floorCapacityResponses);
+        List<AreaResponse> areaResponses = floorEntity.getAreas()
+                .stream()
+                .filter(area -> area.getVehicleType() == vehicleType)
+                .map(AreaMapper.INSTANCE::toResponse)
+                .toList();
+
+        floorDetailedResponse.setAreas(areaResponses);
+
+        return floorDetailedResponse;
     }
 
     @Override

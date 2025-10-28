@@ -1,5 +1,6 @@
 package com.parkmate.floor_capacity;
 
+import com.parkmate.floor_capacity.dto.resp.FloorCapacityResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;
@@ -11,5 +12,5 @@ import org.mapstruct.factory.Mappers;
 public interface FloorCapacityMapper {
     FloorCapacityMapper INSTANCE = Mappers.getMapper(FloorCapacityMapper.class);
 
-
+    FloorCapacityResponse toResponse(FloorCapacityEntity entity);
 }

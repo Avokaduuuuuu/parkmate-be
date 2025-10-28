@@ -1,8 +1,15 @@
 package com.parkmate.parking_lot;
 
+import com.parkmate.common.enums.VehicleType;
+import com.parkmate.floor.dto.resp.FloorResponse;
+import com.parkmate.floor_capacity.FloorCapacityMapper;
+import com.parkmate.floor_capacity.dto.resp.FloorCapacityResponse;
+import com.parkmate.image.ImageMapper;
+import com.parkmate.image.dto.resp.ImageResponse;
 import com.parkmate.lot_capacity.LotCapacityEntity;
 import com.parkmate.lot_capacity.LotCapacityMapper;
 import com.parkmate.lot_capacity.dto.req.LotCapacityCreateRequest;
+import com.parkmate.lot_capacity.dto.resp.LotCapacityResponse;
 import com.parkmate.parking_lot.dto.req.ParkingLotCreateRequest;
 import com.parkmate.parking_lot.dto.req.ParkingLotUpdateRequest;
 import com.parkmate.parking_lot.dto.resp.ParkingLotDetailedResponse;
@@ -11,7 +18,10 @@ import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.pricing_rule.PricingRuleEntity;
+import com.parkmate.pricing_rule.PricingRuleMapper;
+import com.parkmate.pricing_rule.PricingRuleRepository;
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
+import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
 import com.parkmate.s3.S3Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +46,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
 
     private final ParkingLotRepository parkingLotRepository;
     private final S3Service s3Service;
+    private final PricingRuleRepository pricingRuleRepository;
 
     @Override
     public Page<ParkingLotResponse> fetchAllParkingLots(
@@ -59,9 +70,11 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                 parkingLotRepository.findById(id)
                         .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND)));
 
+
         parkingLotResponse.getImages().forEach(image -> image.setPath(s3Service.getPresignedUrl(image.getPath())));
         return parkingLotResponse;
     }
+
 
     @Override
     @Transactional
@@ -148,11 +161,68 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     }
 
     @Override
-    public List<ParkingLotResponse> fetchNearbyParkingLots(Double latitude, Double longitude, Double radiusKm) {
-        Specification<ParkingLotEntity> specification = withinBoundingBox(latitude, longitude, radiusKm);
+    public ParkingLotDetailedResponse getParkingLotByIdAndVehicleType(Long id, VehicleType vehicleType) {
+        ParkingLotEntity parkingLot = parkingLotRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND));
 
-        return parkingLotRepository.findAll(specification)
-                .stream().map(ParkingLotMapper.INSTANCE::toResponse).collect(Collectors.toList());
+        ParkingLotDetailedResponse parkingLotDetailedResponse = ParkingLotDetailedResponse.builder()
+                .id(parkingLot.getId())
+                .partnerId(parkingLot.getPartnerId())
+                .name(parkingLot.getName())
+                .streetAddress(parkingLot.getStreetAddress())
+                .ward(parkingLot.getWard())
+                .city(parkingLot.getCity())
+                .latitude(parkingLot.getLatitude())
+                .longitude(parkingLot.getLongitude())
+                .openTime(parkingLot.getOperatingHoursStart())
+                .closeTime(parkingLot.getOperatingHoursEnd())
+                .is24Hour(parkingLot.getIs24Hour())
+                .status(parkingLot.getStatus())
+                .reason(parkingLot.getReason())
+                .createdAt(parkingLot.getCreatedAt())
+                .updatedAt(parkingLot.getUpdatedAt())
+                .build();
+
+        List<LotCapacityResponse> filteredLotCapacity = parkingLot.getLotCapacity().stream()
+                .filter(capacity -> capacity.getVehicleType() == vehicleType)
+                .map(LotCapacityMapper.INSTANCE::toResponse)
+                .toList();
+        parkingLotDetailedResponse.setLotCapacity(filteredLotCapacity);
+
+        List<FloorResponse> floorResponses = parkingLot.getParkingFloors().stream().map(
+            floor -> {
+                List<FloorCapacityResponse> floorCapacityResponses = floor.getParkingFloorCapacity().stream()
+                        .filter(capacity -> capacity.getVehicleType() == vehicleType)
+                        .map(FloorCapacityMapper.INSTANCE::toResponse)
+                        .toList();
+                if (floorCapacityResponses.isEmpty()) return null;
+
+                FloorResponse floorResponse = FloorResponse.builder()
+                        .id(floor.getId())
+                        .floorNumber(floor.getFloorNumber())
+                        .floorName(floor.getFloorName())
+                        .isActive(floor.getIsActive())
+                        .parkingFloorCapacity(floorCapacityResponses)
+                        .build();
+
+                return floorResponse;
+            }
+        ).toList();
+
+        List<PricingRuleResponse> pricingRuleResponses = parkingLot.getPricingRules()
+                .stream().filter(pricingRule -> pricingRule.getVehicleType() == vehicleType && pricingRule.getIsActive())
+                .map(PricingRuleMapper.INSTANCE::toResponse)
+                .toList();
+
+        parkingLotDetailedResponse.setImages(parkingLot.getImages().stream().map(image -> {
+            ImageResponse imageResponse = ImageMapper.INSTANCE.toResponse(image);
+            imageResponse.setPath(s3Service.getPresignedUrl(image.getPath()));
+            return imageResponse;
+        }).toList());
+        parkingLotDetailedResponse.setPricingRules(pricingRuleResponses);
+        parkingLotDetailedResponse.setParkingFloors(floorResponses);
+
+        return parkingLotDetailedResponse;
     }
 
     @Override
@@ -160,21 +230,4 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         return parkingLotRepository.count();
     }
 
-    private Specification<ParkingLotEntity> withinBoundingBox(Double latitude, Double longitude, Double radiusKm) {
-        // Calculate the delta of latitude direction
-        // 1 degree = 111km
-        double latDelta = radiusKm / 111.0;
-        // 1 degree of longitude varies by latitude
-        // At equator: 111 km, at poles: 0 km
-        double longDelta = radiusKm / (111.0 * Math.cos(Math.toRadians(latitude)));
-
-        double minLat = latitude - latDelta;
-        double maxLat = latitude + latDelta;
-        double minLong = longitude - longDelta;
-        double maxLong = longitude + longDelta;
-        return (root, query, cb) -> cb.and(
-                cb.between(root.get("latitude"), minLat, maxLat),
-                cb.between(root.get("longitude"), minLong, maxLong)
-        );
-    }
 }

@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -78,6 +79,7 @@ public class PricingRuleServiceImpl implements PricingRuleService {
         if (request.stepMinute() != null) pricingRuleEntity.setStepMinute(request.stepMinute());
         if (request.validFrom() != null) pricingRuleEntity.setValidFrom(request.validFrom());
         if (request.validTo() != null) pricingRuleEntity.setValidFrom(request.validTo());
+        if (request.isActive() != null) pricingRuleEntity.setIsActive(request.isActive());
         return PricingRuleMapper.INSTANCE.toResponse(pricingRuleRepository.save(pricingRuleEntity));
     }
 

@@ -93,6 +93,13 @@ public record PricingRuleUpdateRequest(
                 example = "1",
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
-        Long areaId
+        Long areaId,
+
+        @Schema(
+                description = "Status of a pricing rule",
+                example = "true",
+                requiredMode = Schema.RequiredMode.NOT_REQUIRED
+        )
+        Boolean isActive
 ) {
 }
