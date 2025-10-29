@@ -1,6 +1,7 @@
 package com.parkmate.reservation.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.parkmate.vehicle.VehicleType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,6 +23,11 @@ public class ReservationResponse {
 
     @Schema(description = "Vehicle ID", example = "321")
     Long vehicleId;
+
+    @Schema(description = "Vehicle plate", example = "36D-49536")
+    String vehicleLicensePlate;
+
+    VehicleType vehicleType;
 
     @Schema(description = "Parking lot ID", example = "456")
     Long parkingLotId;
