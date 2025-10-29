@@ -4,6 +4,9 @@ import com.parkmate.area.dto.req.AreaCreateRequest;
 import com.parkmate.area.dto.req.AreaUpdateRequest;
 import com.parkmate.area.dto.resp.AreaDetailedResponse;
 import com.parkmate.area.dto.resp.AreaResponse;
+import com.parkmate.area.enums.AreaType;
+import com.parkmate.client.UserClient;
+import com.parkmate.common.ApiResponse;
 import com.parkmate.common.enums.VehicleType;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
@@ -18,6 +21,7 @@ import com.parkmate.spot.SpotHoldService;
 import com.parkmate.spot.SpotMapper;
 import com.parkmate.spot.SpotRepository;
 import com.parkmate.spot.dto.req.SpotCreateRequest;
+import com.parkmate.spot.dto.resp.SpotResponse;
 import com.parkmate.spot.enums.SpotStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +31,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -37,6 +47,7 @@ public class AreaServiceImpl implements AreaService {
     private final FloorRepository floorRepository;
     private final SpotHoldService spotHoldService;
     private final PricingRuleRepository pricingRuleRepository;
+    private final UserClient userClient;
     /**
      *
      * @param page the page number of retrieve (zero-based-index)
@@ -58,10 +69,32 @@ public class AreaServiceImpl implements AreaService {
     public AreaDetailedResponse findAreaById(Long id) {
         AreaEntity area = areaRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_AREA_NOT_FOUND));
+        return AreaMapper.INSTANCE.toDetailResponse(area);
+    }
+
+    @Override
+    public AreaDetailedResponse findAreaDetailByIdAndTime(Long id, LocalDateTime start, LocalDateTime end) {
+        AreaEntity area = areaRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_AREA_NOT_FOUND));
+
         AreaDetailedResponse response = AreaMapper.INSTANCE.toDetailResponse(area);
+
+        List<Long> overlappedSpots = new ArrayList<>();
         response.getSpots().forEach(spot -> {
-            spot.setHasSession(spotHoldService.isSpotHold(spot.getId()));
+            Boolean hasSession = spotHoldService.isSpotHold(spot.getId());
+            spot.setHasSession(hasSession);
+            if (!hasSession) overlappedSpots.add(spot.getId());
         });
+        String startStr = start.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        String endStr = end.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        Map<Long, Boolean> overlappedSpotsMap = userClient.reservationOverlap(overlappedSpots, startStr, endStr).getData();
+
+
+
+        response.getSpots().forEach(spot -> {
+            if (overlappedSpotsMap.containsKey(spot.getId())) spot.setHasSession(overlappedSpotsMap.get(spot.getId()));
+        });
+
         if (area.getPricingRule() == null) {
             PricingRuleEntity pricingRuleEntity = pricingRuleRepository.findByIsActiveAndVehicleType(true, area.getVehicleType())
                     .orElseThrow(() -> new AppException(ErrorCode.PRICING_RULE_NOT_FOUND));
@@ -95,6 +128,7 @@ public class AreaServiceImpl implements AreaService {
                 .supportElectricVehicle(request.supportElectricVehicle())
                 .totalSpots(request.totalSpots())
                 .parkingFloor(floorEntity)
+                .areaType(AreaType.WALK_IN_ONLY)
                 .build();
         area.setSpots(toSpotEntities(request.spotRequests(), area));
         return AreaMapper.INSTANCE.toResponse(areaRepository.save(area));
@@ -112,6 +146,7 @@ public class AreaServiceImpl implements AreaService {
         if (request.areaHeight() != null) area.setAreaHeight(request.areaHeight());
         if (request.supportElectricVehicle() != null) area.setSupportElectricVehicle(request.supportElectricVehicle());
         if (request.isActive() != null) area.setIsActive(request.isActive());
+        if (request.areaType() != null) area.setAreaType(request.areaType());
 
         return AreaMapper.INSTANCE.toResponse(areaRepository.save(area));
     }

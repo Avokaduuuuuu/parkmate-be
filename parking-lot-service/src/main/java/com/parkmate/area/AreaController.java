@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+
 @RestController
 @RequestMapping("/api/v1/parking-service/areas")
 @RequiredArgsConstructor
@@ -53,15 +55,35 @@ public class AreaController {
 
     @Operation(
             summary = "Get parking area by ID",
-            description = "Retrieve detailed information about a specific parking area by its unique identifier, including all associated parking spots"
+            description = "Retrieve detailed information about a specific parking area by its unique identifier, including all associated parking spots. Optionally filter by date range."
     )
     @GetMapping("/{id}")
     public ResponseEntity<?> findById(
             @PathVariable("id")
             @Parameter(description = "Unique identifier of the parking area", required = true, example = "1")
             @Positive(message = "Area ID must be positive")
-            Long id
+            Long id,
+
+            @RequestParam(required = false)
+            @Parameter(description = "Check-in time for availability filtering", example = "2025-10-29T14:00:00")
+            LocalDateTime checkIn,
+
+            @RequestParam(required = false)
+            @Parameter(description = "Check-out time for availability filtering", example = "2025-10-29T16:00:00")
+            LocalDateTime checkOut
     ) {
+        // If both dates provided, use date-filtered service method
+        if (checkIn != null && checkOut != null) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(
+                            ApiResponse.success(
+                                    "Fetch Area by Id with availability successfully",
+                                    areaService.findAreaDetailByIdAndTime(id, checkIn, checkOut)
+                            )
+                    );
+        }
+
+        // Otherwise, use regular method
         return ResponseEntity.status(HttpStatus.OK)
                 .body(
                         ApiResponse.success(
