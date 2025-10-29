@@ -4,7 +4,9 @@ import com.parkmate.common.enums.ReservationStatus;
 import com.parkmate.reservation.dto.*;
 import org.springframework.data.domain.Page;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public interface ReservationService {
 
@@ -19,4 +21,8 @@ public interface ReservationService {
     List<SyncReservationResponse> getReservationForSyncing(Long lotId, ReservationStatus status);
 
     void updateReservation(Long id, SyncReservationUpdateRequest request);
+
+    Map<Long, Boolean> checkOverlap(List<Long> spotIds,
+                                    LocalDateTime start,
+                                    LocalDateTime end);
 }

@@ -10,7 +10,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/user-service/reservations")
@@ -37,6 +39,15 @@ public class ReservationController {
             @ModelAttribute ReservationSearchCriteria criteria) {
 
         return ResponseEntity.ok(ApiResponse.success(reservationService.getReservations(page, size, sortBy, sortOrder, criteria, userIdHeader)));
+    }
+
+    @GetMapping("/overlap")
+    public ResponseEntity<ApiResponse<Map<Long, Boolean>>> checkSpotOverlap(
+            @RequestParam List<Long> spotIds,
+            @RequestParam LocalDateTime start,
+            @RequestParam LocalDateTime end
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(reservationService.checkOverlap(spotIds, start, end)));
     }
 
     @GetMapping("/{lotId}/sync")

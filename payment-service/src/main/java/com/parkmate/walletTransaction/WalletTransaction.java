@@ -35,9 +35,6 @@ public class WalletTransaction {
         }
     }
 
-    @Column(name = "user_id", nullable = false)
-    Long userId;
-
     @Column(name = "wallet_id", nullable = false)
     Long walletId;
 
@@ -45,9 +42,6 @@ public class WalletTransaction {
     @JoinColumn(name = "wallet_id", insertable = false, updatable = false,
             foreignKey = @ForeignKey(name = "fk_wallet_transaction_wallet"))
     Wallet wallet;
-
-    @Column(name = "session_id", nullable = false)
-    UUID sessionId;
 
     @Column(name = "transaction_type", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
@@ -57,20 +51,8 @@ public class WalletTransaction {
     @Column(name = "amount", nullable = false)
     BigDecimal amount;
 
-    @Column(name = "fee", nullable = false)
-    BigDecimal fee;
-
-    @Column(name = "net_amount")
-    BigDecimal netAmount;
-
     @Column(name = "external_transaction_id", nullable = false, length = 3)
     String externalTransactionId;
-
-    @Column(name = "reservation_id")
-    Long reservationId;
-
-    @Column(name = "user_subscription_id")
-    Long subscriptionId;
 
     @Column(name = "gateway_response")
     @JdbcTypeCode(SqlTypes.JSON)
