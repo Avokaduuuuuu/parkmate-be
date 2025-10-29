@@ -19,7 +19,6 @@ public record UserResponse(
         String address,
         String gender,
         String nationality,
-        String profilePictureUrl,
         String idNumber,
         String issuePlace,
         @JsonFormat(pattern = "yyyy-MM-dd")
@@ -32,6 +31,8 @@ public record UserResponse(
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         LocalDateTime createdAt,
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+
+        String qrCode
 ) {
 }
