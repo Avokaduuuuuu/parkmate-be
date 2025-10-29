@@ -120,8 +120,10 @@ public class AreaServiceImpl implements AreaService {
     public void deleteArea(Long id) {
         AreaEntity area = areaRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_AREA_NOT_FOUND));
-        if (area.getParkingFloor().getParkingLot().getStatus().equals(ParkingLotStatus.PREPARING))
-            throw new AppException(ErrorCode.UNABLE_TO_DELETE_MAP, "Can not delete area map if not in PREPARING phase");
+        if (!area.getParkingFloor().getParkingLot().getStatus().equals(ParkingLotStatus.PREPARING) &&
+               !area.getParkingFloor().getParkingLot().getStatus().equals(ParkingLotStatus.MAP_DENIED)
+        )
+            throw new AppException(ErrorCode.UNABLE_TO_DELETE_MAP, "Can not delete area map if not in PREPARING or MAP_DENIED phase");
 
         areaRepository.delete(area);
 

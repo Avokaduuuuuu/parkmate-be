@@ -72,8 +72,10 @@ public class FloorServiceImpl implements FloorService {
         FloorEntity floorEntity = floorRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_FLOOR_NOT_FOUND));
 
-        if (!floorEntity.getParkingLot().getStatus().equals(ParkingLotStatus.PREPARING)) {
-            throw new AppException(ErrorCode.UNABLE_TO_DELETE_MAP, "Can not delete floor if not in PREPARING phase");
+        if (!floorEntity.getParkingLot().getStatus().equals(ParkingLotStatus.PREPARING) &&
+        !floorEntity.getParkingLot().getStatus().equals(ParkingLotStatus.MAP_DENIED)
+        ) {
+            throw new AppException(ErrorCode.UNABLE_TO_DELETE_MAP, "Can not delete floor if not in PREPARING or MAP_DENIED phase");
         }
 
         floorRepository.delete(floorEntity);
