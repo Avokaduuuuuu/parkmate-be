@@ -87,12 +87,9 @@ public class PayOSServiceImpl implements PayOSService {
 
             // Create pending transaction
             WalletTransaction transaction = WalletTransaction.builder()
-                    .userId(userId)
                     .walletId(wallet.getId())
                     .transactionType(TransactionType.TOP_UP)
                     .amount(BigDecimal.valueOf(amount))
-                    .fee(BigDecimal.ZERO)
-                    .netAmount(BigDecimal.valueOf(amount))
                     .externalTransactionId(String.valueOf(orderCode))
                     .status(TransactionStatus.PENDING)
                     .description(TOP_UP_DESCRIPTION)

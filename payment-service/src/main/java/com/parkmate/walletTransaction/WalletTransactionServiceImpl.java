@@ -80,23 +80,12 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
 
         // 5. Create transaction record
         WalletTransaction walletTransaction = WalletTransaction.builder()
-                .id(UuidCreator.getTimeOrderedEpoch())
-                .sessionId(UuidCreator.getTimeOrderedEpoch())
-                .userId(request.getUserId())
                 .walletId(wallet.getId())
                 .amount(amount)
-                .fee(BigDecimal.ZERO)
-                .netAmount(amount)
                 .transactionType(transactionType)
                 .status(TransactionStatus.COMPLETED)
                 .description(request.getDescription())
                 .build();
-
-        if (transactionType == TransactionType.DEDUCTION) {
-            walletTransaction.setReservationId(request.getReservationId());
-        } else if (transactionType == TransactionType.SUBSCRIPTION) {
-            walletTransaction.setSubscriptionId(request.getSubscriptionId());
-        }
 
         walletTransaction = walletTransactionRepository.save(walletTransaction);
 

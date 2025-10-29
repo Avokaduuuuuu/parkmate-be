@@ -14,10 +14,7 @@ import java.util.UUID;
 public interface WalletTransactionRepository extends JpaRepository<WalletTransaction, UUID>,
         QuerydslPredicateExecutor<WalletTransaction> {
 
-    Optional<WalletTransaction> findBySessionId(UUID sessionId);
-
     Optional<WalletTransaction> findByExternalTransactionId(String externalTransactionId);
 
-    Page<WalletTransaction> findAll(Specification<WalletTransaction> spec, Pageable pageable);
 
 }

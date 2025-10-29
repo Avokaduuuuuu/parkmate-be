@@ -15,13 +15,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @Data
 public class WalletTransactionResponse {
-    Long userId;
+    UUID id;
     Long walletId;
-    UUID sessionId;
     String transactionType; // String instead of enum
     BigDecimal amount;
-    BigDecimal fee;
-    BigDecimal netAmount;
     BigDecimal balanceBefore;
     BigDecimal balanceAfter;
     String externalTransactionId;

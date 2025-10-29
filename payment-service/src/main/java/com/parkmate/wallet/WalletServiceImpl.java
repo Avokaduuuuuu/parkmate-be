@@ -44,7 +44,7 @@ public class WalletServiceImpl implements WalletService {
 
         Wallet wallet = Wallet.builder()
                 .userId(createWalletRequest.getUserId())
-                .balance(BigDecimal.valueOf(10000000)) // Initial balance of 10,000,000 VND for testing
+                .balance(BigDecimal.valueOf(0))
                 .currency("VND")
                 .isActive(true)
                 .build();
