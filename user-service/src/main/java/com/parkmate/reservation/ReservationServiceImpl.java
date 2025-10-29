@@ -7,6 +7,7 @@ import com.parkmate.client.constants.TransactionConstants;
 import com.parkmate.client.dto.request.CreateTransactionRequest;
 import com.parkmate.client.dto.response.WalletTransactionResponse;
 import com.parkmate.client.enums.TransactionStatus;
+import com.parkmate.client.exception.ParkingLotServiceErrorCode;
 import com.parkmate.common.dto.ApiResponse;
 import com.parkmate.common.enums.ReservationStatus;
 import com.parkmate.common.exception.AppException;
@@ -76,7 +77,14 @@ public class ReservationServiceImpl implements ReservationService {
             throw new AppException(ErrorCode.INVALID_RESERVATION_TIME, "From must be < to");
         }
 
-        // Create a reservation with PENDING_PAYMENT status
+        if (parkingLotClient.getParkingLotName(request.getParkingLotId()) == null) {
+            throw new AppException(ErrorCode.OTHER_CLIENT_ERROR, ParkingLotServiceErrorCode.PARKING_NOT_FOUND);
+        }
+
+        if (parkingLotClient.getSpotName(request.getSpotId()) == null) {
+            throw new AppException(ErrorCode.OTHER_CLIENT_ERROR, ParkingLotServiceErrorCode.SPOT_NOT_FOUND);
+        }
+
         Reservation reservation = Reservation.builder()
                 .userId(request.getUserId())
                 .spotId(request.getSpotId())
@@ -261,7 +269,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @NonNull
     private ReservationResponse getReservationResponse(Reservation reservation) {
-        ReservationResponse response = reservationMapper.toResponse(reservation, parkingLotClient);
+        ReservationResponse response = reservationMapper.toResponse(reservation, parkingLotClient, vehicleService);
         String qrCodeContent = generateQRCodeContent(reservation);
         String qrCodeBase64 = QRCodeGenerator.generateQRCodeBase64(qrCodeContent);
         response.setQrCode(qrCodeBase64);

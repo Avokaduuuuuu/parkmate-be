@@ -382,7 +382,6 @@ public class AuthServiceImpl implements AuthService {
                 response.address(),
                 response.gender(),
                 response.nationality(),
-                response.profilePictureUrl(),
                 response.idNumber(),
                 response.issuePlace(),
                 response.issueDate(),
@@ -391,7 +390,8 @@ public class AuthServiceImpl implements AuthService {
                 backPhotoUrl,
                 profilePictureUrl,
                 response.createdAt(),
-                response.updatedAt()
+                response.updatedAt(),
+                response.qrCode()
         );
     }
 }

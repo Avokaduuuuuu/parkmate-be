@@ -21,6 +21,8 @@ public class VehicleSearchCriteria {
 
     boolean ownedByMe;
 
+    Long parkingLotId;
+
     // Single values
     @Schema(
             description = "Filter by specific user ID",

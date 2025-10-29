@@ -21,7 +21,13 @@ public interface ReservationMapper {
             expression = "java(getParkingLotName(parkingLotClient, reservation.getParkingLotId()))")
     @Mapping(target = "spotName",
             expression = "java(getSpotName(parkingLotClient, reservation.getSpotId()))")
-    ReservationResponse toResponse(Reservation reservation, @Context ParkingLotClient parkingLotClient);
+    @Mapping(target = "vehicleLicensePlate",
+            expression = "java(getVehicleLicensePlate(reservation.getVehicleId(), vehicleService))")
+    @Mapping(target = "vehicleType",
+            expression = "java(getVehicleType(reservation.getVehicleId(), vehicleService))")
+    ReservationResponse toResponse(Reservation reservation,
+                                   @Context ParkingLotClient parkingLotClient,
+                                   @Context VehicleService vehicleService);
 
     @Mapping(target = "fullName",
             expression = "java(getUserFullName(reservation.getUserId(), userService))")
@@ -76,7 +82,7 @@ public interface ReservationMapper {
             }
             VehicleResponse vehicleResponse = vehicleService.findById(vehicleId);
             if (vehicleResponse != null) {
-                return vehicleResponse.licensePlate();
+                return vehicleResponse.getLicensePlate();
             }
             return null;
         } catch (Exception e) {
@@ -92,7 +98,7 @@ public interface ReservationMapper {
             }
             VehicleResponse vehicleResponse = vehicleService.findById(vehicleId);
             if (vehicleResponse != null) {
-                return vehicleResponse.vehicleType();
+                return vehicleResponse.getVehicleType();
             }
             return null;
         } catch (Exception e) {

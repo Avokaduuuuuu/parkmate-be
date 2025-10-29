@@ -2,12 +2,18 @@ package com.parkmate.vehicle;
 
 import com.parkmate.account.Account;
 import com.parkmate.account.AccountRepository;
+import com.parkmate.common.enums.ReservationStatus;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.common.util.PaginationUtil;
 import com.parkmate.partner.dto.ImportError;
+import com.parkmate.reservation.Reservation;
+import com.parkmate.reservation.ReservationRepository;
 import com.parkmate.user.User;
 import com.parkmate.user.UserRepository;
+import com.parkmate.userSubscription.UserSubscription;
+import com.parkmate.userSubscription.UserSubscriptionRepository;
+import com.parkmate.userSubscription.UserSubscriptionStatus;
 import com.parkmate.vehicle.dto.*;
 import com.querydsl.core.types.Predicate;
 import jakarta.validation.ConstraintViolation;
@@ -24,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +41,8 @@ public class VehicleServiceImpl implements VehicleService {
     private final VehicleMapper vehicleMapper;
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final ReservationRepository reservationRepository;
+    private final UserSubscriptionRepository userSubscriptionRepository;
     private final Validator validator;
 
     private static final List<String> ALLOWED_EXTENSIONS = List.of("xlsx", "xls");
@@ -114,8 +123,46 @@ public class VehicleServiceImpl implements VehicleService {
         Page<Vehicle> vehiclePage = vehicleRepository.findAll(predicate, pageable);
         System.out.println("DEBUG - total elements: " + vehiclePage.getTotalElements());
 
-        return vehiclePage.map(vehicleMapper::toDTO);
+
+        List<Long> vehicleIdsHasSubscription;
+        List<Long> vehicleIdsHasReservation;
+        if (searchCriteria.getParkingLotId() != null) {
+            vehicleIdsHasReservation = checkVehicleInReservation(vehiclePage.getContent());
+            vehicleIdsHasSubscription = checkVehicleInSubscription(searchCriteria.getParkingLotId(), vehiclePage.getContent());
+        } else {
+            vehicleIdsHasSubscription = new ArrayList<>();
+            vehicleIdsHasReservation = new ArrayList<>();
+        }
+        return vehiclePage.map(vehicle -> {
+            VehicleResponse response = vehicleMapper.toDTO(vehicle);
+            response.setInReservation(vehicleIdsHasReservation.contains(vehicle.getId()));
+            response.setHasSubscriptionInThisParkingLot(vehicleIdsHasSubscription.contains(vehicle.getId()));
+            return response;
+        });
     }
+
+    private List<Long> checkVehicleInReservation(List<Vehicle> vehicles) {
+        List<ReservationStatus> reservationStatuses = new ArrayList<>();
+        reservationStatuses.add(ReservationStatus.ACTIVE);
+        reservationStatuses.add(ReservationStatus.PENDING);
+        List<Reservation> reservations = reservationRepository.findAllByVehicleIdInAndStatusIn(
+                vehicles.stream().map(Vehicle::getId).collect(Collectors.toList()),
+                reservationStatuses);
+        List<Long> vehiclesInReservation = new ArrayList<>();
+        reservations.forEach(reservation -> vehiclesInReservation.add(reservation.getVehicleId()));
+        return vehiclesInReservation;
+    }
+
+    private List<Long> checkVehicleInSubscription(Long parkingLotId, List<Vehicle> vehicles) {
+        List<UserSubscription> userSubscriptions = userSubscriptionRepository.findByVehicleIdInAndStatusAndParkingLotId(
+                vehicles.stream().map(Vehicle::getId).collect(Collectors.toList()),
+                UserSubscriptionStatus.ACTIVE,
+                parkingLotId);
+        List<Long> vehicleInSubscription = new ArrayList<>();
+        userSubscriptions.forEach(userSubscription -> vehicleInSubscription.add(userSubscription.getVehicle().getId()));
+        return vehicleInSubscription;
+    }
+
 
     @Override
     public void deleteVehicle(Long id) {
@@ -125,6 +172,7 @@ public class VehicleServiceImpl implements VehicleService {
         vehicle.setActive(false);
         vehicleRepository.save(vehicle);
     }
+
 
     @Override
     @Transactional

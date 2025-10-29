@@ -14,6 +14,7 @@ public enum ErrorCode {
     INVALID_ENUM(1003, "Invalid enum", HttpStatus.BAD_REQUEST),
     IO_ERROR(1004, "I/O error", HttpStatus.INTERNAL_SERVER_ERROR),
     UNAUTHENTICATED(1005, "Unauthenticated", HttpStatus.UNAUTHORIZED),
+    OTHER_CLIENT_ERROR(1006, "Other client error", HttpStatus.BAD_REQUEST),
 
     // User errors 21
     USER_NOT_FOUND(2101, "User not found", HttpStatus.NOT_FOUND),
@@ -31,6 +32,8 @@ public enum ErrorCode {
     VEHICLE_NOT_FOUND(2301, "Vehicle not found", HttpStatus.NOT_FOUND),
     VEHICLE_ALREADY_EXISTS(2302, "Vehicle with license plate '{0}' already exists", HttpStatus.CONFLICT),
     INVALID_VEHICLE_TYPE(2303, "Invalid vehicle type '{0}'", HttpStatus.BAD_REQUEST),
+    VEHICLE_NOT_BELONG_TO_USER(2304, "Vehicle does not belong to the user", HttpStatus.BAD_REQUEST),
+
     // Partner errors 24
     PARTNER_NOT_FOUND(2401, "Partner not found", HttpStatus.NOT_FOUND),
     PARTNER_ALREADY_EXISTS(2402, "Partner with name '{0}' already exists", HttpStatus.CONFLICT),
@@ -77,7 +80,15 @@ public enum ErrorCode {
     RESERVATION_NOT_FOUND(2911, "Reservation not found", HttpStatus.NOT_FOUND),
     RESERVATION_ALREADY_USED(2912, "This reservation has already been used", HttpStatus.BAD_REQUEST),
     RESERVATION_EXPIRED(2913, "Reservation has expired", HttpStatus.BAD_REQUEST),
-    INVALID_RESERVATION_DATA(2914, "Invalid reservation", HttpStatus.BAD_REQUEST);
+    INVALID_RESERVATION_DATA(2914, "Invalid reservation", HttpStatus.BAD_REQUEST),
+
+    INVALID_USER_SUBSCRIPTION_TIME(21000, "Invalid _USER SUBSCRIPTION time", HttpStatus.BAD_REQUEST),
+    USER_SUBSCRIPTION_NOT_FOUND(21001, "_USER SUBSCRIPTION not found", HttpStatus.NOT_FOUND),
+    USER_SUBSCRIPTION_ALREADY_USED(21002, "This _USER SUBSCRIPTION has already been used", HttpStatus.BAD_REQUEST),
+    USER_SUBSCRIPTION_EXPIRED(21003, "_USER SUBSCRIPTION has expired", HttpStatus.BAD_REQUEST),
+    INVALID_USER_SUBSCRIPTION_DATA(21004, "Invalid _USER  SUBSCRIPTION", HttpStatus.BAD_REQUEST),
+    ;
+
 
     private final int code;
     private final String message;
