@@ -1,6 +1,5 @@
 package com.parkmate.walletTransaction;
 
-import com.github.f4b6a3.uuid.UuidCreator;
 import com.parkmate.client.UserServiceClient;
 import com.parkmate.common.PaginationUtil;
 import com.parkmate.exception.AppException;

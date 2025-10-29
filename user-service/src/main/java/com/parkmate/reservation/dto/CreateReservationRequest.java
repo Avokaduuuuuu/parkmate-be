@@ -33,7 +33,10 @@ public class CreateReservationRequest {
     Long spotId;
 
     @Schema(description = "Fee for the reservation", example = "4000")
-    BigDecimal reservationFee;
+    BigDecimal initialFee;
+
+    @Schema(description = "Fee for the reservation", example = "4000")
+    BigDecimal totalFee;
 
     @Schema(description = "Start time of the reservation", example = "2024-07-01T10:00:00")
     @NotNull

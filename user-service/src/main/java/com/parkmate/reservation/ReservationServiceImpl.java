@@ -22,6 +22,7 @@ import com.parkmate.reservation.dto.*;
 import com.parkmate.user.User;
 import com.parkmate.user.UserRepository;
 import com.parkmate.user.UserService;
+import com.parkmate.userSubscription.UserSubscriptionRepository;
 import com.parkmate.vehicle.VehicleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +58,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final UserService userService;
     private final VehicleService vehicleService;
     private final KafkaTemplate<String, NotificationEvent> kafkaTemplate;
+    private final UserSubscriptionRepository userSubscriptionRepository;
 
     @Override
     @Transactional
@@ -90,7 +92,8 @@ public class ReservationServiceImpl implements ReservationService {
                 .spotId(request.getSpotId())
                 .reservedFrom(request.getReservedFrom())
                 .reservedUntil(request.getReservedUntil())
-                .initialFee(request.getReservationFee())
+                .initialFee(request.getInitialFee())
+                .totalFee(request.getTotalFee())
                 .vehicleId(request.getVehicleId())
                 .parkingLotId(request.getParkingLotId())
                 .status(ReservationStatus.PENDING)
@@ -103,7 +106,7 @@ public class ReservationServiceImpl implements ReservationService {
             ResponseEntity<ApiResponse<WalletTransactionResponse>> paymentResult = paymentClient.deductWallet(
                     CreateTransactionRequest.builder()
                             .userId(request.getUserId())
-                            .amount(request.getReservationFee())
+                            .amount(request.getInitialFee())
                             .transactionType(TransactionConstants.TYPE_DEDUCTION)
                             .referenceId(reservation.getId().toString())
                             .reservationId(reservation.getId())
@@ -163,15 +166,6 @@ public class ReservationServiceImpl implements ReservationService {
         try {
             Map<String, Object> qrData = new HashMap<>();
             qrData.put("reservationId", reservation.getId());
-            qrData.put("userId", reservation.getUserId());
-            qrData.put("vehicleId", reservation.getVehicleId());
-            qrData.put("parkingLotId", reservation.getParkingLotId());
-            qrData.put("spotId", reservation.getSpotId());
-            qrData.put("initialFee", reservation.getInitialFee());
-            qrData.put("reservedFrom", reservation.getReservedFrom().toString());
-            qrData.put("status", reservation.getStatus().name());
-            qrData.put("createdAt", reservation.getCreatedAt() != null ? reservation.getCreatedAt().toString() : null);
-
             return objectMapper.writeValueAsString(qrData);
         } catch (Exception e) {
             log.error("Error generating QR code content for reservation ID: {}", reservation.getId(), e);
@@ -265,6 +259,25 @@ public class ReservationServiceImpl implements ReservationService {
 
         // Send notifications after transaction commits (notifications are async via Kafka anyway)
         sendNotificationForStatus(reservation.getId(), newStatus);
+    }
+
+    @Override
+    public Map<Long, Boolean> checkOverlap(List<Long> spotIds, LocalDateTime start, LocalDateTime end) {
+
+        List<Long> occupiedSpotIdsByReservation = reservationRepository.findOccupiedSpotIds(spotIds, start, end);
+
+        List<Long> occupiedSpotIdsByUserSubscription = userSubscriptionRepository.findOccupiedSpotIds(spotIds, start, end);
+
+        Map<Long, Boolean> resultMap = new HashMap<>();
+        for (Long spotId : spotIds) {
+            boolean isOccupied = occupiedSpotIdsByUserSubscription.contains(spotId) || occupiedSpotIdsByReservation.contains(spotId);
+            resultMap.put(spotId, isOccupied);
+        }
+
+        log.debug("Overlap check for {} spots from {} to {}: {} occupied, {} available",
+                spotIds.size(), start, end, occupiedSpotIdsByReservation.size(), spotIds.size() - occupiedSpotIdsByReservation.size());
+
+        return resultMap;
     }
 
     @NonNull
