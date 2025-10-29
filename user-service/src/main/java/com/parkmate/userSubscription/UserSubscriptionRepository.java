@@ -18,9 +18,7 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
             "WHERE uS.assignedSpotId IN :spotIds " +
             "AND uS.startDate < :to " +
             "AND uS.endDate > :from " +
-            "AND uS.status != 'CANCELLED'" +
-            "AND uS.status != 'COMPLETED'" +
-            "AND uS.status != 'EXPIRED'")
+            "AND uS.status = 'ACTIVE' AND uS.status = 'PENDING_PAYMENT'")
     List<Long> findOccupiedSpotIds(
             @Param("spotIds") List<Long> spotIds,
             @Param("from") LocalDateTime from,

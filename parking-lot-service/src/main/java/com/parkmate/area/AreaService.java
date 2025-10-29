@@ -6,12 +6,15 @@ import com.parkmate.area.dto.resp.AreaDetailedResponse;
 import com.parkmate.area.dto.resp.AreaResponse;
 import org.springframework.data.domain.Page;
 
+import java.time.LocalDateTime;
+
 public interface AreaService {
     Page<AreaResponse> findAllAreas(
             int page, int size, String sortBy, String sortOrder, AreaFilterParams params
     );
 
     AreaDetailedResponse findAreaById(Long id);
+    AreaDetailedResponse findAreaDetailByIdAndTime(Long id, LocalDateTime start, LocalDateTime end);
 
     AreaResponse createArea(AreaCreateRequest request, Long floorId);
     AreaResponse updateArea(AreaUpdateRequest request, Long id);
