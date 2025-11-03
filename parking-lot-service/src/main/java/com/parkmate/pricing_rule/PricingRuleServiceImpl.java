@@ -13,6 +13,7 @@ import com.parkmate.parking_lot.ParkingLotRepository;
 import com.parkmate.session.enums.SyncStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -63,6 +65,7 @@ public class PricingRuleServiceImpl implements PricingRuleService {
                 .validFrom(request.validFrom())
                 .validUntil(request.validTo())
                 .parkingLot(parkingLotEntity)
+                .isActive(false)
                 .build();
         return PricingRuleMapper.INSTANCE.toResponse(pricingRuleRepository.save(pricingRuleEntity));
     }
@@ -79,7 +82,17 @@ public class PricingRuleServiceImpl implements PricingRuleService {
         if (request.stepMinute() != null) pricingRuleEntity.setStepMinute(request.stepMinute());
         if (request.validFrom() != null) pricingRuleEntity.setValidFrom(request.validFrom());
         if (request.validTo() != null) pricingRuleEntity.setValidFrom(request.validTo());
-        if (request.isActive() != null) pricingRuleEntity.setIsActive(request.isActive());
+        if (request.isActive() != null) {
+            if (request.isActive()) {
+                log.info("Pricing Rule true");
+                List<PricingRuleEntity> pricingRuleEntities = pricingRuleRepository.findAllByVehicleTypeAndIsActive(pricingRuleEntity.getVehicleType(), true);
+                for (PricingRuleEntity pr : pricingRuleEntities) {
+                    pr.setIsActive(false);
+                    pricingRuleRepository.save(pr);
+                }
+                pricingRuleEntity.setIsActive(true);
+            }else pricingRuleEntity.setIsActive(false);
+        }
         return PricingRuleMapper.INSTANCE.toResponse(pricingRuleRepository.save(pricingRuleEntity));
     }
 

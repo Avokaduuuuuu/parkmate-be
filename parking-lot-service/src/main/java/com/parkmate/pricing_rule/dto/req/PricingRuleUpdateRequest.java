@@ -12,17 +12,16 @@ public record PricingRuleUpdateRequest(
                 description = "Name of the pricing rule for identification",
                 example = "Standard Weekday Pricing",
                 maxLength = 100,
-                requiredMode = Schema.RequiredMode.REQUIRED
+                requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
-        @NotEmpty(message = "Rule name must not be empty")
         @Size(min = 1, max = 100, message = "Rule name must not over 100 characters")
         String ruleName,
 
         @Schema(
                 description = "Type of vehicle this pricing rule applies to",
                 example = "CAR_4_SEATS",
-                allowableValues = {"BIKE", "MOTORBIKE", "CAR_4_SEATS", "CAR_7_SEATS", "CAR_9_SEATS", "OTHER"},
-                requiredMode = Schema.RequiredMode.REQUIRED
+                allowableValues = {"BIKE", "MOTORBIKE", "CAR_UP_TO_9_SEATS", "OTHER"},
+                requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
         VehicleType vehicleType,
 
@@ -88,12 +87,6 @@ public record PricingRuleUpdateRequest(
         )
         LocalDateTime validTo,
 
-        @Schema(
-                description = "Id to apply rule for a specific area (null for lot-wide rule)",
-                example = "1",
-                requiredMode = Schema.RequiredMode.NOT_REQUIRED
-        )
-        Long areaId,
 
         @Schema(
                 description = "Status of a pricing rule",

@@ -120,9 +120,13 @@ public record ParkingLotCreateRequest(
         Boolean is24Hour,
 
         @Valid
+        @NotNull(message = "Lot capacity list must not be null")
+        @NotEmpty(message = "Lot capacity list must not be empty")
         List<LotCapacityCreateRequest> lotCapacityRequests,
 
         @Valid
+        @NotNull(message = "Pricing rule list must not be null")
+        @NotEmpty(message = "Pricing rule list must not be empty")
         List<PricingRuleCreateRequest> pricingRuleCreateRequests
 ) {
 
