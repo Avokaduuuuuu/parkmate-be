@@ -50,6 +50,4 @@ public class SpotEntity extends BaseEntity {
     @JoinColumn(name = "area_id")
     AreaEntity parkingArea;
 
-    @OneToMany(mappedBy = "spot")
-    List<SessionEntity> sessions;
 }

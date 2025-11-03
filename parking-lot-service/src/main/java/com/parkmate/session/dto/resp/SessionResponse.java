@@ -24,19 +24,18 @@ public class SessionResponse {
     LocalDateTime exitTime;
     Integer durationMinute;
     BigDecimal totalAmount;
-    SessionStatus sessionStatus;
+    SessionStatus status;
     SyncStatus syncStatus;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime syncedTime;
+    LocalDateTime syncedFromLocal;
     String note;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
     Long lotId;
-    Long spotId;
     String cardUUID;
     Long pricingRuleId;
-    Long reference_id;
+    Long referenceId;
     ReferenceType referenceType;
 }
