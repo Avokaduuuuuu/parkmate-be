@@ -2,10 +2,12 @@ package com.parkmate.session;
 
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
+import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.parking_lot.ParkingLotRepository;
 import com.parkmate.pricing_rule.PricingRuleEntity;
 import com.parkmate.pricing_rule.PricingRuleRepository;
 import com.parkmate.session.dto.req.SessionCreateRequest;
+import com.parkmate.session.dto.req.SessionSyncRequest;
 import com.parkmate.session.dto.req.SessionUpdateRequest;
 import com.parkmate.session.dto.resp.SessionResponse;
 import com.parkmate.session.enums.SessionStatus;
@@ -20,7 +22,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -59,10 +64,10 @@ public class SessionServiceImpl implements SessionService{
     }
 
     @Override
-    public Page<SessionResponse> getSessions(int page, int size, String sortBy, String sortOrder) {
+    public Page<SessionResponse> getSessions(int page, int size, String sortBy, String sortOrder, SessionFilterParams params) {
         Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<SessionEntity> sessionEntities = sessionRepository.findAll(pageable);
+        Page<SessionEntity> sessionEntities = sessionRepository.findAll(params.getSpecification(),pageable);
         return sessionEntities.map(SessionMapper.INSTANCE::toResponse);
     }
 
@@ -103,11 +108,65 @@ public class SessionServiceImpl implements SessionService{
     }
 
     @Override
-    public SessionResponse deleteSession(String cardUUID) {
+    public void deleteSession(String cardUUID) {
         SessionEntity sessionEntity = sessionRepository.findByCardUUIDAndStatus(cardUUID, SessionStatus.ACTIVE)
                 .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND, "Session with Card UUID " + cardUUID + " not found"));
-        sessionEntity.setStatus(SessionStatus.DELETED);
+        sessionRepository.delete(sessionEntity);
+    }
 
-        return SessionMapper.INSTANCE.toResponse(sessionRepository.save(sessionEntity));
+    @Override
+    public Integer syncSessions(Long lotId, List<SessionSyncRequest> requests) {
+        ParkingLotEntity parkingLot = parkingLotRepository.findById(lotId)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND));
+
+        // Group sessions by pricingRuleId (skip nulls)
+        Map<Long, List<SessionSyncRequest>> groupedByRule = requests.stream()
+                .filter(req -> req.pricingRuleId() != null)
+                .collect(Collectors.groupingBy(SessionSyncRequest::pricingRuleId));
+
+        if (groupedByRule.isEmpty()) return 0;
+
+        // Load all pricing rules once
+        Map<Long, PricingRuleEntity> pricingRules = pricingRuleRepository.findAllById(groupedByRule.keySet())
+                .stream()
+                .collect(Collectors.toMap(PricingRuleEntity::getId, r -> r));
+
+        // Flatten grouped map -> list of SessionEntity
+        List<SessionEntity> sessions = groupedByRule.entrySet().stream()
+                .flatMap(entry -> {
+                    Long ruleId = entry.getKey();
+                    PricingRuleEntity rule = Optional.ofNullable(pricingRules.get(ruleId))
+                            .orElseThrow(() -> new AppException(ErrorCode.PRICING_RULE_NOT_FOUND));
+                    return entry.getValue().stream()
+                            .map(req -> getSessionEntity(req, parkingLot, rule));
+                })
+                .toList();
+
+        sessionRepository.saveAll(sessions);
+        return sessions.size();
+    }
+
+
+    private static SessionEntity getSessionEntity(SessionSyncRequest request, ParkingLotEntity parkingLotEntity, PricingRuleEntity pricingRuleEntity) {
+        SessionEntity sessionEntity = new SessionEntity();
+        sessionEntity.setId(request.id());
+        sessionEntity.setParkingLot(parkingLotEntity);
+        sessionEntity.setUserId(request.userId());
+        sessionEntity.setSessionType(request.sessionType());
+        sessionEntity.setLicensePlate(request.licensePlate());
+        sessionEntity.setEntryTime(request.entryTime());
+        sessionEntity.setAuthMethod(request.authMethod());
+        sessionEntity.setStatus(request.status());
+        sessionEntity.setSyncStatus(SyncStatus.SYNCED);
+        sessionEntity.setPricingRule(pricingRuleEntity);
+        sessionEntity.setCardUUID(request.cardUUID());
+        sessionEntity.setVehicleType(request.vehicleType());
+        sessionEntity.setDurationMinute(request.durationMinute());
+        sessionEntity.setTotalAmount(request.totalAmount());
+        sessionEntity.setReferenceId(request.referenceId());
+        sessionEntity.setNote(request.note());
+        sessionEntity.setReferenceType(request.referenceType());
+        sessionEntity.setSyncedFromLocal(LocalDateTime.now());
+        return sessionEntity;
     }
 }

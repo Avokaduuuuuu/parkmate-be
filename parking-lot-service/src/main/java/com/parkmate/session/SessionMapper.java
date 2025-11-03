@@ -2,6 +2,7 @@ package com.parkmate.session;
 
 import com.parkmate.session.dto.resp.SessionResponse;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;
 
@@ -12,5 +13,7 @@ import org.mapstruct.factory.Mappers;
 public interface SessionMapper {
     SessionMapper INSTANCE = Mappers.getMapper(SessionMapper.class);
 
+    @Mapping(target = "pricingRuleId", source = "pricingRule.id")
+    @Mapping(target = "lotId", source = "parkingLot.id")
     SessionResponse toResponse(SessionEntity entity);
 }

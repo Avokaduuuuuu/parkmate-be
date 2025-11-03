@@ -111,9 +111,6 @@ public class SessionEntity {
     @JoinColumn(name = "lot_id")
     ParkingLotEntity parkingLot;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "spot_id")
-    SpotEntity spot;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pricing_rule_id")
