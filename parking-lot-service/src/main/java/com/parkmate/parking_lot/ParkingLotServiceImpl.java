@@ -35,7 +35,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -81,6 +83,25 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     public ParkingLotResponse addParkingLot(String userHeaderId, ParkingLotCreateRequest request) {
         if (userHeaderId == null || userHeaderId.isEmpty()) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        List<VehicleType> requestedVehicleTypes = request.pricingRuleCreateRequests()
+                .stream()
+                .map(PricingRuleCreateRequest::vehicleType)
+                .toList();
+
+        Set<VehicleType> pricingRuleVehicleTypes = new HashSet<>(requestedVehicleTypes);
+
+        if (requestedVehicleTypes.size() != pricingRuleVehicleTypes.size()) {
+            throw new AppException(
+                ErrorCode.DUPLICATE_PRICING_RULE
+            );
+        }
+
+        Set<VehicleType> capacityVehicleTypes = request.lotCapacityRequests().stream().map(LotCapacityCreateRequest::vehicleType).collect(Collectors.toSet());
+
+        if (!capacityVehicleTypes.containsAll(pricingRuleVehicleTypes)) {
+            throw new AppException(ErrorCode.PRICING_RULE_CAPACITY_MISMATCH);
         }
         Long partnerId = Long.parseLong(userHeaderId);
         ParkingLotEntity parkingLotEntity = ParkingLotMapper.INSTANCE.toEntity(request);

@@ -23,4 +23,6 @@ public interface PricingRuleRepository extends JpaRepository<PricingRuleEntity, 
                     "WHERE p.id IN :ids"
     )
     Integer updateSyncedPricingRules(@Param("ids") List<Long> ruleIds,@Param("status") SyncStatus syncStatus);
+
+    List<PricingRuleEntity> findAllByVehicleTypeAndIsActive(VehicleType vehicleType, Boolean isActive);
 }

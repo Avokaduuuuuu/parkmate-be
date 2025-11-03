@@ -76,6 +76,9 @@ public class    ParkingLotEntity extends BaseEntity {
     @Column(name = "boundary_height")
     Double boundaryHeight;
 
+    @Column(name = "horizon_time")
+    Double horizonTime;
+
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
     @JdbcType(PostgreSQLEnumJdbcType.class)

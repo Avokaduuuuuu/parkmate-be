@@ -63,6 +63,7 @@ public class PricingRuleServiceImpl implements PricingRuleService {
                 .validFrom(request.validFrom())
                 .validUntil(request.validTo())
                 .parkingLot(parkingLotEntity)
+                .isActive(false)
                 .build();
         return PricingRuleMapper.INSTANCE.toResponse(pricingRuleRepository.save(pricingRuleEntity));
     }
@@ -79,7 +80,16 @@ public class PricingRuleServiceImpl implements PricingRuleService {
         if (request.stepMinute() != null) pricingRuleEntity.setStepMinute(request.stepMinute());
         if (request.validFrom() != null) pricingRuleEntity.setValidFrom(request.validFrom());
         if (request.validTo() != null) pricingRuleEntity.setValidFrom(request.validTo());
-        if (request.isActive() != null) pricingRuleEntity.setIsActive(request.isActive());
+        if (request.isActive() != null) {
+            if (request.isActive()) {
+                pricingRuleEntity.setIsActive(true);
+                List<PricingRuleEntity> pricingRuleEntities = pricingRuleRepository.findAllByVehicleTypeAndIsActive(pricingRuleEntity.getVehicleType(), true);
+                for (PricingRuleEntity pr : pricingRuleEntities) {
+                    pr.setIsActive(false);
+                    pricingRuleRepository.save(pr);
+                }
+            }
+        }
         return PricingRuleMapper.INSTANCE.toResponse(pricingRuleRepository.save(pricingRuleEntity));
     }
 
