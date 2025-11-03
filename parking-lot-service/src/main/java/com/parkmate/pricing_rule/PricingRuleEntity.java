@@ -56,8 +56,7 @@ public class PricingRuleEntity {
     Integer initialDurationMinute;
 
     @Column(name = "is_active")
-    @Builder.Default
-    Boolean isActive = true;
+    Boolean isActive;
 
     @Column(name = "valid_from", nullable = false, columnDefinition = "This price rule will be able after this time")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")

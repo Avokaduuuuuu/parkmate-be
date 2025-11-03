@@ -91,14 +91,6 @@ public record PricingRuleCreateRequest(
                 pattern = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
-        LocalDateTime validTo,
-
-        @Schema(
-                description = "Id to apply rule for a specific area (null for lot-wide rule)",
-                example = "1",
-                requiredMode = Schema.RequiredMode.NOT_REQUIRED
-        )
-        Long areaId
-
+        LocalDateTime validTo
 ) {
 }
