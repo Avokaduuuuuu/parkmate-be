@@ -46,11 +46,6 @@ public class ReservationSpecification {
             builder.and(reservation.parkingLotId.eq(criteria.getParkingLotId()));
         }
 
-        // Filter by spot ID
-        if (criteria.getSpotId() != null) {
-            builder.and(reservation.spotId.eq(criteria.getSpotId()));
-        }
-
         // Filter by status
         if (criteria.getStatus() != null) {
             builder.and(reservation.status.eq(criteria.getStatus()));

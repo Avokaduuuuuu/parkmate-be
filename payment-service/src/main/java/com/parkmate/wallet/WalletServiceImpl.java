@@ -38,13 +38,14 @@ public class WalletServiceImpl implements WalletService {
         validateUserId(createWalletRequest.getUserId());
 
         // Check if wallet already exists for this user
-        if (walletRepository.existsByUserId(createWalletRequest.getUserId())) {
+        if (walletRepository.existsByHolderId(createWalletRequest.getUserId())) {
             throw new AppException(ErrorCode.WALLET_ALREADY_EXISTS, createWalletRequest.getUserId());
         }
 
         Wallet wallet = Wallet.builder()
-                .userId(createWalletRequest.getUserId())
+                .holderId(createWalletRequest.getUserId())
                 .balance(BigDecimal.valueOf(0))
+                .walletOwner(createWalletRequest.getWalletOwnerType())
                 .currency("VND")
                 .isActive(true)
                 .build();
@@ -66,7 +67,7 @@ public class WalletServiceImpl implements WalletService {
         Long accountId = Long.parseLong(userHeaderId);
         // Convert accountId to actual userId
         Long userId = getUserIdFromAccountId(accountId);
-        Wallet wallet = walletRepository.findByUserId(userId)
+        Wallet wallet = walletRepository.findByHolderId(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND, userId));
         return walletMapper.toResponse(wallet);
     }
@@ -96,9 +97,9 @@ public class WalletServiceImpl implements WalletService {
 
         Set<Long> requestedUserIds = new HashSet<>(userIds);
 
-        List<Wallet> wallets = walletRepository.findByUserIdIn(userIds);
+        List<Wallet> wallets = walletRepository.findByHolderIdIn(userIds);
 
-        Set<Long> foundUserIds = wallets.stream().map(Wallet::getUserId).collect(Collectors.toSet());
+        Set<Long> foundUserIds = wallets.stream().map(Wallet::getHolderId).collect(Collectors.toSet());
 
 
         Set<Long> missingUserIds = new HashSet<>(requestedUserIds);
@@ -111,7 +112,7 @@ public class WalletServiceImpl implements WalletService {
 
         return wallets.stream()
                 .collect(Collectors.toMap(
-                        Wallet::getUserId,
+                        Wallet::getHolderId,
                         Wallet::getBalance
                 ));
     }

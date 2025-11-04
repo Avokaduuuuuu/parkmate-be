@@ -6,7 +6,8 @@ import java.time.LocalDateTime;
 
 
 public record WalletResponse(
-        Long userId,
+        Long holderId,
+        String walletOwner,
         Long balance,
         String currency,
         boolean isActive,

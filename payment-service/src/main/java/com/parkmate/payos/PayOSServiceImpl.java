@@ -59,7 +59,7 @@ public class PayOSServiceImpl implements PayOSService {
             Long userId = userServiceClient.getUserIdByAccountId(accountId);
 
             // Find wallet
-            Wallet wallet = walletRepository.findByUserId(userId)
+            Wallet wallet = walletRepository.findByHolderId(userId)
                     .orElseThrow(() -> new IllegalArgumentException("Wallet not found for user: " + userId));
 
             // Generate unique orderCode

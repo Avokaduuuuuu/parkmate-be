@@ -29,9 +29,6 @@ public class SyncReservationResponse {
     @Schema(description = "Parking lot ID", example = "456")
     Long parkingLotId;
 
-    @Schema(description = "Spot ID", example = "789")
-    Long spotId;
-
     @Schema(description = "Initial fee in VND", example = "10000")
     BigDecimal initialFee;
 

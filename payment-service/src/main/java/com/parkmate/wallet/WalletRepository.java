@@ -14,16 +14,16 @@ import java.util.Optional;
 @Repository
 public interface WalletRepository extends JpaRepository<Wallet, Long> {
 
-    Optional<Wallet> findByUserId(@NonNull Long Long);
+    Optional<Wallet> findByHolderId(@NonNull Long Long);
 
-    boolean existsByUserId(@NonNull Long userId);
+    boolean existsByHolderId(@NonNull Long userId);
 
-    Page<Wallet> findAllByUserId(@NonNull Long userId, Pageable pageable);
+    Page<Wallet> findAllByHolderId(@NonNull Long userId, Pageable pageable);
 
-    @Query("SELECT w.balance FROM Wallet w WHERE w.userId = :userId")
+    @Query("SELECT w.balance FROM Wallet w WHERE w.holderId = :userId")
     BigDecimal getBalanceByUserId(@NonNull Long userId);
 
-    List<Wallet> findByUserIdIn(@NonNull List<Long> userIds);
+    List<Wallet> findByHolderIdIn(@NonNull List<Long> userIds);
 }
 
 

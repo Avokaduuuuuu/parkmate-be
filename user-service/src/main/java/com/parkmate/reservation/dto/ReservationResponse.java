@@ -35,12 +35,6 @@ public class ReservationResponse {
     @Schema(description = "Parking lot name", example = "Parking Central")
     String parkingLotName;
 
-    @Schema(description = "Spot ID", example = "789")
-    Long spotId;
-
-    @Schema(description = "Spot name", example = "A1")
-    String spotName;
-
     @Schema(description = "Initial fee in VND", example = "10000")
     BigDecimal initialFee;
 
