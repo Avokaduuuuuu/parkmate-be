@@ -261,7 +261,7 @@ public class AuthServiceImpl implements AuthService {
         }
         account.setEmailVerified(true);
         account.setEmailVerificationToken(null);
-        updateStatusAfterVerification(account);
+        account.setStatus(AccountStatus.ACTIVE);
         accountRepository.save(account);
         log.info("Email verified successfully for: {}", account.getEmail());
         return EmailVerificationResponse.builder()
@@ -270,27 +270,6 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
-    private void updateStatusAfterVerification(Account account) {
-
-        switch (account.getRole()) {
-            case MEMBER:
-                account.setStatus(AccountStatus.ACTIVE);
-                log.info("Member account activated: {}", account.getEmail());
-                break;
-
-            case PARTNER_OWNER:
-                account.setStatus(AccountStatus.PENDING_APPROVAL);
-                log.info("Partner account pending approval: {}", account.getEmail());
-                break;
-
-            case ADMIN:
-                account.setStatus(AccountStatus.ACTIVE);
-                break;
-
-            default:
-                account.setStatus(AccountStatus.PENDING_APPROVAL);
-        }
-    }
 
     @Override
     public void resendVerificationEmail(String email) {
