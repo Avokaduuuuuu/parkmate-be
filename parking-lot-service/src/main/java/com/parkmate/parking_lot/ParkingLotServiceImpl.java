@@ -1,6 +1,8 @@
 package com.parkmate.parking_lot;
 
 import com.parkmate.common.enums.VehicleType;
+import com.parkmate.exception.AppException;
+import com.parkmate.exception.ErrorCode;
 import com.parkmate.floor.dto.resp.FloorResponse;
 import com.parkmate.floor_capacity.FloorCapacityMapper;
 import com.parkmate.floor_capacity.dto.resp.FloorCapacityResponse;
@@ -12,6 +14,7 @@ import com.parkmate.lot_capacity.dto.req.LotCapacityCreateRequest;
 import com.parkmate.lot_capacity.dto.resp.LotCapacityResponse;
 import com.parkmate.parking_lot.dto.req.ParkingLotCreateRequest;
 import com.parkmate.parking_lot.dto.req.ParkingLotUpdateRequest;
+import com.parkmate.parking_lot.dto.resp.ParkingLotAvailableReservationSpotResponse;
 import com.parkmate.parking_lot.dto.resp.ParkingLotDetailedResponse;
 import com.parkmate.parking_lot.dto.resp.ParkingLotResponse;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
@@ -25,8 +28,10 @@ import com.parkmate.pricing_rule.PricingRuleMapper;
 import com.parkmate.pricing_rule.PricingRuleRepository;
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
+import com.parkmate.pricing_rule.dto.resp.PricingRuleSimpleResponse;
 import com.parkmate.s3.S3Service;
 import com.parkmate.session.enums.SyncStatus;
+import com.parkmate.session.SessionRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,12 +39,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.util.EnumSet;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -54,6 +57,9 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     private final ParkingLotRepository parkingLotRepository;
     private final S3Service s3Service;
     private final PricingRuleRepository pricingRuleRepository;
+    private final SessionRepository sessionRepository;
+    private final UserClient userClient;
+    private final AreaRepository areaRepository;
 
     @Override
     public Page<ParkingLotResponse> fetchAllParkingLots(
@@ -65,9 +71,9 @@ public class ParkingLotServiceImpl implements ParkingLotService {
             ParkingLotFilterParams params
     ) {
         Long partnerId = userHeaderId != null ? Long.parseLong(userHeaderId) : null;
-        Sort sort = Sort.by(Sort.Direction.fromString(sortOrder),sortBy);
+        Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<ParkingLotEntity> parkingLotEntities = parkingLotRepository.findAll(params.getSpecification(partnerId),pageable);
+        Page<ParkingLotEntity> parkingLotEntities = parkingLotRepository.findAll(params.getSpecification(partnerId), pageable);
         return parkingLotEntities.map(ParkingLotMapper.INSTANCE::toResponse);
     }
 
@@ -93,6 +99,17 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         validatePolicies(request.policyCreateRequests());
         validatePricingRules(request);
 
+        if (requestedVehicleTypes.size() != pricingRuleVehicleTypes.size()) {
+            throw new AppException(
+                    ErrorCode.DUPLICATE_PRICING_RULE
+            );
+        }
+
+        Set<VehicleType> capacityVehicleTypes = request.lotCapacityRequests().stream().map(LotCapacityCreateRequest::vehicleType).collect(Collectors.toSet());
+
+        if (!capacityVehicleTypes.containsAll(pricingRuleVehicleTypes)) {
+            throw new AppException(ErrorCode.PRICING_RULE_CAPACITY_MISMATCH);
+        }
         Long partnerId = Long.parseLong(userHeaderId);
         ParkingLotEntity parkingLotEntity = ParkingLotMapper.INSTANCE.toEntity(request);
         parkingLotEntity.setIs24Hour(request.is24Hour());
@@ -194,7 +211,8 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         if (request.streetAddress() != null) parkingLotEntity.setStreetAddress(request.streetAddress());
         if (request.ward() != null) parkingLotEntity.setWard(request.ward());
         if (request.operatingHoursEnd() != null) parkingLotEntity.setOperatingHoursEnd(request.operatingHoursEnd());
-        if (request.operatingHoursStart() != null) parkingLotEntity.setOperatingHoursStart(request.operatingHoursStart());
+        if (request.operatingHoursStart() != null)
+            parkingLotEntity.setOperatingHoursStart(request.operatingHoursStart());
         if (request.latitude() != null) parkingLotEntity.setLatitude(request.latitude());
         if (request.longitude() != null) parkingLotEntity.setLongitude(request.longitude());
         if (request.totalFloors() != null) parkingLotEntity.setTotalFloors(request.totalFloors());
@@ -254,23 +272,23 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         parkingLotDetailedResponse.setLotCapacity(filteredLotCapacity);
 
         List<FloorResponse> floorResponses = parkingLot.getParkingFloors().stream().map(
-            floor -> {
-                List<FloorCapacityResponse> floorCapacityResponses = floor.getParkingFloorCapacity().stream()
-                        .filter(capacity -> capacity.getVehicleType() == vehicleType)
-                        .map(FloorCapacityMapper.INSTANCE::toResponse)
-                        .toList();
-                if (floorCapacityResponses.isEmpty()) return null;
+                floor -> {
+                    List<FloorCapacityResponse> floorCapacityResponses = floor.getParkingFloorCapacity().stream()
+                            .filter(capacity -> capacity.getVehicleType() == vehicleType)
+                            .map(FloorCapacityMapper.INSTANCE::toResponse)
+                            .toList();
+                    if (floorCapacityResponses.isEmpty()) return null;
 
-                FloorResponse floorResponse = FloorResponse.builder()
-                        .id(floor.getId())
-                        .floorNumber(floor.getFloorNumber())
-                        .floorName(floor.getFloorName())
-                        .isActive(floor.getIsActive())
-                        .parkingFloorCapacity(floorCapacityResponses)
-                        .build();
+                    FloorResponse floorResponse = FloorResponse.builder()
+                            .id(floor.getId())
+                            .floorNumber(floor.getFloorNumber())
+                            .floorName(floor.getFloorName())
+                            .isActive(floor.getIsActive())
+                            .parkingFloorCapacity(floorCapacityResponses)
+                            .build();
 
-                return floorResponse;
-            }
+                    return floorResponse;
+                }
         ).toList();
 
         List<PricingRuleResponse> pricingRuleResponses = parkingLot.getPricingRules()
@@ -294,4 +312,70 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         return parkingLotRepository.count();
     }
 
+    @Override
+    public ParkingLotAvailableReservationSpotResponse countAvailableSpot(Long id, LocalDateTime reservedFrom, Integer assumedStayMinute, VehicleType vehicleType) {
+        ParkingLotEntity parkingLot = parkingLotRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND));
+        int occupiedSpotByWalkIns = getCurrentWalkIn(id, reservedFrom, Math.round(parkingLot.getHorizonTime()), vehicleType);
+        log.info("Occupied Spot By WalkIns: {}", occupiedSpotByWalkIns);
+        Long emergencySpots = areaRepository.countEmergencySpot(id);
+        if (emergencySpots == null) emergencySpots = 0L;
+        log.info("Emergency Spots: {}", emergencySpots);
+        try {
+            PricingRuleEntity pricingRule = pricingRuleRepository.findByParkingLot_IdAndIsActiveAndVehicleType(id, true, vehicleType)
+                    .orElseThrow(() -> new AppException(ErrorCode.PRICING_RULE_NOT_FOUND));
+            Double estimateTotalFee = pricingRule.getInitialCharge() + ((assumedStayMinute - pricingRule.getInitialDurationMinute()) / pricingRule.getStepMinute()) * pricingRule.getStepRate();
+            log.info("Estimate Total Fee: {}", estimateTotalFee);
+            if (assumedStayMinute < parkingLot.getHorizonTime()) {
+                assumedStayMinute = Math.toIntExact(Math.round(parkingLot.getHorizonTime()));
+            }
+            log.info("Assumed Stay Minute: {}", assumedStayMinute);
+            long totalCapacity = parkingLot.getLotCapacity()
+                    .stream().filter(capacity -> (capacity.getVehicleType() == vehicleType && capacity.getIsActive())).mapToLong(LotCapacityEntity::getCapacity).sum();
+            log.info("Total Capacity: {}", totalCapacity);
+            Long overLapReservations = userClient.countReservation(id, reservedFrom, assumedStayMinute, vehicleType).getData();
+            if (overLapReservations == null) overLapReservations = 0L;
+            log.info("OverLap Reservations: {}", overLapReservations);
+
+            // Count temporary holds from Redis (users who moved to summary page but haven't completed reservation)
+            Long temporaryHolds = 0L;
+            try {
+                temporaryHolds = userClient.countTemporaryHolds(
+                        id,
+                        vehicleType.name(),
+                        reservedFrom.toString(),
+                        assumedStayMinute
+                ).getData();
+                if (temporaryHolds == null) temporaryHolds = 0L;
+                log.info("Temporary Holds: {}", temporaryHolds);
+            } catch (Exception e) {
+                log.warn("Failed to count temporary holds, assuming 0: {}", e.getMessage());
+                temporaryHolds = 0L;
+            }
+
+            Long availableSpots = totalCapacity - (emergencySpots + occupiedSpotByWalkIns + overLapReservations + temporaryHolds);
+            log.info("Available Spots: {} (Total: {} - Emergency: {} - WalkIns: {} - Reservations: {} - TempHolds: {})",
+                    availableSpots, totalCapacity, emergencySpots, occupiedSpotByWalkIns, overLapReservations, temporaryHolds);
+
+            PricingRuleSimpleResponse pricingRuleSimpleResponse = PricingRuleSimpleResponse.builder()
+                    .id(pricingRule.getId())
+                    .initialCharge(pricingRule.getInitialCharge())
+                    .initialDurationMinute(pricingRule.getInitialDurationMinute())
+                    .stepRate(pricingRule.getStepRate())
+                    .stepMinute(pricingRule.getStepMinute())
+                    .estimateTotalFee(estimateTotalFee)
+                    .build();
+
+            return ParkingLotAvailableReservationSpotResponse.builder()
+                    .pricing(pricingRuleSimpleResponse)
+                    .totalCapacity(totalCapacity)
+                    .availableCapacity(availableSpots)
+                    .build();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public int getCurrentWalkIn(Long parkingLotId, LocalDateTime entryTimeFrom, Long horizon, VehicleType vehicleType) {
+        return sessionRepository.countActiveWalkInsSince(parkingLotId, entryTimeFrom.minusMinutes(horizon), vehicleType);
+    }
 }

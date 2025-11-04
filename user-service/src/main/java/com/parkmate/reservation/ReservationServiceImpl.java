@@ -24,6 +24,7 @@ import com.parkmate.user.UserRepository;
 import com.parkmate.user.UserService;
 import com.parkmate.userSubscription.UserSubscriptionRepository;
 import com.parkmate.vehicle.VehicleService;
+import com.parkmate.vehicle.VehicleType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -59,6 +60,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final VehicleService vehicleService;
     private final KafkaTemplate<String, NotificationEvent> kafkaTemplate;
     private final UserSubscriptionRepository userSubscriptionRepository;
+    private final ReservationHoldService reservationHoldService;
 
     @Override
     @Transactional
@@ -75,28 +77,29 @@ public class ReservationServiceImpl implements ReservationService {
             throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
         }
 
-        if (request.getReservedFrom().isAfter(request.getReservedUntil())) {
-            throw new AppException(ErrorCode.INVALID_RESERVATION_TIME, "From must be < to");
-        }
-
-        if (parkingLotClient.getParkingLotName(request.getParkingLotId()) == null) {
+        ApiResponse<?> parkingLotResponse = parkingLotClient.getParkingLotName(request.getParkingLotId());
+        if (parkingLotResponse == null || parkingLotResponse.data() == null) {
             throw new AppException(ErrorCode.OTHER_CLIENT_ERROR, ParkingLotServiceErrorCode.PARKING_NOT_FOUND);
         }
 
-        if (parkingLotClient.getSpotName(request.getSpotId()) == null) {
-            throw new AppException(ErrorCode.OTHER_CLIENT_ERROR, ParkingLotServiceErrorCode.SPOT_NOT_FOUND);
+        Object data = parkingLotResponse.data();
+        if (data instanceof ParkingLotClient.ParkingLotNameDto parkingLot) {
+            Integer horizonTime = parkingLot.horizonTime();
+            if (horizonTime != null && request.getAssumedStayMinute() < horizonTime) {
+                request.setAssumedStayMinute(horizonTime);
+            }
         }
+
+
 
         Reservation reservation = Reservation.builder()
                 .userId(request.getUserId())
-                .spotId(request.getSpotId())
                 .reservedFrom(request.getReservedFrom())
-                .reservedUntil(request.getReservedUntil())
                 .initialFee(request.getInitialFee())
-                .totalFee(request.getTotalFee())
                 .vehicleId(request.getVehicleId())
                 .parkingLotId(request.getParkingLotId())
                 .status(ReservationStatus.PENDING)
+                .assumedStayMinute(request.getAssumedStayMinute())
                 .build();
 
         reservation = reservationRepository.save(reservation);
@@ -108,14 +111,11 @@ public class ReservationServiceImpl implements ReservationService {
                             .userId(request.getUserId())
                             .amount(request.getInitialFee())
                             .transactionType(TransactionConstants.TYPE_DEDUCTION)
-                            .referenceId(reservation.getId().toString())
-                            .reservationId(reservation.getId())
                             .processedAt(LocalDateTime.now())
-                            .description("Reservation fee for spot ID: " + request.getSpotId())
+                            .description("Reservation fee for reservation" + reservation.getId())
                             .build()
             );
 
-            // Check if payment service returned a response
             if (!paymentResult.hasBody() || paymentResult.getBody() == null) {
                 log.error("Payment service returned empty response for reservation ID: {}", reservation.getId());
                 reservation.setStatus(ReservationStatus.CANCELLED);
@@ -125,7 +125,6 @@ public class ReservationServiceImpl implements ReservationService {
 
             ApiResponse<WalletTransactionResponse> paymentResponse = paymentResult.getBody();
 
-            // Check if payment was successful
             if (!paymentResponse.success()) {
                 log.warn("Payment failed for reservation ID: {}. Reason: {}",
                         reservation.getId(), paymentResponse.message());
@@ -135,21 +134,30 @@ public class ReservationServiceImpl implements ReservationService {
                 throw new AppException(ErrorCode.WALLET_DEDUCTION_FAILED, paymentResponse.message());
             }
 
-            // Payment successful
             log.info("Payment successful for reservation ID: {}, transaction ID: {}",
                     reservation.getId(),
                     paymentResponse.data() != null ? paymentResponse.data().getSessionId() : "N/A");
 
-            // Update reservation status to CONFIRMED
             reservation.setStatus(ReservationStatus.PENDING);
             reservationRepository.save(reservation);
 
+            // Release temporary hold if holdId was provided
+            if (request.getHoldId() != null && !request.getHoldId().isEmpty()) {
+                try {
+                    reservationHoldService.releaseHold(request.getHoldId());
+                    log.info("Released temporary hold {} after successful reservation {}",
+                            request.getHoldId(), reservation.getId());
+                } catch (Exception holdEx) {
+                    // Don't fail reservation if hold release fails (hold will expire anyway)
+                    log.warn("Failed to release hold {} for reservation {}: {}",
+                            request.getHoldId(), reservation.getId(), holdEx.getMessage());
+                }
+            }
+
         } catch (AppException e) {
-            // Re-throw AppException to preserve the specific error message
-            throw e;
+             throw e;
         } catch (Exception e) {
             log.error("Unexpected error during payment for reservation ID: {}", reservation.getId(), e);
-            // Update reservation status to CANCELLED
             reservation.setStatus(ReservationStatus.CANCELLED);
             reservationRepository.save(reservation);
             throw new AppException(ErrorCode.WALLET_DEDUCTION_FAILED, "Payment processing failed: " + e.getMessage());
@@ -159,21 +167,18 @@ public class ReservationServiceImpl implements ReservationService {
         return getReservationResponse(reservation);
     }
 
-    /**
-     * Generate QR code content as JSON string
-     */
     private String generateQRCodeContent(Reservation reservation) {
         try {
             Map<String, Object> qrData = new HashMap<>();
             qrData.put("reservationId", reservation.getId());
+            qrData.put("qrType", "reservation");
             return objectMapper.writeValueAsString(qrData);
         } catch (Exception e) {
             log.error("Error generating QR code content for reservation ID: {}", reservation.getId(), e);
             // Fallback to simple format
-            return String.format("RESERVATION:%d|USER:%d|SPOT:%d|LOT:%d",
+            return String.format("RESERVATION:%d|USER:%d|LOT:%d",
                     reservation.getId(),
                     reservation.getUserId(),
-                    reservation.getSpotId(),
                     reservation.getParkingLotId());
         }
     }
@@ -262,22 +267,18 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public Map<Long, Boolean> checkOverlap(List<Long> spotIds, LocalDateTime start, LocalDateTime end) {
+    public Long checkOverlap(Long parkingLotId, LocalDateTime start, Integer assumedStayMinute, VehicleType vehicleType) {
+        LocalDateTime end = start.plusMinutes(assumedStayMinute);
 
-        List<Long> occupiedSpotIdsByReservation = reservationRepository.findOccupiedSpotIds(spotIds, start, end);
+        log.debug("Checking overlap for parking lot: {}, time window: {} to {}, vehicle type: {}",
+                parkingLotId, start, end, vehicleType.name());
 
-        List<Long> occupiedSpotIdsByUserSubscription = userSubscriptionRepository.findOccupiedSpotIds(spotIds, start, end);
+        Long count = reservationRepository.findOverlapReservations(
+                parkingLotId, start, end, vehicleType.name());
 
-        Map<Long, Boolean> resultMap = new HashMap<>();
-        for (Long spotId : spotIds) {
-            boolean isOccupied = occupiedSpotIdsByUserSubscription.contains(spotId) || occupiedSpotIdsByReservation.contains(spotId);
-            resultMap.put(spotId, isOccupied);
-        }
+        log.debug("Found {} overlapping reservations", count);
 
-        log.debug("Overlap check for {} spots from {} to {}: {} occupied, {} available",
-                spotIds.size(), start, end, occupiedSpotIdsByReservation.size(), spotIds.size() - occupiedSpotIdsByReservation.size());
-
-        return resultMap;
+        return count != null ? count : 0L;
     }
 
     @NonNull
@@ -441,7 +442,6 @@ public class ReservationServiceImpl implements ReservationService {
     private Map<String, Object> buildReservationNotificationData(Reservation reservation) {
         Map<String, Object> data = new HashMap<>();
         data.put("reservationId", reservation.getId());
-        data.put("spotId", reservation.getSpotId());
         data.put("parkingLotId", reservation.getParkingLotId());
         data.put("reservedFrom", reservation.getReservedFrom().toString());
         data.put("reservedUntil", reservation.getReservedUntil().toString());
@@ -479,7 +479,6 @@ public class ReservationServiceImpl implements ReservationService {
         log.info("Deduction calculation for reservation {}: totalFee={}, initialFee={}, deduction={}",
                 reservation.getId(), reservation.getTotalFee(), reservation.getInitialFee(), deductionAmount);
 
-        // Case 1: Need to deduct more money (totalFee > initialFee) - HAPPY CASE
         if (deductionAmount.compareTo(BigDecimal.ZERO) > 0) {
             try {
                 ResponseEntity<ApiResponse<WalletTransactionResponse>> response = paymentClient.deductWallet(
@@ -487,7 +486,6 @@ public class ReservationServiceImpl implements ReservationService {
                                 .userId(reservation.getUserId())
                                 .amount(deductionAmount)
                                 .transactionType(TransactionConstants.TYPE_DEDUCTION)
-                                .referenceId(reservation.getId().toString())
                                 .description(String.format("Additional charge for reservation %d (Total: %s VND - Prepaid: %s VND)",
                                         reservation.getId(), reservation.getTotalFee(), reservation.getInitialFee()))
                                 .build()
@@ -531,5 +529,6 @@ public class ReservationServiceImpl implements ReservationService {
             log.info("No additional charge needed for reservation {} (exact match)", reservation.getId());
         }
     }
+
 
 }

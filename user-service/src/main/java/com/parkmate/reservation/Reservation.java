@@ -39,9 +39,6 @@ public class Reservation {
     @Column(name = "parking_lot_id", nullable = false)
     Long parkingLotId;
 
-    @Column(name = "spot_id", nullable = false)
-    Long spotId;
-
     @Column(name = "reserved_from", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime reservedFrom;
@@ -49,6 +46,9 @@ public class Reservation {
     @Column(name = "reserved_until", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime reservedUntil;
+
+    @Column(name = "assumed_stay_minute")
+    Integer assumedStayMinute;
 
     @Column(name = "initial_fee", precision = 10, scale = 2)
     BigDecimal initialFee;

@@ -3,6 +3,8 @@ package com.parkmate.reservation;
 import com.parkmate.common.dto.ApiResponse;
 import com.parkmate.common.enums.ReservationStatus;
 import com.parkmate.reservation.dto.*;
+import com.parkmate.vehicle.VehicleType;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/user-service/reservations")
@@ -21,6 +22,7 @@ import java.util.Map;
 public class ReservationController {
 
     private final ReservationService reservationService;
+    private final ReservationHoldService reservationHoldService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ReservationResponse>> createReservation(
@@ -42,12 +44,13 @@ public class ReservationController {
     }
 
     @GetMapping("/overlap")
-    public ResponseEntity<ApiResponse<Map<Long, Boolean>>> checkSpotOverlap(
-            @RequestParam List<Long> spotIds,
+    public ResponseEntity<ApiResponse<Long>> getOverlap(
+            @RequestParam Long parkingLotId,
             @RequestParam LocalDateTime start,
-            @RequestParam LocalDateTime end
+            @RequestParam Integer assumedStayMinute,
+            @RequestParam VehicleType vehicleType
     ) {
-        return ResponseEntity.ok(ApiResponse.success(reservationService.checkOverlap(spotIds, start, end)));
+        return ResponseEntity.ok(ApiResponse.success(reservationService.checkOverlap(parkingLotId, start, assumedStayMinute, vehicleType)));
     }
 
     @GetMapping("/{lotId}/sync")
@@ -64,6 +67,45 @@ public class ReservationController {
             @RequestBody SyncReservationUpdateRequest request) {
         reservationService.updateReservation(id, request);
         return ResponseEntity.ok(ApiResponse.success("Reservation updated successfully"));
+    }
+
+    @GetMapping("/count")
+    @Hidden
+    public ResponseEntity<ApiResponse<Long>> countReservation(
+            @RequestParam Long parkingLotId,
+            @RequestParam LocalDateTime start,
+            @RequestParam Integer assumedStayMinute,
+            @RequestParam VehicleType vehicleType) {
+        return ResponseEntity.ok(ApiResponse.success(reservationService.checkOverlap(parkingLotId, start, assumedStayMinute, vehicleType)));
+    }
+
+    @PostMapping("/hold")
+    public ResponseEntity<ApiResponse<HoldSlotResponse>> holdSlot(
+            @RequestBody HoldSlotRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader) {
+
+        if (userIdHeader != null && request.getUserId() == null) {
+            // If user is authenticated and userId not provided, use the authenticated user
+            request.setUserId(Long.parseLong(userIdHeader));
+        }
+
+        HoldSlotResponse response = reservationHoldService.holdSlot(request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @DeleteMapping("/hold/{holdId}")
+    public ResponseEntity<ApiResponse<String>> releaseHold(@PathVariable String holdId) {
+        reservationHoldService.releaseHold(holdId);
+        return ResponseEntity.ok(ApiResponse.success("Slot released successfully"));
+    }
+
+    @GetMapping("/hold/{holdId}")
+    public ResponseEntity<ApiResponse<TemporaryReservationHold>> getHold(@PathVariable String holdId) {
+        TemporaryReservationHold hold = reservationHoldService.getHold(holdId);
+        if (hold == null) {
+            return ResponseEntity.ok(ApiResponse.error("HOLD_NOT_FOUND", "Hold not found or expired"));
+        }
+        return ResponseEntity.ok(ApiResponse.success(hold));
     }
 
 

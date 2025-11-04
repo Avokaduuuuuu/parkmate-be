@@ -1,8 +1,8 @@
 package com.parkmate.client;
 
 import com.parkmate.common.ApiResponse;
+import com.parkmate.common.enums.VehicleType;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -18,4 +18,26 @@ public interface UserClient {
             @RequestParam String start,
             @RequestParam String end
     );
+
+    @GetMapping("/api/v1/user-service/reservations/count")
+    ApiResponse<Long> countReservation(
+            @RequestParam Long parkingLotId,
+            @RequestParam LocalDateTime start,
+            @RequestParam Integer assumedStayMinute,
+            @RequestParam VehicleType vehicleType);
+
+    @GetMapping("/internal/user-service/reservations/holds/count")
+    ApiResponse<Long> countTemporaryHolds(
+            @RequestParam Long parkingLotId,
+            @RequestParam String vehicleType,
+            @RequestParam String reservedFrom,
+            @RequestParam Integer assumedStayMinute);
+
+//    @GetMapping("/api/v1/user-service/reservations/count")
+//    ApiResponse<Long> countReservation(
+//            @RequestParam Long parkingLotId,
+//            @RequestParam LocalDateTime start,
+//            @RequestParam Integer assumedStayMinute,
+//            @RequestParam VehicleType vehicleType,
+//            @RequestParam Boolean isElectric);
 }

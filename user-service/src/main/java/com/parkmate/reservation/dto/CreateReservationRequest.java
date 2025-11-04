@@ -28,23 +28,17 @@ public class CreateReservationRequest {
     @NotNull
     Long parkingLotId;
 
-    @Schema(description = "Parking lot section ID", example = "789")
-    @NotNull
-    Long spotId;
-
     @Schema(description = "Fee for the reservation", example = "4000")
     BigDecimal initialFee;
-
-    @Schema(description = "Fee for the reservation", example = "4000")
-    BigDecimal totalFee;
 
     @Schema(description = "Start time of the reservation", example = "2024-07-01T10:00:00")
     @NotNull
     LocalDateTime reservedFrom;
+    @Schema(description = "Start time of the reservation", example = "2024-07-01T10:00:00")
+    Integer assumedStayMinute;
 
-    @Schema(description = "End time of the reservation", example = "2024-07-01T11:00:00")
-    @NotNull
-    LocalDateTime reservedUntil;
+    @Schema(description = "Hold ID from temporary slot reservation (optional)", example = "550e8400-e29b-41d4-a716-446655440000")
+    String holdId;
 
 }
 
