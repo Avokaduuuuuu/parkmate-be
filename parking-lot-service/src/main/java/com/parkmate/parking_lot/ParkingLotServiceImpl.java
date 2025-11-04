@@ -126,6 +126,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                         .initialCharge(req.initialCharge())
                         .validFrom(req.validFrom())
                         .validUntil(req.validTo())
+                        .syncStatus(SyncStatus.PENDING)
                         .build()
                 )
                 .toList();

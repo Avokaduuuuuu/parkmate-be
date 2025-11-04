@@ -76,6 +76,8 @@ public class SecurityConfig {
             "/api/v1/user-service/reservations/{lotId}/sync",
             "/api/v1/user-service/reservations/{id}/sync",
             "/api/v1/parking-service/sessions/{lotId}/sync",
+            "/api/v1/parking-service/policies/{lotId}/sync",
+            "/api/v1/parking-service/policies/sync",
 
             // Test
             "/api/v1/fcm/test",

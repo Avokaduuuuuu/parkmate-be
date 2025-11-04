@@ -55,7 +55,8 @@ public enum ErrorCode {
     // Policy errors
     POLICY_NOT_ENOUGH(3801, "Policy not enough", HttpStatus.BAD_REQUEST),
     DUPLICATE_POLICY(3802, "Duplicate policy", HttpStatus.BAD_REQUEST),
-    MISSING_POLICY(3803, "Missing policy", HttpStatus.BAD_REQUEST),;
+    MISSING_POLICY(3803, "Missing policy", HttpStatus.BAD_REQUEST),
+    POLICY_NOT_FOUND(3804, "Policy not found", HttpStatus.NOT_FOUND),;
 
     private final int code;
     private final String message;
