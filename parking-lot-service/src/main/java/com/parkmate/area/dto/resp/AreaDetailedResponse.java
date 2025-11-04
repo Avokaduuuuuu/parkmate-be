@@ -33,5 +33,4 @@ public class AreaDetailedResponse {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
     List<SpotResponse> spots;
-    PricingRuleResponse pricingRule;
 }

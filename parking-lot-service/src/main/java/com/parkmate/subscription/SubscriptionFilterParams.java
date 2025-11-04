@@ -24,8 +24,9 @@ public class SubscriptionFilterParams {
     VehicleType vehicleType;
     DurationType durationType;
     Long lotId;
+    Boolean ownedByMe;
 
-    public Specification<SubscriptionEntity> getSpecification() {
+    public Specification<SubscriptionEntity> getSpecification(Long partnerId) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -48,6 +49,13 @@ public class SubscriptionFilterParams {
             if (lotId != null) {
                 Join<SubscriptionEntity, ParkingLotEntity> join = root.join("parkingLot", JoinType.LEFT);
                 predicates.add(cb.equal(join.get("id"), lotId));
+            }
+
+            if (ownedByMe != null && ownedByMe) {
+                if (partnerId != null) {
+                    Join<SubscriptionEntity, ParkingLotEntity> join = root.join("parkingLot", JoinType.LEFT);
+                    predicates.add(cb.equal(join.get("partnerId"), partnerId));
+                }
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

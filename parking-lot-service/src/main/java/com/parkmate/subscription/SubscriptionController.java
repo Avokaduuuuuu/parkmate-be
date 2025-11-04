@@ -52,6 +52,8 @@ public class SubscriptionController {
     })
     @GetMapping
     public ResponseEntity<?> fetchAll(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "X-User-Id", required = false) String userHeaderId,
             @Parameter(description = "Page number (zero-based)", example = "0")
             @RequestParam(defaultValue = "0") int page,
 
@@ -71,7 +73,7 @@ public class SubscriptionController {
                 .body(
                         com.parkmate.common.ApiResponse.success(
                                 "Fetching all subscriptions.",
-                                subscriptionService.fetchAllSubscriptions(page, size, sortBy, sortOrder, filterParams)
+                                subscriptionService.fetchAllSubscriptions(userHeaderId,page, size, sortBy, sortOrder, filterParams)
                         )
                 );
     }

@@ -84,8 +84,6 @@ public class PricingRuleEntity {
     @JoinColumn(name = "lot_id")
     ParkingLotEntity parkingLot;
 
-    @OneToMany(mappedBy = "pricingRule")
-    List<AreaEntity> areas;
 
     @OneToMany(mappedBy = "pricingRule")
     List<SessionEntity> sessions;

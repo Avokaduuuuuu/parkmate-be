@@ -106,6 +106,8 @@ public class SessionController {
                 """
     )
     public ResponseEntity<?> getAllSessions(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
             @Parameter(description = "Page number (zero-based index)", example = "0")
             @RequestParam(defaultValue = "0") int page,
 
@@ -125,7 +127,7 @@ public class SessionController {
                 .body(
                         ApiResponse.success(
                                 "Fetch all sessions successfully",
-                                sessionService.getSessions(page, size, sortBy, sortOrder, params)
+                                sessionService.getSessions(userIdHeader ,page, size, sortBy, sortOrder, params)
                         )
                 );
     }
