@@ -50,7 +50,12 @@ public enum ErrorCode {
     INVALID_IMAGE(3602, "Invalid image", HttpStatus.BAD_REQUEST),
 
     // Subscription errors
-    SUBSCRIPTION_NOT_FOUND(3701, "Subscription not found", HttpStatus.NOT_FOUND),;
+    SUBSCRIPTION_NOT_FOUND(3701, "Subscription not found", HttpStatus.NOT_FOUND),
+
+    // Policy errors
+    POLICY_NOT_ENOUGH(3801, "Policy not enough", HttpStatus.BAD_REQUEST),
+    DUPLICATE_POLICY(3802, "Duplicate policy", HttpStatus.BAD_REQUEST),
+    MISSING_POLICY(3803, "Missing policy", HttpStatus.BAD_REQUEST),;
 
     private final int code;
     private final String message;

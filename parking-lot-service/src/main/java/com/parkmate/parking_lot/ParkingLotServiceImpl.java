@@ -17,12 +17,16 @@ import com.parkmate.parking_lot.dto.resp.ParkingLotResponse;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
+import com.parkmate.policy.PolicyEntity;
+import com.parkmate.policy.dto.req.PolicyCreateRequest;
+import com.parkmate.policy.enums.PolicyType;
 import com.parkmate.pricing_rule.PricingRuleEntity;
 import com.parkmate.pricing_rule.PricingRuleMapper;
 import com.parkmate.pricing_rule.PricingRuleRepository;
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
 import com.parkmate.s3.S3Service;
+import com.parkmate.session.enums.SyncStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +39,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -85,24 +90,9 @@ public class ParkingLotServiceImpl implements ParkingLotService {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
-        List<VehicleType> requestedVehicleTypes = request.pricingRuleCreateRequests()
-                .stream()
-                .map(PricingRuleCreateRequest::vehicleType)
-                .toList();
+        validatePolicies(request.policyCreateRequests());
+        validatePricingRules(request);
 
-        Set<VehicleType> pricingRuleVehicleTypes = new HashSet<>(requestedVehicleTypes);
-
-        if (requestedVehicleTypes.size() != pricingRuleVehicleTypes.size()) {
-            throw new AppException(
-                ErrorCode.DUPLICATE_PRICING_RULE
-            );
-        }
-
-        Set<VehicleType> capacityVehicleTypes = request.lotCapacityRequests().stream().map(LotCapacityCreateRequest::vehicleType).collect(Collectors.toSet());
-
-        if (!capacityVehicleTypes.containsAll(pricingRuleVehicleTypes)) {
-            throw new AppException(ErrorCode.PRICING_RULE_CAPACITY_MISMATCH);
-        }
         Long partnerId = Long.parseLong(userHeaderId);
         ParkingLotEntity parkingLotEntity = ParkingLotMapper.INSTANCE.toEntity(request);
         parkingLotEntity.setIs24Hour(request.is24Hour());
@@ -110,6 +100,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         parkingLotEntity.setStatus(ParkingLotStatus.PENDING);
         parkingLotEntity.setLotCapacity(toLotCapacity(request.lotCapacityRequests(), parkingLotEntity));
         parkingLotEntity.setPricingRules(toPricingRules(request.pricingRuleCreateRequests(), parkingLotEntity));
+        parkingLotEntity.setPolicies(toPolicies(request.policyCreateRequests(), parkingLotEntity));
         return ParkingLotMapper.INSTANCE.toResponse(parkingLotRepository.save(parkingLotEntity));
     }
 
@@ -138,6 +129,58 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                         .build()
                 )
                 .toList();
+    }
+
+    private void validatePricingRules(ParkingLotCreateRequest request) {
+        List<VehicleType> requestedVehicleTypes = request.pricingRuleCreateRequests()
+                .stream()
+                .map(PricingRuleCreateRequest::vehicleType)
+                .toList();
+
+        Set<VehicleType> pricingRuleVehicleTypes = new HashSet<>(requestedVehicleTypes);
+
+        if (requestedVehicleTypes.size() != pricingRuleVehicleTypes.size()) {
+            throw new AppException(
+                    ErrorCode.DUPLICATE_PRICING_RULE
+            );
+        }
+
+        Set<VehicleType> capacityVehicleTypes = request.lotCapacityRequests().stream().map(LotCapacityCreateRequest::vehicleType).collect(Collectors.toSet());
+
+        if (!capacityVehicleTypes.containsAll(pricingRuleVehicleTypes)) {
+            throw new AppException(ErrorCode.PRICING_RULE_CAPACITY_MISMATCH);
+        }
+    }
+
+    private List<PolicyEntity> toPolicies(List<PolicyCreateRequest> requests, ParkingLotEntity parkingLotEntity) {
+        return requests.stream()
+                .map(req -> PolicyEntity.builder()
+                        .parkingLot(parkingLotEntity)
+                        .policyType(req.policyType())
+                        .value(req.value())
+                        .isActive(true)
+                        .syncStatus(SyncStatus.PENDING)
+                        .build())
+                .toList();
+    }
+
+    private void validatePolicies(List<PolicyCreateRequest> policies) {
+        if (policies.size() != PolicyType.values().length) {
+            throw new AppException(ErrorCode.POLICY_NOT_ENOUGH, "There must be " + PolicyType.values().length + " policies");
+        }
+
+        Set<PolicyType> providedPolicies = policies.stream().map(PolicyCreateRequest::policyType).collect(Collectors.toSet());
+
+        if (providedPolicies.size() != policies.size()) {
+            throw new AppException(ErrorCode.DUPLICATE_POLICY, "Duplicate policy is not allowed");
+        }
+
+        Set<PolicyType> allTypes = EnumSet.allOf(PolicyType.class);
+        if (!providedPolicies.containsAll(allTypes)) {
+            Set<PolicyType> missingTypes = new HashSet<>(allTypes);
+            missingTypes.removeAll(providedPolicies);
+            throw new AppException(ErrorCode.MISSING_POLICY, "Missing policies: " + missingTypes);
+        }
     }
 
     @Override

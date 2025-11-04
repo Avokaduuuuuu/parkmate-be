@@ -6,6 +6,7 @@ import com.parkmate.common.BaseEntity;
 import com.parkmate.floor.FloorEntity;
 import com.parkmate.image.ImageEntity;
 import com.parkmate.lot_capacity.LotCapacityEntity;
+import com.parkmate.policy.PolicyEntity;
 import com.parkmate.pricing_rule.PricingRuleEntity;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import com.parkmate.session.SessionEntity;
@@ -106,4 +107,7 @@ public class    ParkingLotEntity extends BaseEntity {
 
     @OneToMany(mappedBy = "parkingLot")
     List<SubscriptionEntity> subscriptions;
+
+    @OneToMany(mappedBy = "parkingLot", cascade = CascadeType.ALL)
+    List<PolicyEntity> policies;
 }
