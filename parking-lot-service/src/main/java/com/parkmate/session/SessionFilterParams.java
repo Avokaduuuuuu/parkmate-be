@@ -139,15 +139,29 @@ public class SessionFilterParams {
     )
     Integer durationMinuteLessThan;
 
+    @Schema(
+            description = "Filter to show only sessions owned by the authenticated member. " +
+                    "Requires partner authentication. When true, returns only sessions belonging to the current member.",
+            example = "true"
+    )
+    Boolean ownedByMe;
+
     /**
      * Builds a JPA Specification for filtering parking sessions based on the provided parameters.
      *
      * @return JPA Specification for querying parking sessions
      */
     @JsonIgnore
-    public Specification<SessionEntity> getSpecification() {
+    public Specification<SessionEntity> getSpecification(Long userId) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
+
+
+            if (ownedByMe != null && ownedByMe) {
+                if (userId != null) {
+                    predicates.add(cb.equal(root.get("userId"), userId));
+                }
+            }
 
             // Filter by parking lot ID
             if (lotId != null) {

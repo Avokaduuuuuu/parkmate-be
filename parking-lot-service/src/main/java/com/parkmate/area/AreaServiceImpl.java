@@ -95,11 +95,6 @@ public class AreaServiceImpl implements AreaService {
             if (overlappedSpotsMap.containsKey(spot.getId())) spot.setHasSession(overlappedSpotsMap.get(spot.getId()));
         });
 
-        if (area.getPricingRule() == null) {
-            PricingRuleEntity pricingRuleEntity = pricingRuleRepository.findByIsActiveAndVehicleType(true, area.getVehicleType())
-                    .orElseThrow(() -> new AppException(ErrorCode.PRICING_RULE_NOT_FOUND));
-            response.setPricingRule(PricingRuleMapper.INSTANCE.toResponse(pricingRuleEntity));
-        }
         return response;
     }
 

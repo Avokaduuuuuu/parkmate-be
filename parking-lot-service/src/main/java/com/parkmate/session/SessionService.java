@@ -13,6 +13,7 @@ public interface SessionService {
     SessionResponse createSession(Long lotId,SessionCreateRequest request);
 
     Page<SessionResponse> getSessions(
+            String userIdHeader,
             int page,
             int size,
             String sortBy,

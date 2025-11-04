@@ -64,10 +64,13 @@ public class SessionServiceImpl implements SessionService{
     }
 
     @Override
-    public Page<SessionResponse> getSessions(int page, int size, String sortBy, String sortOrder, SessionFilterParams params) {
+    public Page<SessionResponse> getSessions(
+            String userIdHeader,
+            int page, int size, String sortBy, String sortOrder, SessionFilterParams params) {
+        Long userId = userIdHeader == null ? null : Long.parseLong(userIdHeader);
         Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<SessionEntity> sessionEntities = sessionRepository.findAll(params.getSpecification(),pageable);
+        Page<SessionEntity> sessionEntities = sessionRepository.findAll(params.getSpecification(userId),pageable);
         return sessionEntities.map(SessionMapper.INSTANCE::toResponse);
     }
 
@@ -155,6 +158,7 @@ public class SessionServiceImpl implements SessionService{
         sessionEntity.setSessionType(request.sessionType());
         sessionEntity.setLicensePlate(request.licensePlate());
         sessionEntity.setEntryTime(request.entryTime());
+        sessionEntity.setExitTime(request.exitTime());
         sessionEntity.setAuthMethod(request.authMethod());
         sessionEntity.setStatus(request.status());
         sessionEntity.setSyncStatus(SyncStatus.SYNCED);

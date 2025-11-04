@@ -26,10 +26,13 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final ParkingLotRepository parkingLotRepository;
 
     @Override
-    public Page<SubscriptionResponse> fetchAllSubscriptions(int page, int size, String sortBy, String sortOrder, SubscriptionFilterParams filterParams) {
+    public Page<SubscriptionResponse> fetchAllSubscriptions(
+            String userHeaderId,
+            int page, int size, String sortBy, String sortOrder, SubscriptionFilterParams filterParams) {
+        Long partnerId = userHeaderId != null ? Long.parseLong(userHeaderId) : null;
         Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<SubscriptionEntity> subscriptions = subscriptionRepository.findAll(filterParams.getSpecification(), pageable);
+        Page<SubscriptionEntity> subscriptions = subscriptionRepository.findAll(filterParams.getSpecification(partnerId), pageable);
         return subscriptions.map(SubscriptionMapper.INSTANCE::toResponse);
     }
 

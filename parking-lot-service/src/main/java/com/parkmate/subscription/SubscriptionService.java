@@ -8,11 +8,13 @@ import org.springframework.data.domain.Page;
 import java.awt.print.Pageable;
 
 public interface SubscriptionService {
-    Page<SubscriptionResponse> fetchAllSubscriptions(int page,
-                                                     int size,
-                                                     String sortBy,
-                                                     String sortOrder,
-                                                     SubscriptionFilterParams filterParams);
+    Page<SubscriptionResponse> fetchAllSubscriptions(
+            String userHeaderId,
+            int page,
+            int size,
+            String sortBy,
+            String sortOrder,
+            SubscriptionFilterParams filterParams);
 
     SubscriptionResponse fetchSubscriptionById(Long id);
 
