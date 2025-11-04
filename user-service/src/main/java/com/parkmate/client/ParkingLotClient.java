@@ -18,7 +18,7 @@ public interface ParkingLotClient {
     @GetMapping("/internal/parking-service/spots/{id}/name")
     ApiResponse<SpotNameDto> getSpotName(@PathVariable Long id);
 
-    record ParkingLotNameDto(Long id, String name) {
+    record ParkingLotNameDto(Long id, String name, Integer horizonTime) {
     }
 
     record SpotNameDto(Long id, String name) {

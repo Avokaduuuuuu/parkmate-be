@@ -36,7 +36,7 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
         // 1. Get wallet with lock to prevent race condition
         log.info("Creating wallet transaction for user {}: type={}, amount={}",
                 request.getUserId(), request.getTransactionType(), request.getAmount());
-        Wallet wallet = walletRepository.findByUserId(request.getUserId())
+        Wallet wallet = walletRepository.findByHolderId(request.getUserId())
                 .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND));
 
         BigDecimal currentBalance = wallet.getBalance();

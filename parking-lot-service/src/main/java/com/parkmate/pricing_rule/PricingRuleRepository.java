@@ -9,10 +9,10 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 public interface PricingRuleRepository extends JpaRepository<PricingRuleEntity, Long> {
     List<PricingRuleEntity> findAllByParkingLotIdAndSyncStatus(Long lotId, SyncStatus syncStatus);
+
     Optional<PricingRuleEntity> findByIsActiveAndVehicleType(Boolean isActive, VehicleType vehicleType);
 
 
@@ -22,8 +22,9 @@ public interface PricingRuleRepository extends JpaRepository<PricingRuleEntity, 
                     "SET p.syncStatus = :status " +
                     "WHERE p.id IN :ids"
     )
-    Integer updateSyncedPricingRules(@Param("ids") List<Long> ruleIds,@Param("status") SyncStatus syncStatus);
+    Integer updateSyncedPricingRules(@Param("ids") List<Long> ruleIds, @Param("status") SyncStatus syncStatus);
 
     List<PricingRuleEntity> findAllByVehicleTypeAndIsActive(VehicleType vehicleType, Boolean isActive);
 
+    Optional<PricingRuleEntity> findByParkingLot_IdAndIsActiveAndVehicleType(Long parkingLotId, Boolean isActive, VehicleType vehicleType);
 }

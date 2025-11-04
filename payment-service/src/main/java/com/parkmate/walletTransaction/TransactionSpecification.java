@@ -16,19 +16,19 @@ public class TransactionSpecification {
 
         // Filter by user ID from header (applies when ownedByMe is true)
         if (userId != null && Boolean.TRUE.equals(criteria.getOwnedByMe())) {
-            builder.and(transaction.wallet.userId.eq(userId));
+            builder.and(transaction.wallet.holderId.eq(userId));
         }
         // Filter by specific user ID (only when ownedByMe is explicitly false - for admin use)
         else if (criteria.getUserId() != null && Boolean.FALSE.equals(criteria.getOwnedByMe())) {
-            builder.and(transaction.wallet.userId.eq(criteria.getUserId()));
+            builder.and(transaction.wallet.holderId.eq(criteria.getUserId()));
         }
         // Filter by user ID when ownedByMe is null
         else if (criteria.getUserId() != null && criteria.getOwnedByMe() == null) {
-            builder.and(transaction.wallet.userId.eq(criteria.getUserId()));
+            builder.and(transaction.wallet.holderId.eq(criteria.getUserId()));
         }
         // Default: when userId from header is present and ownedByMe is null, filter by header userId
         else if (userId != null && criteria.getOwnedByMe() == null) {
-            builder.and(transaction.wallet.userId.eq(userId));
+            builder.and(transaction.wallet.holderId.eq(userId));
         }
 
         // Filter by transaction ID

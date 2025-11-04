@@ -19,8 +19,6 @@ public interface ReservationMapper {
     @Mapping(target = "qrCode", ignore = true)
     @Mapping(target = "parkingLotName",
             expression = "java(getParkingLotName(parkingLotClient, reservation.getParkingLotId()))")
-    @Mapping(target = "spotName",
-            expression = "java(getSpotName(parkingLotClient, reservation.getSpotId()))")
     @Mapping(target = "vehicleLicensePlate",
             expression = "java(getVehicleLicensePlate(reservation.getVehicleId(), vehicleService))")
     @Mapping(target = "vehicleType",
@@ -42,16 +40,6 @@ public interface ReservationMapper {
     default String getParkingLotName(ParkingLotClient client, Long parkingLotId) {
         try {
             var response = client.getParkingLotName(parkingLotId);
-            return response != null && response.data() != null ? response.data().name() : null;
-        } catch (Exception e) {
-            // Log error and return null
-            return null;
-        }
-    }
-
-    default String getSpotName(ParkingLotClient client, Long spotId) {
-        try {
-            var response = client.getSpotName(spotId);
             return response != null && response.data() != null ? response.data().name() : null;
         } catch (Exception e) {
             // Log error and return null

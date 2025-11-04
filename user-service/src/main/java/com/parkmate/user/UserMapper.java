@@ -53,11 +53,9 @@ public abstract class UserMapper {
      */
     protected String generateUserQRCode(User user) {
         try {
-            // Build QR code data structure
             Map<String, Object> qrData = new LinkedHashMap<>();
             qrData.put("userId", user.getId());
-
-            // Add vehicle list if available
+            qrData.put("qrType", "MemberWalkIn");
             if (user.getVehicles() != null && !user.getVehicles().isEmpty()) {
                 List<Map<String, Object>> vehicleList = user.getVehicles().stream()
                         .filter(Vehicle::isActive) // Only include active vehicles
@@ -73,20 +71,17 @@ public abstract class UserMapper {
                 qrData.put("vehicles", vehicleList);
             }
 
-            // Convert to JSON string
             String jsonContent = objectMapper.writeValueAsString(qrData);
 
             log.debug("Generated QR code content for user ID: {} with {} vehicles",
                     user.getId(),
                     user.getVehicles() != null ? user.getVehicles().size() : 0);
 
-            // Generate QR code image as Base64 with data URI
             return QRCodeGenerator.generateQRCodeBase64(jsonContent);
 
         } catch (Exception e) {
             log.error("Error generating QR code for user ID: {}", user.getId(), e);
 
-            // Fallback to simple format without vehicle details
             try {
                 String fallbackContent = String.format("{\"userId\":%d}", user.getId());
                 return QRCodeGenerator.generateQRCodeBase64(fallbackContent);

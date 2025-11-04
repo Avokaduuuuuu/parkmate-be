@@ -39,13 +39,12 @@ public class InternalParkingController {
         description = "Retrieve only the ID and name of a parking lot. Used internally by reservation service."
     )
     public ResponseEntity<?> getParkingLotName(
-        @PathVariable("id")
-        @Parameter(description = "Parking lot ID", required = true, example = "1")
+            @PathVariable @Parameter(description = "Parking lot ID", required = true, example = "1")
         Long id
     ) {
         log.debug("Getting parking lot name for ID: {}", id);
         var parkingLot = parkingLotService.getParkingLotById(id);
-        var response = new ParkingLotNameDto(parkingLot.getId(), parkingLot.getName());
+        var response = new ParkingLotInternalDto(parkingLot.getId(), parkingLot.getName(), parkingLot.getHorizonTime());
         return ResponseEntity.status(HttpStatus.OK)
             .body(ApiResponse.success("Parking lot name fetched successfully", response));
     }
@@ -56,8 +55,7 @@ public class InternalParkingController {
         description = "Retrieve only the ID and name of a parking spot. Used internally by reservation service."
     )
     public ResponseEntity<?> getSpotName(
-        @PathVariable("id")
-        @Parameter(description = "Spot ID", required = true, example = "1")
+            @PathVariable @Parameter(description = "Spot ID", required = true, example = "1")
         Long id
     ) {
         log.debug("Getting spot name for ID: {}", id);
@@ -70,7 +68,7 @@ public class InternalParkingController {
     /**
      * DTO for parking lot name response
      */
-    public record ParkingLotNameDto(Long id, String name) {}
+    public record ParkingLotInternalDto(Long id, String name, Integer horizonTime) {}
 
     /**
      * DTO for spot name response

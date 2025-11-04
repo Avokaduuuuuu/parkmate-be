@@ -30,6 +30,7 @@ public class ParkingLotDetailedResponse {
     Double latitude;
     Double longitude;
     Integer totalFloors;
+    Integer horizonTime;
     @JsonFormat(pattern = "HH:mm:ss")
     LocalTime openTime;
     @JsonFormat(pattern = "HH:mm:ss")
