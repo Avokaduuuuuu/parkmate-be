@@ -41,7 +41,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,6 +101,7 @@ public class ReservationServiceImpl implements ReservationService {
                 .initialFee(request.getInitialFee())
                 .vehicle(vehicle)
                 .parkingLotId(request.getParkingLotId())
+                .pricingRuleId(request.getPricingRuleId())
                 .status(ReservationStatus.PENDING)
                 .assumedStayMinute(request.getAssumedStayMinute())
                 .build();
@@ -115,7 +115,7 @@ public class ReservationServiceImpl implements ReservationService {
                             .amount(reservation.getInitialFee())
                             .transactionType(TransactionConstants.TYPE_DEDUCTION)
                             .processedAt(LocalDateTime.now())
-                            .description("Reservation fee for reservation" + reservation.getId())
+                            .description("Cọc đặt chỗ: " + reservation.getId())
                             .build()
             );
 
@@ -163,7 +163,7 @@ public class ReservationServiceImpl implements ReservationService {
             reservationRepository.save(reservation);
             throw new AppException(ErrorCode.WALLET_DEDUCTION_FAILED, "Payment processing failed: " + e.getMessage());
         }
-        sendNotificationForStatus(reservation.getId(), reservation.getStatus());
+        sendNotificationForStatus(reservation.getId(), ReservationStatus.PENDING);
         return getReservationResponse(reservation);
     }
 
@@ -285,6 +285,7 @@ public class ReservationServiceImpl implements ReservationService {
         switch (status) {
             case PENDING:
                 sendNewReservationNotification(reservationId);
+                break;
             case ACTIVE:
                 sendActiveReservationNotification(reservationId);
                 break;
@@ -308,18 +309,9 @@ public class ReservationServiceImpl implements ReservationService {
                 NotificationEventType.RESERVATION_CREATED,
                 "ĐẶT CHỖ THÀNH CÔNG",
                 reservation -> {
-                    long feignStartTime = System.currentTimeMillis();
                     String parkingLotName = reservationMapper.getParkingLotName(parkingLotClient, reservation.getParkingLotId());
-                    long feignEndTime = System.currentTimeMillis();
-
-                    log.info("Feign call to get parking lot name took: {}ms", (feignEndTime - feignStartTime));
-
                     String lotName = (parkingLotName != null) ? parkingLotName : "the parking lot";
                     String time = ZonedDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"));
-
-                    long totalTime = System.currentTimeMillis() - startTime;
-                    log.info("ACTIVE notification completed for reservation: {} in {}ms", reservationId, totalTime);
-
                     return String.format("BẠN ĐÃ ĐẶT CHỖ THÀNH CÔNG CHO XE CÓ BIỂN SỐ %s TẠI BÃI XE %s VÀO LÚC %s",
                             reservation.getVehicle().getLicensePlate(),
                             lotName,
@@ -335,7 +327,7 @@ public class ReservationServiceImpl implements ReservationService {
         sendReservationNotificationWithContent(
                 reservationId,
                 NotificationEventType.RESERVATION_ACTIVATED,
-                "Vehicle Entered Parking Lot",
+                "XE CỦA BẠN ĐÃ VÀO BÃI",
                 reservation -> {
                     long feignStartTime = System.currentTimeMillis();
                     String parkingLotName = reservationMapper.getParkingLotName(parkingLotClient, reservation.getParkingLotId());
@@ -349,7 +341,7 @@ public class ReservationServiceImpl implements ReservationService {
                     long totalTime = System.currentTimeMillis() - startTime;
                     log.info("ACTIVE notification completed for reservation: {} in {}ms", reservationId, totalTime);
 
-                    return String.format("Your vehicle has entered %s at %s", lotName, time);
+                    return String.format("Xe của bạn đã vào bãi xe %s vào lúc %s", lotName, time);
                 }
         );
     }
@@ -361,16 +353,17 @@ public class ReservationServiceImpl implements ReservationService {
         sendReservationNotificationWithContent(
                 reservationId,
                 NotificationEventType.RESERVATION_COMPLETED,
-                "Reservation Completed",
+                "XE CỦA BẠN ĐÃ RA KHỎI BÃI",
                 reservation -> {
-                    String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("h:mm a"));
+                    String time = reservation.getReservedUntil().toString();
                     String totalFee = (reservation.getTotalFee() != null) ? reservation.getTotalFee().toString() : "0";
 
                     long totalTime = System.currentTimeMillis() - startTime;
                     log.info("COMPLETED notification completed for reservation: {} in {}ms", reservationId, totalTime);
 
                     return String.format(
-                            "Reservation completed and your vehicle has exited at %s. Total fee charged: %s VND",
+                            "Lượt đặt chỗ tại của bạn đã hoàn thành vào lúc %s. \n Tổng số phí phải trả: %s VND \n" +
+                                    "Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Parkmate",
                             time, totalFee
                     );
                 }
