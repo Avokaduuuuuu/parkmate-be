@@ -24,6 +24,8 @@ public class CreateReservationRequest {
     @NotNull
     Long vehicleId;
 
+    Long pricingRuleId;
+
     @Schema(description = "Parking lot ID where the reservation is made", example = "456")
     @NotNull
     Long parkingLotId;
