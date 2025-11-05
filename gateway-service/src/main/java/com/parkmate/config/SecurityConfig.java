@@ -93,6 +93,7 @@ public class SecurityConfig {
 
     public static final String[] MEMBER_PARKING_ENDPOINTS = {
             "/api/v1/parking-service/spots/*/session",
+            "/api/v1/parking-service/lots/*/available-spots"
     };
 
     // Member endpoints (regular users)

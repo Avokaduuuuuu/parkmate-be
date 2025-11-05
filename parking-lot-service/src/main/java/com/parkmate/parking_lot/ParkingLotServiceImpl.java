@@ -1,5 +1,7 @@
 package com.parkmate.parking_lot;
 
+import com.parkmate.area.AreaRepository;
+import com.parkmate.client.UserClient;
 import com.parkmate.common.enums.VehicleType;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
@@ -99,17 +101,8 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         validatePolicies(request.policyCreateRequests());
         validatePricingRules(request);
 
-        if (requestedVehicleTypes.size() != pricingRuleVehicleTypes.size()) {
-            throw new AppException(
-                    ErrorCode.DUPLICATE_PRICING_RULE
-            );
-        }
 
         Set<VehicleType> capacityVehicleTypes = request.lotCapacityRequests().stream().map(LotCapacityCreateRequest::vehicleType).collect(Collectors.toSet());
-
-        if (!capacityVehicleTypes.containsAll(pricingRuleVehicleTypes)) {
-            throw new AppException(ErrorCode.PRICING_RULE_CAPACITY_MISMATCH);
-        }
         Long partnerId = Long.parseLong(userHeaderId);
         ParkingLotEntity parkingLotEntity = ParkingLotMapper.INSTANCE.toEntity(request);
         parkingLotEntity.setIs24Hour(request.is24Hour());
