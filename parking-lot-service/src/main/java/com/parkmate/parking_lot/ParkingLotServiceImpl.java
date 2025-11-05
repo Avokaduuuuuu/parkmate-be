@@ -20,8 +20,6 @@ import com.parkmate.parking_lot.dto.resp.ParkingLotAvailableReservationSpotRespo
 import com.parkmate.parking_lot.dto.resp.ParkingLotDetailedResponse;
 import com.parkmate.parking_lot.dto.resp.ParkingLotResponse;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
-import com.parkmate.exception.AppException;
-import com.parkmate.exception.ErrorCode;
 import com.parkmate.policy.PolicyEntity;
 import com.parkmate.policy.dto.req.PolicyCreateRequest;
 import com.parkmate.policy.enums.PolicyType;
@@ -32,8 +30,8 @@ import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleSimpleResponse;
 import com.parkmate.s3.S3Service;
-import com.parkmate.session.enums.SyncStatus;
 import com.parkmate.session.SessionRepository;
+import com.parkmate.session.enums.SyncStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,8 +41,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.EnumSet;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -101,8 +99,6 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         validatePolicies(request.policyCreateRequests());
         validatePricingRules(request);
 
-
-        Set<VehicleType> capacityVehicleTypes = request.lotCapacityRequests().stream().map(LotCapacityCreateRequest::vehicleType).collect(Collectors.toSet());
         Long partnerId = Long.parseLong(userHeaderId);
         ParkingLotEntity parkingLotEntity = ParkingLotMapper.INSTANCE.toEntity(request);
         parkingLotEntity.setIs24Hour(request.is24Hour());
@@ -273,15 +269,13 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                             .toList();
                     if (floorCapacityResponses.isEmpty()) return null;
 
-                    FloorResponse floorResponse = FloorResponse.builder()
+                    return FloorResponse.builder()
                             .id(floor.getId())
                             .floorNumber(floor.getFloorNumber())
                             .floorName(floor.getFloorName())
                             .isActive(floor.getIsActive())
                             .parkingFloorCapacity(floorCapacityResponses)
                             .build();
-
-                    return floorResponse;
                 }
         ).toList();
 
@@ -317,7 +311,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         try {
             PricingRuleEntity pricingRule = pricingRuleRepository.findByParkingLot_IdAndIsActiveAndVehicleType(id, true, vehicleType)
                     .orElseThrow(() -> new AppException(ErrorCode.PRICING_RULE_NOT_FOUND));
-            Double estimateTotalFee = pricingRule.getInitialCharge() + ((assumedStayMinute - pricingRule.getInitialDurationMinute()) / pricingRule.getStepMinute()) * pricingRule.getStepRate();
+            Double estimateTotalFee = pricingRule.getInitialCharge() + Math.ceil(((float) (assumedStayMinute - pricingRule.getInitialDurationMinute()) / pricingRule.getStepMinute())) * pricingRule.getStepRate();
             log.info("Estimate Total Fee: {}", estimateTotalFee);
             if (assumedStayMinute < parkingLot.getHorizonTime()) {
                 assumedStayMinute = Math.toIntExact(Math.round(parkingLot.getHorizonTime()));
@@ -330,8 +324,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
             if (overLapReservations == null) overLapReservations = 0L;
             log.info("OverLap Reservations: {}", overLapReservations);
 
-            // Count temporary holds from Redis (users who moved to summary page but haven't completed reservation)
-            Long temporaryHolds = 0L;
+            Long temporaryHolds;
             try {
                 temporaryHolds = userClient.countTemporaryHolds(
                         id,

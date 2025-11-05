@@ -45,6 +45,7 @@ public enum ErrorCode {
     ACCOUNT_INACTIVE(2503, "Account is inactive", HttpStatus.BAD_REQUEST),
     EMAIL_ALREADY_VERIFIED(2504, "Email has been verified before on this account", HttpStatus.CONFLICT),
     EMAIL_RESEND_FAILED(2505, "Failed to resend verification email", HttpStatus.UNAUTHORIZED),
+    ACCOUNT_NOT_VERIFIED(2506, "Please verify email before logging in", HttpStatus.UNAUTHORIZED),
 
     // Partner Registration errors 27
     TAX_NUMBER_ALREADY_EXISTS(2701, "A partner with the same tax number '{0}' already exists.", HttpStatus.CONFLICT),

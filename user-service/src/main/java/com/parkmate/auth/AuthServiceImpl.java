@@ -67,6 +67,10 @@ public class AuthServiceImpl implements AuthService {
             throw new AppException(ErrorCode.PASSWORD_MISMATCH, "Invalid password");
         }
 
+        if (account.getStatus() == AccountStatus.PENDING_VERIFICATION) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED, "Account is not verified");
+        }
+
         Map<String, Object> claims = buildClaims(account);
 
         String accessToken = jwtUtil.generateToken(claims);
@@ -185,11 +189,8 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByPhone(request.getPhone())) {
             throw new AppException(ErrorCode.PHONE_ALREADY_EXISTS);
         }
-
-        // Create verification token
         String verificationToken = generateNumericVerificationToken();
 
-        // Create Account
         Account account = Account.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -201,7 +202,6 @@ public class AuthServiceImpl implements AuthService {
 
         Account savedAccount = accountRepository.save(account);
 
-        // Create User linked to Account
         User user = User.builder()
                 .account(savedAccount)
                 .phone(request.getPhone())
@@ -215,20 +215,7 @@ public class AuthServiceImpl implements AuthService {
         String fullName = savedUser.getFirstName() + " " + savedUser.getLastName();
         sendVerificationEmail(savedAccount.getEmail(), verificationToken, fullName);
 
-        // Generate tokens
-        Map<String, Object> claims = buildClaims(savedAccount);
-        String accessToken = jwtUtil.generateToken(claims);
-        String refreshToken = UUID.randomUUID().toString().replace("-", "");
-
-        redisTokenService.storeRefreshToken(refreshToken, claims, REFRESH_TOKEN_EXPIRATION);
-
         return RegisterResponse.builder()
-                .authResponse(AuthResponse.builder()
-                        .accessToken(accessToken)
-                        .refreshToken(refreshToken)
-                        .tokenType(TOKEN_TYPE)
-                        .expiresIn(ACCESS_TOKEN_EXPIRATION)
-                        .build())
                 .userResponse(responseWithPresignedURL(userMapper.toResponse(savedUser), savedUser))
                 .build();
     }
@@ -298,7 +285,7 @@ public class AuthServiceImpl implements AuthService {
             } else if (account.getRole().equals(AccountRole.MEMBER)) {
                 User user = userRepository.findByAccountId(account.getId())
                         .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
-                String fullName = account.getUser().getFirstName() + " " + account.getUser().getLastName();
+                String fullName = user.getFirstName() + " " + user.getLastName();
                 accountEventPublisher.publishMemberVerificationEvent(
                         account.getEmail(),
                         fullName,

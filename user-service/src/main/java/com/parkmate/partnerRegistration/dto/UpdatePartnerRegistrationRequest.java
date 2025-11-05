@@ -14,7 +14,7 @@ import lombok.*;
 public class UpdatePartnerRegistrationRequest {
 
     @NotNull(message = "Status is required")
-    @Schema(description = "New status for the registration", example = "APPROVED", required = true, allowableValues = {"PENDING", "APPROVED", "REJECTED"})
+    @Schema(description = "New status for the registration", example = "APPROVED", allowableValues = {"PENDING", "APPROVED", "REJECTED"})
     private RequestStatus status;
 
     @Schema(description = "Notes from admin during approval", example = "All documents verified successfully")

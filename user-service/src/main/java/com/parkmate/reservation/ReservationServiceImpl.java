@@ -23,8 +23,11 @@ import com.parkmate.user.User;
 import com.parkmate.user.UserRepository;
 import com.parkmate.user.UserService;
 import com.parkmate.userSubscription.UserSubscriptionRepository;
+import com.parkmate.vehicle.Vehicle;
+import com.parkmate.vehicle.VehicleRepository;
 import com.parkmate.vehicle.VehicleService;
 import com.parkmate.vehicle.VehicleType;
+import com.querydsl.core.types.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -61,6 +64,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final KafkaTemplate<String, NotificationEvent> kafkaTemplate;
     private final UserSubscriptionRepository userSubscriptionRepository;
     private final ReservationHoldService reservationHoldService;
+    private final VehicleRepository vehicleRepository;
 
     @Override
     @Transactional
@@ -73,9 +77,6 @@ public class ReservationServiceImpl implements ReservationService {
             request.setUserId(user.getId());
         }
 
-        if (request.getUserId() == null) {
-            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
-        }
 
         ApiResponse<?> parkingLotResponse = parkingLotClient.getParkingLotName(request.getParkingLotId());
         if (parkingLotResponse == null || parkingLotResponse.data() == null) {
@@ -89,14 +90,17 @@ public class ReservationServiceImpl implements ReservationService {
                 request.setAssumedStayMinute(horizonTime);
             }
         }
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-
+        Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
+                .orElseThrow(() -> new AppException(ErrorCode.VEHICLE_NOT_FOUND));
 
         Reservation reservation = Reservation.builder()
-                .userId(request.getUserId())
+                .user(user)
                 .reservedFrom(request.getReservedFrom())
                 .initialFee(request.getInitialFee())
-                .vehicleId(request.getVehicleId())
+                .vehicle(vehicle)
                 .parkingLotId(request.getParkingLotId())
                 .status(ReservationStatus.PENDING)
                 .assumedStayMinute(request.getAssumedStayMinute())
@@ -104,12 +108,11 @@ public class ReservationServiceImpl implements ReservationService {
 
         reservation = reservationRepository.save(reservation);
 
-        // Deduct wallet balance
         try {
             ResponseEntity<ApiResponse<WalletTransactionResponse>> paymentResult = paymentClient.deductWallet(
                     CreateTransactionRequest.builder()
-                            .userId(request.getUserId())
-                            .amount(request.getInitialFee())
+                            .userId(reservation.getUser().getId())
+                            .amount(reservation.getInitialFee())
                             .transactionType(TransactionConstants.TYPE_DEDUCTION)
                             .processedAt(LocalDateTime.now())
                             .description("Reservation fee for reservation" + reservation.getId())
@@ -141,29 +144,26 @@ public class ReservationServiceImpl implements ReservationService {
             reservation.setStatus(ReservationStatus.PENDING);
             reservationRepository.save(reservation);
 
-            // Release temporary hold if holdId was provided
             if (request.getHoldId() != null && !request.getHoldId().isEmpty()) {
                 try {
                     reservationHoldService.releaseHold(request.getHoldId());
                     log.info("Released temporary hold {} after successful reservation {}",
                             request.getHoldId(), reservation.getId());
                 } catch (Exception holdEx) {
-                    // Don't fail reservation if hold release fails (hold will expire anyway)
                     log.warn("Failed to release hold {} for reservation {}: {}",
                             request.getHoldId(), reservation.getId(), holdEx.getMessage());
                 }
             }
 
         } catch (AppException e) {
-             throw e;
+            throw e;
         } catch (Exception e) {
             log.error("Unexpected error during payment for reservation ID: {}", reservation.getId(), e);
             reservation.setStatus(ReservationStatus.CANCELLED);
             reservationRepository.save(reservation);
             throw new AppException(ErrorCode.WALLET_DEDUCTION_FAILED, "Payment processing failed: " + e.getMessage());
         }
-
-        // Generate QR code with reservation information
+        sendNotificationForStatus(reservation.getId(), reservation.getStatus());
         return getReservationResponse(reservation);
     }
 
@@ -178,7 +178,7 @@ public class ReservationServiceImpl implements ReservationService {
             // Fallback to simple format
             return String.format("RESERVATION:%d|USER:%d|LOT:%d",
                     reservation.getId(),
-                    reservation.getUserId(),
+                    reservation.getUser().getId(),
                     reservation.getParkingLotId());
         }
     }
@@ -195,7 +195,6 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public Page<ReservationResponse> getReservations(int page, int size, String sortBy, String sortOrder, ReservationSearchCriteria criteria, String userIdHeader) {
-        // Parse accountId from header and convert to User ID if needed
         Long accountId = null;
         if (userIdHeader != null) {
             try {
@@ -206,7 +205,6 @@ public class ReservationServiceImpl implements ReservationService {
             }
         }
 
-        // If ownedByMe is true, convert accountId to userId
         Long userId = null;
         if (accountId != null && Boolean.TRUE.equals(criteria.getOwnedByMe())) {
             User user = userRepository.findByAccountId(accountId)
@@ -214,23 +212,18 @@ public class ReservationServiceImpl implements ReservationService {
             userId = user.getId();
             log.info("Converted account ID {} to user ID {}", accountId, userId);
         } else if (accountId != null && criteria.getOwnedByMe() == null) {
-            // Default behavior: if no ownedByMe flag, treat it as user's own reservations
             User user = userRepository.findByAccountId(accountId)
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
             userId = user.getId();
             log.info("Default: Converted account ID {} to user ID {}", accountId, userId);
         }
 
-        // Create pageable
         Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
 
-        // Build predicate from criteria and userId
-        com.querydsl.core.types.Predicate predicate = ReservationSpecification.buildPredicate(criteria, userId);
+        Predicate predicate = ReservationSpecification.buildPredicate(criteria, userId);
 
-        // Query with predicate
         Page<Reservation> reservations = reservationRepository.findAll(predicate, pageable);
 
-        // Map to response with QR code
         return reservations.map(this::getReservationResponse);
     }
 
@@ -251,18 +244,16 @@ public class ReservationServiceImpl implements ReservationService {
         ReservationStatus newStatus = request.getStatus();
         reservation.setStatus(newStatus);
         reservation.setSessionId(request.getSessionId());
-
-        // Save reservation first
+        reservation.setTotalFee(request.getTotalFee());
+        reservation.setReservedUntil(request.getReservedUntil());
         reservation = reservationRepository.save(reservation);
 
-        // Handle payment/refund logic within transaction
         if (newStatus == ReservationStatus.COMPLETED) {
             deductWalletAfterCompletingReservation(reservation);
         } else if (newStatus == ReservationStatus.CANCELLED) {
             logCancelledReservation(reservation);
         }
 
-        // Send notifications after transaction commits (notifications are async via Kafka anyway)
         sendNotificationForStatus(reservation.getId(), newStatus);
     }
 
@@ -292,6 +283,8 @@ public class ReservationServiceImpl implements ReservationService {
 
     private void sendNotificationForStatus(Long reservationId, ReservationStatus status) {
         switch (status) {
+            case PENDING:
+                sendNewReservationNotification(reservationId);
             case ACTIVE:
                 sendActiveReservationNotification(reservationId);
                 break;
@@ -306,13 +299,42 @@ public class ReservationServiceImpl implements ReservationService {
         }
     }
 
+    private void sendNewReservationNotification(Long reservationId) {
+        long startTime = System.currentTimeMillis();
+        log.info("Starting PENDING notification for reservation: {}", reservationId);
+
+        sendReservationNotificationWithContent(
+                reservationId,
+                NotificationEventType.RESERVATION_CREATED,
+                "ĐẶT CHỖ THÀNH CÔNG",
+                reservation -> {
+                    long feignStartTime = System.currentTimeMillis();
+                    String parkingLotName = reservationMapper.getParkingLotName(parkingLotClient, reservation.getParkingLotId());
+                    long feignEndTime = System.currentTimeMillis();
+
+                    log.info("Feign call to get parking lot name took: {}ms", (feignEndTime - feignStartTime));
+
+                    String lotName = (parkingLotName != null) ? parkingLotName : "the parking lot";
+                    String time = ZonedDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"));
+
+                    long totalTime = System.currentTimeMillis() - startTime;
+                    log.info("ACTIVE notification completed for reservation: {} in {}ms", reservationId, totalTime);
+
+                    return String.format("BẠN ĐÃ ĐẶT CHỖ THÀNH CÔNG CHO XE CÓ BIỂN SỐ %s TẠI BÃI XE %s VÀO LÚC %s",
+                            reservation.getVehicle().getLicensePlate(),
+                            lotName,
+                            time);
+                }
+        );
+    }
+
     private void sendActiveReservationNotification(Long reservationId) {
         long startTime = System.currentTimeMillis();
         log.info("Starting ACTIVE notification for reservation: {}", reservationId);
 
         sendReservationNotificationWithContent(
                 reservationId,
-                NotificationEventType.RESERVATION_CREATED,
+                NotificationEventType.RESERVATION_ACTIVATED,
                 "Vehicle Entered Parking Lot",
                 reservation -> {
                     long feignStartTime = System.currentTimeMillis();
@@ -389,8 +411,8 @@ public class ReservationServiceImpl implements ReservationService {
                     .orElseThrow(() -> new AppException(ErrorCode.RESERVATION_NOT_FOUND, "Reservation not found: " + reservationId));
 
             // 2. Get user info
-            User user = userRepository.findById(reservation.getUserId())
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found: " + reservation.getUserId()));
+            User user = userRepository.findById(reservation.getUser().getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found: " + reservation.getUser().getId()));
 
             // 3. Get all FCM tokens for the user
             List<String> deviceTokens = mobileDeviceRepository.findActivePushTokensByUserId(user.getId());
@@ -463,7 +485,6 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     private void deductWalletAfterCompletingReservation(Reservation reservation) {
-        // Validate inputs
         if (reservation.getTotalFee() == null) {
             log.error("Total fee is null for reservation: {}", reservation.getId());
             return;
@@ -483,7 +504,7 @@ public class ReservationServiceImpl implements ReservationService {
             try {
                 ResponseEntity<ApiResponse<WalletTransactionResponse>> response = paymentClient.deductWallet(
                         CreateTransactionRequest.builder()
-                                .userId(reservation.getUserId())
+                                .userId(reservation.getUser().getId())
                                 .amount(deductionAmount)
                                 .transactionType(TransactionConstants.TYPE_DEDUCTION)
                                 .description(String.format("Additional charge for reservation %d (Total: %s VND - Prepaid: %s VND)",

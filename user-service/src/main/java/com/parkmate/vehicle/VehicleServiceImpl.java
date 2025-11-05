@@ -149,7 +149,7 @@ public class VehicleServiceImpl implements VehicleService {
                 vehicles.stream().map(Vehicle::getId).collect(Collectors.toList()),
                 reservationStatuses);
         List<Long> vehiclesInReservation = new ArrayList<>();
-        reservations.forEach(reservation -> vehiclesInReservation.add(reservation.getVehicleId()));
+        reservations.forEach(reservation -> vehiclesInReservation.add(reservation.getVehicle().getId()));
         return vehiclesInReservation;
     }
 

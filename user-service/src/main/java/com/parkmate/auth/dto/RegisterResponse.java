@@ -8,7 +8,6 @@ import lombok.Data;
 @Builder
 public class RegisterResponse {
 
-    AuthResponse authResponse;
     UserResponse userResponse;
 
 }
