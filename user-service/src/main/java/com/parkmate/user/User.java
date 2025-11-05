@@ -2,6 +2,8 @@ package com.parkmate.user;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.account.Account;
+import com.parkmate.reservation.Reservation;
+import com.parkmate.userSubscription.UserSubscription;
 import com.parkmate.vehicle.Vehicle;
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,7 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-;
+
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -95,5 +97,10 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Vehicle> vehicles;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<Reservation> reservations;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<UserSubscription> subscriptions;
 
 }

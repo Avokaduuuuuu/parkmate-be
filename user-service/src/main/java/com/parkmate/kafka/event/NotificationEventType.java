@@ -13,22 +13,16 @@ public enum NotificationEventType {
 
     // Reservation events (future use)
     RESERVATION_CREATED("RESERVATION_CREATED", "Reservation created"),
+    RESERVATION_ACTIVATED("RESERVATION_ACTIVATED", "Reservation activated"),
     RESERVATION_CANCELLED("RESERVATION_CANCELLED", "Reservation cancelled"),
     RESERVATION_COMPLETED("RESERVATION_COMPLETED", "Reservation completed"),
 
     // Approval/Rejection events
     PARTNER_APPROVED("PARTNER_APPROVED", "Partner registration approved"),
-    PARTNER_REJECTED("PARTNER_REJECTED", "Partner registration rejected");
+    PARTNER_REJECTED("PARTNER_REJECTED", "Partner registration rejected"),
+    ;
 
     private final String value;
     private final String description;
 
-    public static NotificationEventType fromString(String value) {
-        for (NotificationEventType type : NotificationEventType.values()) {
-            if (type.value.equalsIgnoreCase(value)) {
-                return type;
-            }
-        }
-        throw new IllegalArgumentException("Unknown notification event type: " + value);
-    }
 }

@@ -31,7 +31,9 @@ public abstract class UserMapper {
             @Mapping(target = "account", ignore = true),
             @Mapping(target = "profilePictureUrl", ignore = true),
             @Mapping(target = "frontPhotoPath", ignore = true),
-            @Mapping(target = "backPhotoPath", ignore = true)
+            @Mapping(target = "backPhotoPath", ignore = true),
+            @Mapping(target = "reservations", ignore = true),
+            @Mapping(target = "subscriptions", ignore = true)
     })
     public abstract void updateEntity(UpdateUserRequest req, @MappingTarget User user);
 
@@ -55,7 +57,7 @@ public abstract class UserMapper {
         try {
             Map<String, Object> qrData = new LinkedHashMap<>();
             qrData.put("userId", user.getId());
-            qrData.put("qrType", "MemberWalkIn");
+            qrData.put("qrType", "memberWalkIn");
             if (user.getVehicles() != null && !user.getVehicles().isEmpty()) {
                 List<Map<String, Object>> vehicleList = user.getVehicles().stream()
                         .filter(Vehicle::isActive) // Only include active vehicles

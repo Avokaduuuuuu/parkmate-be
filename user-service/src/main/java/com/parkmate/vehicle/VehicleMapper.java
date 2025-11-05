@@ -21,8 +21,8 @@ public abstract class VehicleMapper {
             @Mapping(target = "isActive", ignore = true),
             @Mapping(target = "createdAt", ignore = true),
             @Mapping(target = "updatedAt", ignore = true),
-            @Mapping(target = "isElectric", source = "electric")
-
+            @Mapping(target = "isElectric", source = "electric"),
+            @Mapping(target = "reservations", ignore = true)
     })
     public abstract Vehicle toEntity(CreateVehicleRequest vehicleDTO);
 
@@ -50,7 +50,8 @@ public abstract class VehicleMapper {
             @Mapping(target = "licensePlate", ignore = true),
             @Mapping(target = "active", ignore = true), //test
             @Mapping(target = "electric", source = "electric"),
-            @Mapping(target = "vehicleImage", ignore = true) // Handled separately
+            @Mapping(target = "vehicleImage", ignore = true), // Handled separately
+            @Mapping(target = "reservations", ignore = true)
     })
     public abstract void updateEntityFromDTO(UpdateVehicleRequest vehicleDTO, @MappingTarget Vehicle vehicle);
 

@@ -2,6 +2,8 @@ package com.parkmate.reservation;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.common.enums.ReservationStatus;
+import com.parkmate.user.User;
+import com.parkmate.vehicle.Vehicle;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -30,20 +32,25 @@ public class Reservation {
     @Column(name = "id")
     Long id;
 
-    @Column(name = "user_id", nullable = false)
-    Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    User user;
 
-    @Column(name = "vehicle_id", nullable = false)
-    Long vehicleId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicle_id")
+    Vehicle vehicle;
 
     @Column(name = "parking_lot_id", nullable = false)
     Long parkingLotId;
+
+    @Column(name = "pricing_rule_id", nullable = false)
+    Long pricingRuleId;
 
     @Column(name = "reserved_from", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime reservedFrom;
 
-    @Column(name = "reserved_until", nullable = false)
+    @Column(name = "reserved_until")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime reservedUntil;
 
@@ -77,5 +84,6 @@ public class Reservation {
     @ColumnDefault("false")
     @Column(name = "is_used")
     private Boolean isUsed;
+
 
 }

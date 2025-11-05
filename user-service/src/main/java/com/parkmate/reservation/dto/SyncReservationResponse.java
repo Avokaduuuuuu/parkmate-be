@@ -23,11 +23,14 @@ public class SyncReservationResponse {
 
     VehicleType vehicleType;
 
-    @Schema(description = "", example = "ABC123")
+    @Schema(example = "ABC123")
     String licensePlate;
 
     @Schema(description = "Parking lot ID", example = "456")
     Long parkingLotId;
+
+    @Schema(description = "Parking lot pricing rule ID", example = "1")
+    Long pricingRuleId;
 
     @Schema(description = "Initial fee in VND", example = "10000")
     BigDecimal initialFee;
