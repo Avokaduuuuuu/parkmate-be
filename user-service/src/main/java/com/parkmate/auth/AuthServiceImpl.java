@@ -229,6 +229,8 @@ public class AuthServiceImpl implements AuthService {
         Map<String, Object> claims = new HashMap<>();
         if (account.getRole() == AccountRole.PARTNER_OWNER && account.getPartner() != null) {
             claims.put("userId", account.getPartner().getId());
+        } else if (account.getRole() == AccountRole.MEMBER && account.getUser() != null) {
+            claims.put("userId", account.getUser().getId());
         } else {
             claims.put("userId", account.getId());
         }

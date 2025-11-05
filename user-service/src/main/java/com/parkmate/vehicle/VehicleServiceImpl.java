@@ -1,6 +1,5 @@
 package com.parkmate.vehicle;
 
-import com.parkmate.account.Account;
 import com.parkmate.account.AccountRepository;
 import com.parkmate.common.enums.ReservationStatus;
 import com.parkmate.common.exception.AppException;
@@ -68,9 +67,7 @@ public class VehicleServiceImpl implements VehicleService {
         }
 
         if (userId != null && !userId.isEmpty()) {
-            Account account = accountRepository.findById(Long.parseLong(userId))
-                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, userId));
-            request.setUserId(account.getUser().getId());
+            request.setUserId(Long.parseLong(userId));
         }
 
         User user = userRepository.findById(request.getUserId())
@@ -103,17 +100,14 @@ public class VehicleServiceImpl implements VehicleService {
                                          String sortBy,
                                          String sortOrder,
                                          VehicleSearchCriteria searchCriteria,
-                                         String accountIdHeader) {
+                                         String userIdHeader) {
         Long userId = null;
-        // X-User-Id header contains accountId, need to convert to userId
-        if (accountIdHeader != null && !accountIdHeader.isEmpty() && searchCriteria.isOwnedByMe()) {
-            Account account = accountRepository.findById(Long.parseLong(accountIdHeader))
-                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, accountIdHeader));
-            userId = account.getUser().getId();
+        // X-User-Id header now contains userId directly
+        if (userIdHeader != null && !userIdHeader.isEmpty() && searchCriteria.isOwnedByMe()) {
+            userId = Long.parseLong(userIdHeader);
         }
 
-        System.out.println("DEBUG - accountId header: " + accountIdHeader);
-        System.out.println("DEBUG - converted userId: " + userId);
+        System.out.println("DEBUG - userId header: " + userIdHeader);
         System.out.println("DEBUG - searchCriteria: " + searchCriteria);
 
         Predicate predicate = VehicleSpecification.buildPredicate(searchCriteria, userId);
@@ -296,13 +290,11 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
-    public void exportVehiclesToExcel(VehicleSearchCriteria searchCriteria, String accountIdHeader, java.io.OutputStream outputStream) throws java.io.IOException {
+    public void exportVehiclesToExcel(VehicleSearchCriteria searchCriteria, String userIdHeader, java.io.OutputStream outputStream) throws java.io.IOException {
         Long userId = null;
-        // X-User-Id header contains accountId, need to convert to userId
-        if (accountIdHeader != null && !accountIdHeader.isEmpty() && searchCriteria != null && searchCriteria.isOwnedByMe()) {
-            Account account = accountRepository.findById(Long.parseLong(accountIdHeader))
-                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, accountIdHeader));
-            userId = account.getUser().getId();
+        // X-User-Id header now contains userId directly
+        if (userIdHeader != null && !userIdHeader.isEmpty() && searchCriteria != null && searchCriteria.isOwnedByMe()) {
+            userId = Long.parseLong(userIdHeader);
         }
 
         // Get vehicles based on search criteria
