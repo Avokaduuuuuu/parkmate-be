@@ -1,7 +1,9 @@
 package com.parkmate.common.controller;
 
 import com.parkmate.common.ApiResponse;
+import com.parkmate.common.enums.VehicleType;
 import com.parkmate.parking_lot.ParkingLotService;
+import com.parkmate.pricing_rule.PricingRuleService;
 import com.parkmate.spot.SpotService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -10,10 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Internal API endpoints for inter-service communication.
@@ -25,53 +24,73 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/internal/parking-service")
 @RequiredArgsConstructor
 @Tag(
-    name = "Internal Parking Service API",
-    description = "Internal endpoints for service-to-service communication. Used by user-service for reservation operations."
+        name = "Internal Parking Service API",
+        description = "Internal endpoints for service-to-service communication. Used by user-service for reservation operations."
 )
 public class InternalParkingController {
 
     private final ParkingLotService parkingLotService;
     private final SpotService spotService;
+    private final PricingRuleService pricingRuleService;
 
     @GetMapping("/lots/{id}/name")
     @Operation(
-        summary = "Get parking lot name by ID",
-        description = "Retrieve only the ID and name of a parking lot. Used internally by reservation service."
+            summary = "Get parking lot name by ID",
+            description = "Retrieve only the ID and name of a parking lot. Used internally by reservation service."
     )
     public ResponseEntity<?> getParkingLotName(
             @PathVariable @Parameter(description = "Parking lot ID", required = true, example = "1")
-        Long id
+            Long id
     ) {
         log.debug("Getting parking lot name for ID: {}", id);
         var parkingLot = parkingLotService.getParkingLotById(id);
         var response = new ParkingLotInternalDto(parkingLot.getId(), parkingLot.getName(), parkingLot.getHorizonTime());
         return ResponseEntity.status(HttpStatus.OK)
-            .body(ApiResponse.success("Parking lot name fetched successfully", response));
+                .body(ApiResponse.success("Parking lot name fetched successfully", response));
     }
 
     @GetMapping("/spots/{id}/name")
     @Operation(
-        summary = "Get spot name by ID",
-        description = "Retrieve only the ID and name of a parking spot. Used internally by reservation service."
+            summary = "Get spot name by ID",
+            description = "Retrieve only the ID and name of a parking spot. Used internally by reservation service."
     )
     public ResponseEntity<?> getSpotName(
             @PathVariable @Parameter(description = "Spot ID", required = true, example = "1")
-        Long id
+            Long id
     ) {
         log.debug("Getting spot name for ID: {}", id);
         var spot = spotService.findById(id);
         var response = new SpotNameDto(spot.getId(), spot.getName());
         return ResponseEntity.status(HttpStatus.OK)
-            .body(ApiResponse.success("Spot name fetched successfully", response));
+                .body(ApiResponse.success("Spot name fetched successfully", response));
+    }
+
+    @GetMapping("/lots/{id}/pricing-rules")
+    public ResponseEntity<?> getParkingLotName(
+            @PathVariable @Parameter(description = "Parking lot ID", required = true, example = "1") Long id,
+            @RequestParam VehicleType vehicleType
+    ) {
+        log.debug("Getting parking lot name for ID: {}", id);
+        var pricingRule = pricingRuleService.findByParkingLotIdAndVehicleType(id, vehicleType);
+        var response = new PricingRuleDto(pricingRule.getId());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success("Pricing rule fetched successfully", response));
     }
 
     /**
      * DTO for parking lot name response
      */
-    public record ParkingLotInternalDto(Long id, String name, Integer horizonTime) {}
+    public record ParkingLotInternalDto(Long id,
+                                        String name,
+                                        Integer horizonTime) {
+    }
 
     /**
      * DTO for spot name response
      */
-    public record SpotNameDto(Long id, String name) {}
+    public record SpotNameDto(Long id, String name) {
+    }
+
+    public record PricingRuleDto(Long id) {
+    }
 }

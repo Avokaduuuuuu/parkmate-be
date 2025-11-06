@@ -1,15 +1,15 @@
 package com.parkmate.pricing_rule;
 
+import com.parkmate.area.AreaRepository;
+import com.parkmate.common.enums.VehicleType;
+import com.parkmate.exception.AppException;
+import com.parkmate.exception.ErrorCode;
+import com.parkmate.parking_lot.ParkingLotEntity;
+import com.parkmate.parking_lot.ParkingLotRepository;
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import com.parkmate.pricing_rule.dto.req.PricingRuleUpdateRequest;
 import com.parkmate.pricing_rule.dto.req.SyncedPricingRulesUpdateRequest;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
-import com.parkmate.area.AreaEntity;
-import com.parkmate.parking_lot.ParkingLotEntity;
-import com.parkmate.exception.AppException;
-import com.parkmate.exception.ErrorCode;
-import com.parkmate.area.AreaRepository;
-import com.parkmate.parking_lot.ParkingLotRepository;
 import com.parkmate.session.enums.SyncStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +21,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -78,7 +76,8 @@ public class PricingRuleServiceImpl implements PricingRuleService {
         if (request.vehicleType() != null) pricingRuleEntity.setVehicleType(request.vehicleType());
         if (request.stepRate() != null) pricingRuleEntity.setStepRate(request.stepRate());
         if (request.initialCharge() != null) pricingRuleEntity.setInitialCharge(request.initialCharge());
-        if (request.initialDurationMinute() != null) pricingRuleEntity.setInitialDurationMinute(request.initialDurationMinute());
+        if (request.initialDurationMinute() != null)
+            pricingRuleEntity.setInitialDurationMinute(request.initialDurationMinute());
         if (request.stepMinute() != null) pricingRuleEntity.setStepMinute(request.stepMinute());
         if (request.validFrom() != null) pricingRuleEntity.setValidFrom(request.validFrom());
         if (request.validTo() != null) pricingRuleEntity.setValidFrom(request.validTo());
@@ -91,7 +90,7 @@ public class PricingRuleServiceImpl implements PricingRuleService {
                     pricingRuleRepository.save(pr);
                 }
                 pricingRuleEntity.setIsActive(true);
-            }else pricingRuleEntity.setIsActive(false);
+            } else pricingRuleEntity.setIsActive(false);
         }
         return PricingRuleMapper.INSTANCE.toResponse(pricingRuleRepository.save(pricingRuleEntity));
     }
@@ -118,5 +117,12 @@ public class PricingRuleServiceImpl implements PricingRuleService {
     @Override
     public Integer updateSyncedPricingRules(SyncedPricingRulesUpdateRequest request) {
         return pricingRuleRepository.updateSyncedPricingRules(request.ruleIds(), request.status());
+    }
+
+    @Override
+    public PricingRuleResponse findByParkingLotIdAndVehicleType(Long id, VehicleType vehicleType) {
+        PricingRuleEntity pricingRuleEntity = pricingRuleRepository.findByParkingLot_IdAndIsActiveAndVehicleType(id, true, vehicleType)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND));
+        return PricingRuleMapper.INSTANCE.toResponse(pricingRuleEntity);
     }
 }

@@ -103,7 +103,7 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
         Long userId = null;
         if (userHeaderId != null) {
             try {
-                userId = getUserIdFromAccountId(Long.parseLong(userHeaderId));
+                userId = Long.parseLong(userHeaderId);
                 log.info("Parsed user ID from header: {}", userId);
             } catch (NumberFormatException e) {
                 log.warn("Invalid user ID in header: {}", userHeaderId);

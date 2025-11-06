@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -46,9 +45,9 @@ public class MobileDeviceServiceImpl implements MobileDeviceService {
      * */
     @Override
     @Transactional
-    public MobileDeviceResponse createMobileDevice(CreateMobileDeviceRequest request, String userHeadId) {
-        if (Boolean.TRUE.equals(request.getOwnedByMe()) && userHeadId != null) {
-            request.setUserId(userRepository.getUserIdByAccountId(Long.parseLong(userHeadId)));
+    public MobileDeviceResponse createMobileDevice(CreateMobileDeviceRequest request, String userIdHeader) {
+        if (Boolean.TRUE.equals(request.getOwnedByMe()) && userIdHeader != null) {
+            request.setUserId(Long.parseLong(userIdHeader));
         }
 
         if (request.getUserId() == null) {

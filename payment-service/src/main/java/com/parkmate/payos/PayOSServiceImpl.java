@@ -54,9 +54,7 @@ public class PayOSServiceImpl implements PayOSService {
                 throw new IllegalArgumentException("Amount must be at least 1000 VND");
             }
 
-            Long accountId = Long.parseLong(userHeadId);
-
-            Long userId = userServiceClient.getUserIdByAccountId(accountId);
+            Long userId = Long.parseLong(userHeadId);
 
             // Find wallet
             Wallet wallet = walletRepository.findByHolderId(userId)
