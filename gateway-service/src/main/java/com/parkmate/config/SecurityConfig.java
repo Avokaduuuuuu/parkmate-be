@@ -119,7 +119,7 @@ public class SecurityConfig {
                         .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .pathMatchers(MEMBER_PARKING_ENDPOINTS).hasAnyRole("MEMBER", "ADMIN")
                         .pathMatchers(PARTNER_ENDPOINTS).hasAnyRole("PARTNER_OWNER", "PARTNER_STAFF", "ADMIN")
-                        .pathMatchers(MEMBER_ENDPOINTS).hasAnyRole("MEMBER", "ADMIN")
+                        .pathMatchers(MEMBER_ENDPOINTS).hasAnyRole("MEMBER", "ADMIN", "PARTNER_OWNER", "PARTNER_STAFF")
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
