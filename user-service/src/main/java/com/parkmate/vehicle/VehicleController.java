@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/user-service/vehicle")
 @RequiredArgsConstructor
@@ -162,5 +164,11 @@ public class VehicleController {
         vehicleService.exportVehiclesToExcel(searchCriteria, userIdHeader, response.getOutputStream());
     }
 
+    @GetMapping("/users/{userId}")
+    @Operation(summary = "Get Vehicles by User ID", description = "Retrieve all vehicles owned by a specific user")
+    public ResponseEntity<ApiResponse<List<VehicleSimpleResponse>>> getVehiclesByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(ApiResponse.success(vehicleService.getVehiclesByUserId(userId)
+                , "Vehicles fetched successfully"));
+    }
 
 }

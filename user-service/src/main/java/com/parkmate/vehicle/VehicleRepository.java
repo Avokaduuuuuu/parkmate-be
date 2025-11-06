@@ -7,12 +7,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, Long>, QuerydslPredicateExecutor<Vehicle> {
 
     boolean existsByLicensePlate(String licensePlate);
 
     Page<Vehicle> findAll(Predicate predicate, Pageable pageable);
+
+    List<Vehicle> findAllByUserId(Long userId);
 
 }
 
