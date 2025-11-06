@@ -64,9 +64,8 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     public WalletResponse getByUserId(String userHeaderId) {
-        Long accountId = Long.parseLong(userHeaderId);
-        // Convert accountId to actual userId
-        Long userId = getUserIdFromAccountId(accountId);
+        Long userId = Long.parseLong(userHeaderId);
+        // X-User-Id header now contains userId directly
         Wallet wallet = walletRepository.findByHolderId(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND, userId));
         return walletMapper.toResponse(wallet);

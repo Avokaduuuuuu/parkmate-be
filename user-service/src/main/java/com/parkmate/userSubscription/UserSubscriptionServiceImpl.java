@@ -32,9 +32,9 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     private final VehicleService vehicleService;
 
     @Override
-    public UserSubscriptionResponse create(CreateUserSubscriptionRequest request, String accountIdHeader) {
-        if (accountIdHeader != null) {
-            request.setUserId(userRepository.getUserIdByAccountId(Long.parseLong(accountIdHeader)));
+    public UserSubscriptionResponse create(CreateUserSubscriptionRequest request, String userIdHeader) {
+        if (userIdHeader != null) {
+            request.setUserId(Long.parseLong(userIdHeader));
         }
 
         User user = userRepository.findById(request.getUserId())
@@ -80,15 +80,15 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
                                                   int size,
                                                   String sortBy,
                                                   String sortOrder,
-                                                  String accountIdHeader,
+                                                  String userIdHeader,
                                                   UserSubscriptionSearchCriteria searchCriteria) {
-        Long userHeadId = null;
-        if (accountIdHeader != null) {
-            userHeadId = userRepository.getUserIdByAccountId(Long.parseLong(accountIdHeader));
+        Long userId = null;
+        if (userIdHeader != null) {
+            userId = Long.parseLong(userIdHeader);
         }
 
         Page<UserSubscription> userSubscriptionPage = userSubscriptionRepository.findAll(
-                UserSubscriptionSpecification.buildPredicate(searchCriteria, userHeadId),
+                UserSubscriptionSpecification.buildPredicate(searchCriteria, userId),
                 PaginationUtil.parsePageable(page, size, sortBy, sortOrder));
 
         return userSubscriptionPage.map(

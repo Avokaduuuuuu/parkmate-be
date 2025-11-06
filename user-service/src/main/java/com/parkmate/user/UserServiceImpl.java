@@ -72,21 +72,17 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public UserResponse getCurrentUser(String userIdHeader) {
-        long accountId;
+        long userId;
 
-        // Try to get userId from header first (from gateway)
+        // Get userId directly from header (from gateway)
         if (userIdHeader != null && !userIdHeader.isEmpty()) {
-            accountId = Long.parseLong(userIdHeader);
+            userId = Long.parseLong(userIdHeader);
         } else {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
-        log.info("Fetching profile for user ID: {}", accountId);
-        ;
-        return getUserById(accountRepository.findById(accountId)
-                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND))
-                .getUser()
-                .getId());
+        log.info("Fetching profile for user ID: {}", userId);
+        return getUserById(userId);
     }
 
     @Override

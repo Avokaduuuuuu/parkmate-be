@@ -4,6 +4,8 @@ import com.parkmate.vehicle.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 public interface VehicleService {
 
     VehicleResponse findById(Long id);
@@ -15,6 +17,8 @@ public interface VehicleService {
     VehicleResponse updateVehicle(Long id, UpdateVehicleRequest request);
 
     Page<VehicleResponse> findAll(int page, int size, String sortBy, String sortOrder, VehicleSearchCriteria searchCriteria, String userId);
+
+    List<VehicleSimpleResponse> getVehiclesByUserId(Long userId);
 
     void deleteVehicle(Long id);
 

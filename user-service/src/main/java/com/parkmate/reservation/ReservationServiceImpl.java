@@ -71,13 +71,13 @@ public class ReservationServiceImpl implements ReservationService {
 
         if (userId != null && request.isOwnedByMe()) {
             long userIdLong = Long.parseLong(userId);
-            User user = userRepository.findByAccountId(userIdLong)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-            request.setUserId(user.getId());
+            request.setUserId(userIdLong);
         }
 
-
+        Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
+                .orElseThrow(() -> new AppException(ErrorCode.VEHICLE_NOT_FOUND));
         ApiResponse<?> parkingLotResponse = parkingLotClient.getParkingLotName(request.getParkingLotId());
+        ApiResponse<?> pricingRuleResponse = parkingLotClient.getPricingRule(request.getParkingLotId(), vehicle.getVehicleType());
         if (parkingLotResponse == null || parkingLotResponse.data() == null) {
             throw new AppException(ErrorCode.OTHER_CLIENT_ERROR, ParkingLotServiceErrorCode.PARKING_NOT_FOUND);
         }
@@ -89,11 +89,13 @@ public class ReservationServiceImpl implements ReservationService {
                 request.setAssumedStayMinute(horizonTime);
             }
         }
+        Object pricingRuleData = pricingRuleResponse.data();
+        if (pricingRuleData instanceof ParkingLotClient.PricingRuleDto pricingRule) {
+            request.setPricingRuleId(pricingRule.id());
+        }
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
-                .orElseThrow(() -> new AppException(ErrorCode.VEHICLE_NOT_FOUND));
 
         Reservation reservation = Reservation.builder()
                 .user(user)
@@ -195,27 +197,19 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public Page<ReservationResponse> getReservations(int page, int size, String sortBy, String sortOrder, ReservationSearchCriteria criteria, String userIdHeader) {
-        Long accountId = null;
-        if (userIdHeader != null) {
+        Long userId = null;
+        if (userIdHeader != null && criteria.getOwnedByMe() == true) {
             try {
-                accountId = Long.parseLong(userIdHeader);
-                log.info("Parsed account ID from header: {}", accountId);
+                userId = Long.parseLong(userIdHeader);
+                log.info("Parsed user ID from header: {}", userId);
             } catch (NumberFormatException e) {
-                log.warn("Invalid account ID in header: {}", userIdHeader);
+                log.warn("Invalid user ID in header: {}", userIdHeader);
             }
         }
 
-        Long userId = null;
-        if (accountId != null && Boolean.TRUE.equals(criteria.getOwnedByMe())) {
-            User user = userRepository.findByAccountId(accountId)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-            userId = user.getId();
-            log.info("Converted account ID {} to user ID {}", accountId, userId);
-        } else if (accountId != null && criteria.getOwnedByMe() == null) {
-            User user = userRepository.findByAccountId(accountId)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-            userId = user.getId();
-            log.info("Default: Converted account ID {} to user ID {}", accountId, userId);
+        // Only filter by userId if ownedByMe is true or not specified
+        if (userId != null && (Boolean.TRUE.equals(criteria.getOwnedByMe()) || criteria.getOwnedByMe() == null)) {
+            log.info("Filtering reservations for user ID: {}", userId);
         }
 
         Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
@@ -362,8 +356,10 @@ public class ReservationServiceImpl implements ReservationService {
                     log.info("COMPLETED notification completed for reservation: {} in {}ms", reservationId, totalTime);
 
                     return String.format(
-                            "Lượt đặt chỗ tại của bạn đã hoàn thành vào lúc %s. \n Tổng số phí phải trả: %s VND \n" +
-                                    "Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Parkmate",
+                            """
+                                    Lượt đặt chỗ tại của bạn đã hoàn thành vào lúc %s.\s
+                                     Tổng số phí phải trả: %s VND\s
+                                    Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Parkmate""",
                             time, totalFee
                     );
                 }
