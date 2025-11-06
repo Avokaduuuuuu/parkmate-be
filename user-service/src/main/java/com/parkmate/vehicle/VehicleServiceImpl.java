@@ -140,7 +140,9 @@ public class VehicleServiceImpl implements VehicleService {
         userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, userId));
         List<VehicleSimpleResponse> vehicleSimpleResponses = new ArrayList<>();
         vehicleRepository.findAllByUserId(userId).forEach(vehicle ->
-                vehicleSimpleResponses.add(new VehicleSimpleResponse(vehicle.getId(),
+                vehicleSimpleResponses.add(new VehicleSimpleResponse(
+                        userId,
+                        vehicle.getId(),
                         vehicle.getLicensePlate(),
                         vehicle.getVehicleType())
 

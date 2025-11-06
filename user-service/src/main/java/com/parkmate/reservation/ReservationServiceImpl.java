@@ -198,6 +198,9 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public Page<ReservationResponse> getReservations(int page, int size, String sortBy, String sortOrder, ReservationSearchCriteria criteria, String userIdHeader) {
         Long userId = null;
+        if (criteria.getOwnedByMe() == null) {
+            criteria.setOwnedByMe(false);
+        }
         if (userIdHeader != null && criteria.getOwnedByMe() == true) {
             try {
                 userId = Long.parseLong(userIdHeader);
