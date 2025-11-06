@@ -135,6 +135,19 @@ public class VehicleServiceImpl implements VehicleService {
         });
     }
 
+    @Override
+    public List<VehicleSimpleResponse> getVehiclesByUserId(Long userId) {
+        userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, userId));
+        List<VehicleSimpleResponse> vehicleSimpleResponses = new ArrayList<>();
+        vehicleRepository.findAllByUserId(userId).forEach(vehicle ->
+                vehicleSimpleResponses.add(new VehicleSimpleResponse(vehicle.getId(),
+                        vehicle.getLicensePlate(),
+                        vehicle.getVehicleType())
+
+                ));
+        return vehicleSimpleResponses;
+    }
+
     private List<Long> checkVehicleInReservation(List<Vehicle> vehicles) {
         List<ReservationStatus> reservationStatuses = new ArrayList<>();
         reservationStatuses.add(ReservationStatus.ACTIVE);

@@ -198,7 +198,7 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public Page<ReservationResponse> getReservations(int page, int size, String sortBy, String sortOrder, ReservationSearchCriteria criteria, String userIdHeader) {
         Long userId = null;
-        if (userIdHeader != null) {
+        if (userIdHeader != null && criteria.getOwnedByMe() == true) {
             try {
                 userId = Long.parseLong(userIdHeader);
                 log.info("Parsed user ID from header: {}", userId);
@@ -356,8 +356,10 @@ public class ReservationServiceImpl implements ReservationService {
                     log.info("COMPLETED notification completed for reservation: {} in {}ms", reservationId, totalTime);
 
                     return String.format(
-                            "Lượt đặt chỗ tại của bạn đã hoàn thành vào lúc %s. \n Tổng số phí phải trả: %s VND \n" +
-                                    "Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Parkmate",
+                            """
+                                    Lượt đặt chỗ tại của bạn đã hoàn thành vào lúc %s.\s
+                                     Tổng số phí phải trả: %s VND\s
+                                    Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Parkmate""",
                             time, totalFee
                     );
                 }
