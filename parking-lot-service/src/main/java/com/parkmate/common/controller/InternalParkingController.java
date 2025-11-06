@@ -70,7 +70,6 @@ public class InternalParkingController {
             @PathVariable @Parameter(description = "Parking lot ID", required = true, example = "1") Long id,
             @RequestParam VehicleType vehicleType
     ) {
-        log.debug("Getting parking lot name for ID: {}", id);
         var pricingRule = pricingRuleService.findByParkingLotIdAndVehicleType(id, vehicleType);
         var response = new PricingRuleDto(pricingRule.getId());
         return ResponseEntity.status(HttpStatus.OK)

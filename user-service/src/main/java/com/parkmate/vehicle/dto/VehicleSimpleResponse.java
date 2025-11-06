@@ -12,6 +12,7 @@ import lombok.experimental.FieldDefaults;
 @Data
 @AllArgsConstructor
 public class VehicleSimpleResponse {
+    Long userId;
     Long vehicleId;
     String licensePlate;
     VehicleType vehicleType;
