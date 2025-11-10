@@ -59,6 +59,8 @@ public record ParkingLotUpdateRequest(
         @DecimalMax(value = "180.0", message = "Longitude must be between -180 and 180")
         Double longitude,
 
+
+
         @Schema(
                 description = "Total number of floors in the parking lot",
                 example = "3",
@@ -91,6 +93,13 @@ public record ParkingLotUpdateRequest(
                 type = "boolean"
         )
         Boolean is24Hour,
+
+        @Schema(
+                description = "Horizon time to predict how long a user will park",
+                example = "100",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        Double horizonTime,
         @Schema(
                 description = """
                 Status of the parking lot. Each status represents a specific stage in the parking lot lifecycle:

@@ -43,6 +43,10 @@ public class FloorServiceImpl implements FloorService {
         FloorEntity floorEntity = FloorEntity.builder()
                 .floorName(request.floorName())
                 .floorNumber(request.floorNumber())
+                .floorTopLeftX(request.floorTopLeftX())
+                .floorTopLeftY(request.floorTopLeftY())
+                .floorWidth(request.floorWidth())
+                .floorHeight(request.floorHeight())
                 .parkingLot(parkingLotEntity)
                 .build();
 
@@ -89,6 +93,10 @@ public class FloorServiceImpl implements FloorService {
         if (request.floorName() != null) floorEntity.setFloorName(request.floorName());
         if (request.floorNumber() != null) floorEntity.setFloorNumber(request.floorNumber());
         if (request.isActive() != null) floorEntity.setIsActive(request.isActive());
+        if (request.floorTopLeftX() != null) floorEntity.setFloorTopLeftX(request.floorTopLeftX());
+        if (request.floorTopLeftY() != null) floorEntity.setFloorTopLeftY(request.floorTopLeftY());
+        if (request.floorWidth() != null) floorEntity.setFloorWidth(request.floorWidth());
+        if (request.floorHeight() != null) floorEntity.setFloorHeight(request.floorHeight());
         return FloorMapper.INSTANCE.toResponse(floorRepository.save(floorEntity));
     }
 
