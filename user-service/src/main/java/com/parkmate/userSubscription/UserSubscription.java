@@ -76,6 +76,11 @@ public class UserSubscription {
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private UserSubscriptionStatus status;
 
+    @Column(name = "sync_status", columnDefinition = "sync_status")
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    private SyncStatus syncStatus;
+
     @Column(name = "cancelled_at")
     private Instant cancelledAt;
 

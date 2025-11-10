@@ -4,7 +4,6 @@ import com.parkmate.area.enums.AreaType;
 import com.parkmate.common.enums.VehicleType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 @Schema(description = "Request body for updating parking area")

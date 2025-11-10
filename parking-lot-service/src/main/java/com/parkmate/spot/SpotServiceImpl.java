@@ -1,8 +1,9 @@
 package com.parkmate.spot;
 
 import com.parkmate.area.AreaEntity;
-import com.parkmate.area.AreaMapper;
 import com.parkmate.area.AreaRepository;
+import com.parkmate.area.enums.AreaType;
+import com.parkmate.client.UserClient;
 import com.parkmate.common.enums.VehicleType;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
@@ -10,10 +11,12 @@ import com.parkmate.spot.dto.req.SpotCreateRequest;
 import com.parkmate.spot.dto.req.SpotUpdateRequest;
 import com.parkmate.spot.dto.resp.SpotResponse;
 import com.parkmate.spot.enums.SpotStatus;
+import com.parkmate.spot.enums.SpotUnavailableReason;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,12 +27,13 @@ public class SpotServiceImpl implements SpotService {
     private final SpotRepository spotRepository;
     private final AreaRepository areaRepository;
     private final SpotHoldService spotHoldService;
+    private final UserClient userClient;
 
     @Override
     public SpotResponse findById(Long id) {
         return SpotMapper.INSTANCE.toResponse(
                 spotRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.SPOT_NOT_FOUND))
+                        .orElseThrow(() -> new AppException(ErrorCode.SPOT_NOT_FOUND))
         );
     }
 
@@ -118,5 +122,41 @@ public class SpotServiceImpl implements SpotService {
     @Override
     public Long count() {
         return spotRepository.count();
+    }
+
+
+    @Override
+    public List<SpotResponse> getSubscriptionAvailability(
+            Long areaId,
+            LocalDateTime startDateTime,
+            LocalDateTime endDateTime
+    ) {
+        AreaEntity area = areaRepository.findById(areaId)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_AREA_NOT_FOUND));
+
+        List<SpotEntity> spots = spotRepository.findByParkingArea_Id(areaId);
+
+        List<Long> spotIds = spots.stream().map(SpotEntity::getId).toList();
+        List<Long> occupiedSpotIds = userClient.checkOccupiedSpots(spotIds, startDateTime, endDateTime);
+        return spots.stream().map(spot -> {
+            SpotResponse response = SpotMapper.INSTANCE.toResponse(spot);
+
+            String reason = null;
+            boolean isAvailable = true;
+
+            if (area.getAreaType() != AreaType.SUBSCRIPTION_ONLY) {
+                isAvailable = false;
+                reason = SpotUnavailableReason.NOT_SUBSCRIPTION_AREA.name();
+            } else if (occupiedSpotIds.contains(spot.getId())) {
+                isAvailable = false;
+                reason = SpotUnavailableReason.ALREADY_ASSIGNED.name();
+            } else if (spotHoldService.isSpotHold(spot.getId())) {
+                isAvailable = false;
+                reason = SpotUnavailableReason.SPOT_HELD.name();
+            }
+            response.setIsAvailableForSubscription(isAvailable);
+            response.setSubscriptionUnavailabilityReason(reason);
+            return response;
+        }).toList();
     }
 }

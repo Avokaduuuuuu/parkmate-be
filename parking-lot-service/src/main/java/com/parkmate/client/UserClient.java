@@ -3,6 +3,7 @@ package com.parkmate.client;
 import com.parkmate.common.ApiResponse;
 import com.parkmate.common.enums.VehicleType;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -32,6 +33,14 @@ public interface UserClient {
             @RequestParam String vehicleType,
             @RequestParam String reservedFrom,
             @RequestParam Integer assumedStayMinute);
+
+    @GetMapping("/internal/user-service/user-subscriptions/check-occupied-spots")
+    List<Long> checkOccupiedSpots(
+            @RequestParam("spotIds") List<Long> spotIds,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate
+    );
+
 
 //    @GetMapping("/api/v1/user-service/reservations/count")
 //    ApiResponse<Long> countReservation(

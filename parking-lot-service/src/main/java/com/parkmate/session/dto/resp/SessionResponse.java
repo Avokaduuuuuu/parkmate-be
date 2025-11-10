@@ -1,7 +1,9 @@
 package com.parkmate.session.dto.resp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.parkmate.session.enums.*;
+import com.parkmate.session.enums.ReferenceType;
+import com.parkmate.session.enums.SessionStatus;
+import com.parkmate.session.enums.SyncStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -34,6 +36,7 @@ public class SessionResponse {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
     Long lotId;
+    String parkingLotName;
     String cardUUID;
     Long pricingRuleId;
     Long referenceId;

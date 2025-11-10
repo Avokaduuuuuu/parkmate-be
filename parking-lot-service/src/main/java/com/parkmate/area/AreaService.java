@@ -7,6 +7,7 @@ import com.parkmate.area.dto.resp.AreaResponse;
 import org.springframework.data.domain.Page;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface AreaService {
     Page<AreaResponse> findAllAreas(
@@ -14,11 +15,16 @@ public interface AreaService {
     );
 
     AreaDetailedResponse findAreaById(Long id);
+
     AreaDetailedResponse findAreaDetailByIdAndTime(Long id, LocalDateTime start, LocalDateTime end);
 
     AreaResponse createArea(AreaCreateRequest request, Long floorId);
+
     AreaResponse updateArea(AreaUpdateRequest request, Long id);
+
     void deleteArea(Long id);
 
     Long count();
+
+    List<AreaResponse> getSubscriptionAvailability(Long floorId, LocalDateTime startDateTime, LocalDateTime endDateTime);
 }

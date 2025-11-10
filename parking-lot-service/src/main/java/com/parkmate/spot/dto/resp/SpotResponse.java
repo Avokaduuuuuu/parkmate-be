@@ -26,4 +26,7 @@ public class SpotResponse {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
     Boolean hasSession;
+
+    Boolean isAvailableForSubscription;
+    String subscriptionUnavailabilityReason;
 }

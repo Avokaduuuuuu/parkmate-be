@@ -18,6 +18,7 @@ public interface SessionMapper {
 
     @Mapping(target = "pricingRuleId", source = "pricingRule.id")
     @Mapping(target = "lotId", source = "parkingLot.id")
+    @Mapping(target = "parkingLotName", source = "parkingLot.name")
     SessionResponse toResponse(SessionEntity entity);
 
     @Mapping(target = "lotName", source = "parkingLot.name")

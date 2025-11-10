@@ -2,7 +2,6 @@ package com.parkmate.floor;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.parkmate.parking_lot.ParkingLotEntity;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;

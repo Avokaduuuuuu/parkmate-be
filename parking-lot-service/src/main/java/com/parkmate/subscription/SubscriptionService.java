@@ -5,8 +5,6 @@ import com.parkmate.subscription.dto.req.SubscriptionUpdateRequest;
 import com.parkmate.subscription.dto.resp.SubscriptionResponse;
 import org.springframework.data.domain.Page;
 
-import java.awt.print.Pageable;
-
 public interface SubscriptionService {
     Page<SubscriptionResponse> fetchAllSubscriptions(
             String userHeaderId,

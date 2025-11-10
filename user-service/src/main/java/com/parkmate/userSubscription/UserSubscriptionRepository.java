@@ -18,10 +18,14 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
             "WHERE uS.assignedSpotId IN :spotIds " +
             "AND uS.startDate < :to " +
             "AND uS.endDate > :from " +
-            "AND uS.status = 'ACTIVE' AND uS.status = 'PENDING_PAYMENT'")
+            "AND uS.status IN ('ACTIVE','PENDING_PAYMENT')")
     List<Long> findOccupiedSpotIds(
             @Param("spotIds") List<Long> spotIds,
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to
     );
+
+    boolean existsByUserIdAndParkingLotIdAndUserIdAndStatus(Long userId, Long parkingLotId, Long userId1, UserSubscriptionStatus status);
+
+    List<UserSubscription> findByParkingLotIdAndSyncStatus(Long parkingLotId, SyncStatus syncStatus);
 }

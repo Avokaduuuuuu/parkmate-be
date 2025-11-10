@@ -83,7 +83,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         Object data = parkingLotResponse.data();
-        if (data instanceof ParkingLotClient.ParkingLotNameDto parkingLot) {
+        if (data instanceof ParkingLotClient.ParkingLotSimpleDto parkingLot) {
             Integer horizonTime = parkingLot.horizonTime();
             if (horizonTime != null && request.getAssumedStayMinute() < horizonTime) {
                 request.setAssumedStayMinute(horizonTime);
@@ -298,7 +298,6 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     private void sendNewReservationNotification(Long reservationId) {
-        long startTime = System.currentTimeMillis();
         log.info("Starting PENDING notification for reservation: {}", reservationId);
 
         sendReservationNotificationWithContent(
@@ -308,7 +307,7 @@ public class ReservationServiceImpl implements ReservationService {
                 reservation -> {
                     String parkingLotName = reservationMapper.getParkingLotName(parkingLotClient, reservation.getParkingLotId());
                     String lotName = (parkingLotName != null) ? parkingLotName : "the parking lot";
-                    String time = ZonedDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"));
+                    String time = reservation.getReservedFrom().format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"));
                     return String.format("BẠN ĐÃ ĐẶT CHỖ THÀNH CÔNG CHO XE CÓ BIỂN SỐ %s TẠI BÃI XE %s VÀO LÚC %s",
                             reservation.getVehicle().getLicensePlate(),
                             lotName,

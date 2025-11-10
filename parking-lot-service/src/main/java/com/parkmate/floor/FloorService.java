@@ -7,6 +7,9 @@ import com.parkmate.floor.dto.resp.FloorDetailedResponse;
 import com.parkmate.floor.dto.resp.FloorResponse;
 import org.springframework.data.domain.Page;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 public interface FloorService {
     FloorResponse createFloor(Long parkingLotId, FloorCreateRequest request);
     FloorDetailedResponse getFloorById(Long parkingLotId);
@@ -17,6 +20,13 @@ public interface FloorService {
     FloorResponse updateFloor(Long id, FloorUpdateRequest request);
 
     FloorDetailedResponse getFloorByIdAndVehicleType(Long id, VehicleType vehicleType);
+
+    List<FloorResponse> getSubscriptionAvailability(
+            Long parkingLotId,
+            VehicleType vehicleType,
+            LocalDateTime startDate,
+            LocalDateTime endDate
+    );
 
     Long count();
 }

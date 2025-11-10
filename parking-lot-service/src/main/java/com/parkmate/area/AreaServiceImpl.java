@@ -6,22 +6,18 @@ import com.parkmate.area.dto.resp.AreaDetailedResponse;
 import com.parkmate.area.dto.resp.AreaResponse;
 import com.parkmate.area.enums.AreaType;
 import com.parkmate.client.UserClient;
-import com.parkmate.common.ApiResponse;
 import com.parkmate.common.enums.VehicleType;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.floor.FloorEntity;
 import com.parkmate.floor.FloorRepository;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
-import com.parkmate.pricing_rule.PricingRuleEntity;
-import com.parkmate.pricing_rule.PricingRuleMapper;
 import com.parkmate.pricing_rule.PricingRuleRepository;
 import com.parkmate.spot.SpotEntity;
 import com.parkmate.spot.SpotHoldService;
 import com.parkmate.spot.SpotMapper;
 import com.parkmate.spot.SpotRepository;
 import com.parkmate.spot.dto.req.SpotCreateRequest;
-import com.parkmate.spot.dto.resp.SpotResponse;
 import com.parkmate.spot.enums.SpotStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -34,10 +30,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -48,13 +42,15 @@ public class AreaServiceImpl implements AreaService {
     private final SpotHoldService spotHoldService;
     private final PricingRuleRepository pricingRuleRepository;
     private final UserClient userClient;
+    private final SpotRepository spotRepository;
+
     /**
      *
-     * @param page the page number of retrieve (zero-based-index)
-     * @param size number of items per page
-     * @param sortBy the field name to sort by (e.g., "id", "name"
+     * @param page      the page number of retrieve (zero-based-index)
+     * @param size      number of items per page
+     * @param sortBy    the field name to sort by (e.g., "id", "name"
      * @param sortOrder the sort direction, either "ASC" for ascending or "DESC" for descending
-     * @param params the filter params containing optional filters
+     * @param params    the filter params containing optional filters
      * @return a {@link Page} of {@link AreaResponse}
      */
     @Override
@@ -90,7 +86,6 @@ public class AreaServiceImpl implements AreaService {
         Map<Long, Boolean> overlappedSpotsMap = userClient.reservationOverlap(overlappedSpots, startStr, endStr).getData();
 
 
-
         response.getSpots().forEach(spot -> {
             if (overlappedSpotsMap.containsKey(spot.getId())) spot.setHasSession(overlappedSpotsMap.get(spot.getId()));
         });
@@ -108,7 +103,7 @@ public class AreaServiceImpl implements AreaService {
         }
 
         if (!request.vehicleType().equals(VehicleType.BIKE) && !request.vehicleType().equals(VehicleType.MOTORBIKE)
-            && request.totalSpots() != request.spotRequests().size()
+                && request.totalSpots() != request.spotRequests().size()
         ) {
             throw new AppException(ErrorCode.SPOT_COUNT_MISS_MATCH);
         }
@@ -151,7 +146,7 @@ public class AreaServiceImpl implements AreaService {
         AreaEntity area = areaRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_AREA_NOT_FOUND));
         if (!area.getParkingFloor().getParkingLot().getStatus().equals(ParkingLotStatus.PREPARING) &&
-               !area.getParkingFloor().getParkingLot().getStatus().equals(ParkingLotStatus.MAP_DENIED)
+                !area.getParkingFloor().getParkingLot().getStatus().equals(ParkingLotStatus.MAP_DENIED)
         )
             throw new AppException(ErrorCode.UNABLE_TO_DELETE_MAP, "Can not delete area map if not in PREPARING or MAP_DENIED phase");
 
@@ -162,6 +157,36 @@ public class AreaServiceImpl implements AreaService {
     @Override
     public Long count() {
         return areaRepository.countAllBy();
+    }
+
+    @Override
+    public List<AreaResponse> getSubscriptionAvailability(Long floorId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+
+        FloorEntity floor = floorRepository.findById(floorId)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_FLOOR_NOT_FOUND));
+        List<AreaEntity> areas = floor.getAreas().stream().filter(
+                area -> area.getAreaType() == AreaType.SUBSCRIPTION_ONLY && area.getIsActive()
+        ).toList();
+
+        return areas.stream().map(areaEntity -> {
+            AreaResponse response = AreaMapper.INSTANCE.toResponse(areaEntity);
+            List<Long> spotIds = spotRepository.findIdsByAreaId(areaEntity.getId());
+
+            if (spotIds.isEmpty()) {
+                response.setAvailableSubscriptionSpots(areaEntity.getTotalSpots());
+            } else {
+                List<Long> occupiedSpotIds = userClient.checkOccupiedSpots(
+                        spotIds,
+                        startDateTime,
+                        endDateTime
+                );
+
+                int availableSubscriptionSpots = areaEntity.getTotalSpots() - occupiedSpotIds.size();
+                response.setAvailableSubscriptionSpots(availableSubscriptionSpots);
+            }
+            return response;
+        }).toList();
+
     }
 
     private List<SpotEntity> toSpotEntities(List<SpotCreateRequest> requests, AreaEntity area) {

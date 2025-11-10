@@ -1,7 +1,6 @@
 package com.parkmate.override_pricing_rule.dto.resp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.parkmate.common.enums.VehicleType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

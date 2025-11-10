@@ -83,7 +83,12 @@ public class SecurityConfig {
 
             // Test
             "/api/v1/fcm/test",
-            "/api/v1/payment-service/wallets/sync"
+            "/api/v1/payment-service/wallets/sync",
+
+            //Internal
+            "/api/v1/parking-service/spots/internal/subscription-availability/**",
+            "/api/v1/parking-service/areas/internal/subscription-availability/**",
+            "/api/v1/parking-service/floors/internal/subscription-availability/**",
     };
 
 

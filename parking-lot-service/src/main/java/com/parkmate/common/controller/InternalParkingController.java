@@ -5,6 +5,7 @@ import com.parkmate.common.enums.VehicleType;
 import com.parkmate.parking_lot.ParkingLotService;
 import com.parkmate.pricing_rule.PricingRuleService;
 import com.parkmate.spot.SpotService;
+import com.parkmate.subscription.SubscriptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,6 +33,7 @@ public class InternalParkingController {
     private final ParkingLotService parkingLotService;
     private final SpotService spotService;
     private final PricingRuleService pricingRuleService;
+    private final SubscriptionService subscriptionService;
 
     @GetMapping("/lots/{id}/name")
     @Operation(
@@ -71,9 +73,20 @@ public class InternalParkingController {
             @RequestParam VehicleType vehicleType
     ) {
         var pricingRule = pricingRuleService.findByParkingLotIdAndVehicleType(id, vehicleType);
-        var response = new PricingRuleDto(pricingRule.getId());
+        var response = new PricingRuleDto(pricingRule.getId(), pricingRule.getVehicleType());
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success("Pricing rule fetched successfully", response));
+    }
+
+    @GetMapping("/subscriptions/{id}")
+    public ResponseEntity<?> getSubscriptionById(
+            @PathVariable @Parameter(description = "Subscription ID", required = true, example = "1") Long id
+    ) {
+        var subscription = subscriptionService.fetchSubscriptionById(id);
+        var response = new SubscriptionDto(subscription.getId(), subscription.getDurationValue(), subscription.getName());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success("Subscription fetched successfully", response));
+
     }
 
     /**
@@ -90,6 +103,9 @@ public class InternalParkingController {
     public record SpotNameDto(Long id, String name) {
     }
 
-    public record PricingRuleDto(Long id) {
+    public record PricingRuleDto(Long id, VehicleType vehicleType) {
+    }
+
+    public record SubscriptionDto(Long id, Integer durationValue, String name) {
     }
 }

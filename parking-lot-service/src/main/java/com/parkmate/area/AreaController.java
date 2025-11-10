@@ -163,6 +163,33 @@ public class AreaController {
                 );
     }
 
+    @Operation(
+            summary = "Get area subscription availability (Internal API)",
+            description = "Retrieve subscription availability for areas in a floor. Returns areas with SUBSCRIPTION_ONLY type and their available spot counts for the given time period ."
+    )
+    @GetMapping("/internal/subscription-availability")
+    public ResponseEntity<?> getSubscriptionAvailability(
+            @RequestParam
+            @Parameter(description = "Floor ID to get areas from", required = true, example = "1")
+            Long floorId,
+
+            @RequestParam
+            @Parameter(description = "Subscription start date", required = true, example = "2025-01-15T00:00:00")
+            LocalDateTime startDate,
+
+            @RequestParam
+            @Parameter(description = "Subscription end date", required = true, example = "2025-02-15T00:00:00")
+            LocalDateTime endDate
+    ) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(
+                        ApiResponse.success(
+                                "Fetch area subscription availability successfully",
+                                areaService.getSubscriptionAvailability(floorId, startDate, endDate)
+                        )
+                );
+    }
+
     @GetMapping("/count")
     public ResponseEntity<?> count() {
         return ResponseEntity.status(HttpStatus.OK)
@@ -173,4 +200,6 @@ public class AreaController {
                         )
                 );
     }
+
+
 }

@@ -1,7 +1,10 @@
 package com.parkmate.session.dto.req;
 
 import com.parkmate.common.enums.VehicleType;
-import com.parkmate.session.enums.*;
+import com.parkmate.session.enums.AuthMethod;
+import com.parkmate.session.enums.ReferenceType;
+import com.parkmate.session.enums.SessionStatus;
+import com.parkmate.session.enums.SessionType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
