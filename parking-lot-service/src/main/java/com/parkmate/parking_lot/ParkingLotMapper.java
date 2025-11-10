@@ -9,6 +9,7 @@ import com.parkmate.parking_lot.dto.resp.ParkingLotDetailedResponse;
 import com.parkmate.parking_lot.dto.resp.ParkingLotResponse;
 import com.parkmate.policy.PolicyMapper;
 import com.parkmate.pricing_rule.PricingRuleMapper;
+import com.parkmate.subscription.SubscriptionMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -17,7 +18,7 @@ import org.mapstruct.factory.Mappers;
 @Mapper(
         unmappedTargetPolicy = ReportingPolicy.IGNORE,
         unmappedSourcePolicy = ReportingPolicy.IGNORE,
-        uses = {FloorMapper.class, PricingRuleMapper.class, LotCapacityMapper.class, ImageMapper.class, PolicyMapper.class}
+        uses = {FloorMapper.class, PricingRuleMapper.class, LotCapacityMapper.class, ImageMapper.class, PolicyMapper.class, SubscriptionMapper.class}
 )
 public interface ParkingLotMapper {
     ParkingLotMapper INSTANCE = Mappers.getMapper(ParkingLotMapper.class);
@@ -27,6 +28,7 @@ public interface ParkingLotMapper {
     ParkingLotResponse toResponse(ParkingLotEntity entity);
 
     ParkingLotEntity toEntity(ParkingLotCreateRequest request);
+
     @Mapping(target = "openTime", source = "operatingHoursStart")
     @Mapping(target = "closeTime", source = "operatingHoursEnd")
     ParkingLotDetailedResponse toDetailedResponse(ParkingLotEntity entity);

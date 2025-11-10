@@ -5,6 +5,7 @@ import com.parkmate.common.config.MapStructConfig;
 import com.parkmate.userSubscription.dto.CreateUserSubscriptionRequest;
 import com.parkmate.userSubscription.dto.UpdateUserSubscriptionRequest;
 import com.parkmate.userSubscription.dto.UserSubscriptionResponse;
+import com.parkmate.userSubscription.dto.UserSubscriptionSyncResponse;
 import com.parkmate.vehicle.VehicleService;
 import com.parkmate.vehicle.dto.VehicleResponse;
 import org.mapstruct.*;
@@ -53,6 +54,33 @@ public abstract class UserSubscriptionMapper {
         }
     }
 
+    @Mapping(target = "assignedSpotName", ignore = true)
+    @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "fullName", source = "user.fullName")
+    @Mapping(target = "vehicleId", source = "vehicle.id")
+    @Mapping(target = "vehicleLicensePlate", ignore = true)
+    @Mapping(target = "vehicleType", ignore = true)
+    public abstract UserSubscriptionSyncResponse toSyncDto(UserSubscription userSubscription,
+                                                           @Context ParkingLotClient parkingLotClient,
+                                                           @Context VehicleService vehicleService);
+
+    @AfterMapping
+    protected void enrichSyncResponse(@MappingTarget UserSubscriptionSyncResponse response,
+                                      UserSubscription entity,
+                                      @Context ParkingLotClient parkingLotClient,
+                                      @Context VehicleService vehicleService) {
+
+        // Get assigned spot name from external service
+        if (entity.getAssignedSpotId() != null && parkingLotClient != null) {
+            response.setAssignedSpotName(fetchSpotName(parkingLotClient, entity.getAssignedSpotId()));
+        }
+
+        // Get vehicle information
+        if (entity.getVehicle() != null && entity.getVehicle().getId() != null && vehicleService != null) {
+            enrichVehicleInfo(response, entity.getVehicle().getId(), vehicleService);
+        }
+    }
+
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "vehicle", ignore = true)
@@ -63,6 +91,8 @@ public abstract class UserSubscriptionMapper {
     @Mapping(target = "refundAmount", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "endDate", ignore = true)
+    @Mapping(target = "syncStatus", ignore = true)
     public abstract UserSubscription toEntity(CreateUserSubscriptionRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -75,6 +105,7 @@ public abstract class UserSubscriptionMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "cancelledAt", ignore = true)
+    @Mapping(target = "syncStatus", ignore = true)
     public abstract void updateEntityFromDto(UpdateUserSubscriptionRequest request, @MappingTarget UserSubscription entity);
 
     protected Long calculateDaysRemaining(LocalDateTime startDate, LocalDateTime endDate) {
@@ -107,7 +138,7 @@ public abstract class UserSubscriptionMapper {
         }
     }
 
-    protected void enrichVehicleInfo(UserSubscriptionResponse response, Long vehicleId, VehicleService vehicleService) {
+    protected void enrichVehicleInfo(Object response, Long vehicleId, VehicleService vehicleService) {
         try {
             if (vehicleId == null || vehicleService == null) {
                 return;
@@ -118,12 +149,16 @@ public abstract class UserSubscriptionMapper {
                 return;
             }
 
-            // Set license plate
-            response.setVehicleLicensePlate(vehicleResponse.getLicensePlate());
+            if (response instanceof UserSubscriptionResponse) {
+                ((UserSubscriptionResponse) response).setVehicleLicensePlate(vehicleResponse.getLicensePlate());
+                if (vehicleResponse.getVehicleType() != null)
+                    ((UserSubscriptionResponse) response).setVehicleType((long) vehicleResponse.getVehicleType().ordinal());
+            }
 
-            // Set vehicle type (convert enum to ordinal)
-            if (vehicleResponse.getVehicleType() != null) {
-                response.setVehicleType((long) vehicleResponse.getVehicleType().ordinal());
+            if (response instanceof UserSubscriptionSyncResponse) {
+                ((UserSubscriptionSyncResponse) response).setVehicleLicensePlate(vehicleResponse.getLicensePlate());
+                if (vehicleResponse.getVehicleType() != null)
+                    ((UserSubscriptionSyncResponse) response).setVehicleType((long) vehicleResponse.getVehicleType().ordinal());
             }
         } catch (Exception e) {
             // Log error and continue

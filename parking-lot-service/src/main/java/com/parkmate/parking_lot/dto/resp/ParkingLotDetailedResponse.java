@@ -8,6 +8,7 @@ import com.parkmate.lot_capacity.dto.resp.LotCapacityResponse;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import com.parkmate.policy.dto.resp.PolicyResponse;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
+import com.parkmate.subscription.dto.resp.SubscriptionResponse;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -47,4 +48,6 @@ public class ParkingLotDetailedResponse {
     List<LotCapacityResponse> lotCapacity;
     List<ImageResponse> images;
     List<PolicyResponse> policies;
+    List<SubscriptionResponse> subscriptions;
+    List<ParkingLotAvailableReservationSpotResponse> availableSpots;
 }

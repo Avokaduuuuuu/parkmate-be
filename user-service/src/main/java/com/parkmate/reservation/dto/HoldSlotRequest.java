@@ -1,6 +1,5 @@
 package com.parkmate.reservation.dto;
 
-import com.parkmate.vehicle.VehicleType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

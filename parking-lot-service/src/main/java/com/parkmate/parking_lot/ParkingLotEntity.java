@@ -2,13 +2,12 @@ package com.parkmate.parking_lot;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.common.BaseEntity;
-
 import com.parkmate.floor.FloorEntity;
 import com.parkmate.image.ImageEntity;
 import com.parkmate.lot_capacity.LotCapacityEntity;
+import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import com.parkmate.policy.PolicyEntity;
 import com.parkmate.pricing_rule.PricingRuleEntity;
-import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import com.parkmate.session.SessionEntity;
 import com.parkmate.subscription.SubscriptionEntity;
 import jakarta.persistence.*;

@@ -1,9 +1,10 @@
 package com.parkmate.parking_lot.dto.req;
 
-import com.parkmate.common.enums.VehicleType;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 
 import java.time.LocalTime;
 

@@ -1,22 +1,24 @@
 package com.parkmate.floor;
 
 import com.parkmate.area.AreaMapper;
+import com.parkmate.area.AreaRepository;
 import com.parkmate.area.dto.resp.AreaResponse;
+import com.parkmate.client.UserClient;
 import com.parkmate.common.enums.VehicleType;
-import com.parkmate.floor.dto.resp.FloorDetailedResponse;
-import com.parkmate.floor_capacity.FloorCapacityMapper;
-import com.parkmate.floor_capacity.dto.req.FloorCapacityCreateRequest;
-import com.parkmate.floor.dto.req.FloorCreateRequest;
-import com.parkmate.floor.dto.req.FloorUpdateRequest;
-import com.parkmate.floor.dto.resp.FloorResponse;
-
-import com.parkmate.floor_capacity.FloorCapacityEntity;
-import com.parkmate.floor_capacity.dto.resp.FloorCapacityResponse;
-import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
+import com.parkmate.floor.dto.req.FloorCreateRequest;
+import com.parkmate.floor.dto.req.FloorUpdateRequest;
+import com.parkmate.floor.dto.resp.FloorDetailedResponse;
+import com.parkmate.floor.dto.resp.FloorResponse;
+import com.parkmate.floor_capacity.FloorCapacityEntity;
+import com.parkmate.floor_capacity.FloorCapacityMapper;
+import com.parkmate.floor_capacity.dto.req.FloorCapacityCreateRequest;
+import com.parkmate.floor_capacity.dto.resp.FloorCapacityResponse;
+import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.parking_lot.ParkingLotRepository;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
+import com.parkmate.spot.SpotRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,8 +27,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +36,9 @@ import java.util.stream.Collectors;
 public class FloorServiceImpl implements FloorService {
     private final FloorRepository floorRepository;
     private final ParkingLotRepository parkingLotRepository;
+    private final AreaRepository areaRepository;
+    private final SpotRepository spotRepository;
+    private final UserClient userClient;
 
     @Override
     public FloorResponse createFloor(Long parkingLotId, FloorCreateRequest request) {
@@ -77,7 +82,7 @@ public class FloorServiceImpl implements FloorService {
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_FLOOR_NOT_FOUND));
 
         if (!floorEntity.getParkingLot().getStatus().equals(ParkingLotStatus.PREPARING) &&
-        !floorEntity.getParkingLot().getStatus().equals(ParkingLotStatus.MAP_DENIED)
+                !floorEntity.getParkingLot().getStatus().equals(ParkingLotStatus.MAP_DENIED)
         ) {
             throw new AppException(ErrorCode.UNABLE_TO_DELETE_MAP, "Can not delete floor if not in PREPARING or MAP_DENIED phase");
         }
@@ -129,6 +134,51 @@ public class FloorServiceImpl implements FloorService {
 
         return floorDetailedResponse;
     }
+
+    @Override
+    public List<FloorResponse> getSubscriptionAvailability(
+            Long parkingLotId,
+            VehicleType vehicleType,
+            LocalDateTime startDate,
+            LocalDateTime endDate
+    ) {
+        List<FloorEntity> floors = floorRepository.findByParkingLot_IdAndIsActive(parkingLotId, true);
+
+        return floors.stream()
+                .map(floor -> {
+                    FloorResponse response = FloorMapper.INSTANCE.toResponse(floor);
+                    System.out.println("Subscription availability for floor " + floor.getId());
+                    Integer totalSubscriptionSpots = areaRepository.countTotalSubscriptionSpots(
+                            floor.getId(),
+                            vehicleType
+                    );
+                    System.out.println("Total subscription spots: " + totalSubscriptionSpots);
+                    List<Long> spotsIds = spotRepository.findIdsByFloorAndVehicleTypeAndSubscriptionOnly(
+                            floor.getId(),
+                            vehicleType
+                    );
+
+                    int available = 0;
+                    if (totalSubscriptionSpots != null && totalSubscriptionSpots > 0) {
+                        if (spotsIds.isEmpty()) {
+                            available = totalSubscriptionSpots;
+                        } else {
+                            List<Long> occupiedSpotIds = userClient.checkOccupiedSpots(spotsIds, startDate, endDate);
+                            System.out.println("Occupied spots: " + occupiedSpotIds.size());
+                            available = totalSubscriptionSpots - occupiedSpotIds.size();
+                        }
+                    }
+                    System.out.println("Available subscription spots: " + available);
+
+                    response.setTotalSubscriptionSpots(totalSubscriptionSpots != null ? totalSubscriptionSpots : 0);
+                    response.setAvailableSubscriptionSpots(Math.max(0, available));
+
+                    return response;
+
+                })
+                .toList();
+    }
+
 
     @Override
     public Long count() {

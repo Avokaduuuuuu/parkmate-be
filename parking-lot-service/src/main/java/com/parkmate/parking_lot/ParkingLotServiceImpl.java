@@ -42,10 +42,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -83,8 +80,14 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                 parkingLotRepository.findById(id)
                         .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND)));
 
-
         parkingLotResponse.getImages().forEach(image -> image.setPath(s3Service.getPresignedUrl(image.getPath())));
+        List<ParkingLotAvailableReservationSpotResponse> availableSpotResponses = new ArrayList<>();
+        for (VehicleType vehicleType : VehicleType.values()) {
+            ParkingLotAvailableReservationSpotResponse countAvailableSpot = countAvailableSpot(id, LocalDateTime.now(), 0, vehicleType);
+            countAvailableSpot.setPricing(null);
+            availableSpotResponses.add(countAvailableSpot);
+        }
+        parkingLotResponse.setAvailableSpots(availableSpotResponses);
         return parkingLotResponse;
     }
 
@@ -315,7 +318,18 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         log.info("Emergency Spots: {}", emergencySpots);
         try {
             PricingRuleEntity pricingRule = pricingRuleRepository.findByParkingLot_IdAndIsActiveAndVehicleType(id, true, vehicleType)
-                    .orElseThrow(() -> new AppException(ErrorCode.PRICING_RULE_NOT_FOUND));
+                    .orElse(null);
+
+            // Nếu không tìm thấy pricing rule (vehicleType không được support), trả về 0/0
+            if (pricingRule == null) {
+                return ParkingLotAvailableReservationSpotResponse.builder()
+                        .vehicleType(vehicleType)
+                        .pricing(null)
+                        .totalCapacity(0L)
+                        .availableCapacity(0L)
+                        .build();
+            }
+
             Double estimateTotalFee = pricingRule.getInitialCharge() + Math.ceil(((float) (assumedStayMinute - pricingRule.getInitialDurationMinute()) / pricingRule.getStepMinute())) * pricingRule.getStepRate();
             log.info("Estimate Total Fee: {}", estimateTotalFee);
             if (assumedStayMinute < parkingLot.getHorizonTime()) {
@@ -358,6 +372,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                     .build();
 
             return ParkingLotAvailableReservationSpotResponse.builder()
+                    .vehicleType(vehicleType)
                     .pricing(pricingRuleSimpleResponse)
                     .totalCapacity(totalCapacity)
                     .availableCapacity(availableSpots)

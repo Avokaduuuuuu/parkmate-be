@@ -1,8 +1,6 @@
 package com.parkmate.pricing_rule;
 
 
-import com.github.f4b6a3.uuid.UuidCreator;
-import com.parkmate.area.AreaEntity;
 import com.parkmate.common.enums.VehicleType;
 import com.parkmate.override_pricing_rule.OverridePricingRuleEntity;
 import com.parkmate.parking_lot.ParkingLotEntity;
@@ -20,7 +18,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor

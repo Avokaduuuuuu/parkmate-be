@@ -4,6 +4,7 @@ public enum UserSubscriptionStatus {
 
     PENDING_PAYMENT,
     ACTIVE,
+    INACTIVE,
     EXPIRED,
     CANCELLED
 }

@@ -17,6 +17,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class CreateUserSubscriptionRequest {
 
+    private Boolean ownedByMe;
+
     private Long userId;
 
     @NotNull(message = "Vehicle ID is required")
@@ -41,11 +43,6 @@ public class CreateUserSubscriptionRequest {
     @Schema(description = "Subscription start date and time", example = "2025-12-15T00:00:00")
     @Future(message = "End date must be in the future")
     private LocalDateTime startDate;
-
-    @NotNull(message = "End date is required")
-    @Schema(description = "Subscription end date and time", example = "2026-12-15T00:00:00")
-    @Future(message = "End date must be in the future")
-    private LocalDateTime endDate;
 
     @Schema(description = "Whether to auto-renew the subscription", example = "false", defaultValue = "false")
     private Boolean autoRenew;

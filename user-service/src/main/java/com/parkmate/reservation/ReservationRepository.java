@@ -1,7 +1,6 @@
 package com.parkmate.reservation;
 
 import com.parkmate.common.enums.ReservationStatus;
-import com.parkmate.vehicle.VehicleType;
 import com.querydsl.core.types.Predicate;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;

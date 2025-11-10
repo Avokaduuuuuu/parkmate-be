@@ -1,8 +1,8 @@
 package com.parkmate.pricing_rule;
 
+import com.parkmate.common.ApiResponse;
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import com.parkmate.pricing_rule.dto.req.PricingRuleUpdateRequest;
-import com.parkmate.common.ApiResponse;
 import com.parkmate.pricing_rule.dto.req.SyncedPricingRulesUpdateRequest;
 import com.parkmate.session.enums.SyncStatus;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,8 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/parking-service/pricing-rules")

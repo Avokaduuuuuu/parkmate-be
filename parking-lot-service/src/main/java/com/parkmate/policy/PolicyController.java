@@ -1,6 +1,5 @@
 package com.parkmate.policy;
 
-import com.parkmate.common.ApiResponse;
 import com.parkmate.policy.dto.req.PolicyUpdateRequest;
 import com.parkmate.policy.dto.req.SyncedPolicyUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -8,14 +7,12 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.*;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/parking-service/policies")

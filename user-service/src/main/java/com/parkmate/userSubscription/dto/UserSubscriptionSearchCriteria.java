@@ -14,6 +14,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class UserSubscriptionSearchCriteria {
 
+    @Schema(description = "Filter by subscription owned by me", example = "true")
+    private Boolean ownedByMe;
+
     @Schema(description = "Filter by user ID", example = "1")
     private Long userId;
 

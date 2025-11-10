@@ -3,6 +3,7 @@ package com.parkmate.spot;
 import com.parkmate.common.ApiResponse;
 import com.parkmate.spot.dto.req.SpotCreateRequest;
 import com.parkmate.spot.dto.req.SpotUpdateRequest;
+import com.parkmate.spot.dto.resp.SpotResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -141,7 +143,7 @@ public class SpotController {
                 );
     }
 
-    @PostMapping("/{spotId}/session")
+    @PostMapping("/{spotId}/hold")
     public ResponseEntity<?> createSpotSession(
             @Parameter(hidden = true)
             @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
@@ -157,7 +159,7 @@ public class SpotController {
                 );
     }
 
-    @DeleteMapping("/{spotId}/session")
+    @DeleteMapping("/{spotId}/hold")
     public ResponseEntity<?> deleteSpotSession(
             @Parameter(hidden = true)
             @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
@@ -170,5 +172,14 @@ public class SpotController {
                                 spotService.releaseSpot(spotId, Long.parseLong(userIdHeader))
                         )
                 );
+    }
+
+    @GetMapping("/internal/subscription-availability")
+    public ResponseEntity<ApiResponse<List<SpotResponse>>> getSubscriptionAvailability(
+            @RequestParam Long areaId,
+            @RequestParam LocalDateTime startDate,
+            @RequestParam LocalDateTime endDate
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(spotService.getSubscriptionAvailability(areaId, startDate, endDate)));
     }
 }
