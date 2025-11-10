@@ -56,6 +56,14 @@ public record ParkingLotCreateRequest(
         String city,
 
         @Schema(
+                description = "Total usable parking area across all floors",
+                example = "1000.50",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        @NotNull(message = "Lot Square must not be null")
+        Double lotSquare,
+
+        @Schema(
                 description = "Latitude coordinate of the parking lot location",
                 example = "10.7827500",
                 minimum = "-90",
@@ -119,6 +127,15 @@ public record ParkingLotCreateRequest(
         )
         @NotNull
         Boolean is24Hour,
+
+
+        @Schema(
+                description = "Horizon time to predict how long a user will park",
+                example = "100",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        @NotNull
+        Double horizonTime,
 
         @Valid
         @NotNull(message = "Lot capacity list must not be null")

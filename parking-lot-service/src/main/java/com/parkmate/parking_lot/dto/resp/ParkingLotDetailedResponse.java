@@ -36,10 +36,6 @@ public class ParkingLotDetailedResponse {
     @JsonFormat(pattern = "HH:mm:ss")
     LocalTime closeTime;
     Boolean is24Hour;
-    Double boundaryTopLeftX;
-    Double boundaryTopLeftY;
-    Double boundaryWidth;
-    Double boundaryHeight;
     ParkingLotStatus status;
     String reason;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

@@ -45,6 +45,12 @@ public class    ParkingLotEntity extends BaseEntity {
     @Column(name = "city", length = 100)
     String city;
 
+    @Column(name = "lot_square")
+    Double lotSquare;
+
+    @Column(name = "registration_cost")
+    Double registrationCost;
+
     @Column(name = "latitude")
     Double latitude;
 
@@ -65,17 +71,6 @@ public class    ParkingLotEntity extends BaseEntity {
     @Column(name = "is_24_hour")
     Boolean is24Hour;
 
-    @Column(name = "boundary_top_left_x")
-    Double boundaryTopLeftX;
-
-    @Column(name = "boundary_top_left_y")
-    Double boundaryTopLeftY;
-
-    @Column(name = "boundary_width")
-    Double boundaryWidth;
-
-    @Column(name = "boundary_height")
-    Double boundaryHeight;
 
     @Column(name = "horizon_time")
     Double horizonTime;
@@ -87,7 +82,6 @@ public class    ParkingLotEntity extends BaseEntity {
 
     @Column(name = "reason")
     String reason;
-
 
     @OneToMany(mappedBy = "parkingLot")
     List<FloorEntity> parkingFloors;

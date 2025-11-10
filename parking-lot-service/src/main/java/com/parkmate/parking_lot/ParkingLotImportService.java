@@ -108,10 +108,6 @@ public class ParkingLotImportService {
                 .operatingHoursStart(dto.getOperatingHoursStart())
                 .operatingHoursEnd(dto.getOperatingHoursEnd())
                 .is24Hour(dto.getIs24Hour())
-                .boundaryTopLeftX(dto.getBoundaryTopLeftX())
-                .boundaryTopLeftY(dto.getBoundaryTopLeftY())
-                .boundaryWidth(dto.getBoundaryWidth())
-                .boundaryHeight(dto.getBoundaryHeight())
                 .status(dto.getStatus())
                 .reason(dto.getReason())
                 .build();

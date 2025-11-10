@@ -114,17 +114,7 @@ public class ParkingLotExportService {
                 // Is 24 Hour
                 createCell(row, 11, parkingLot.getIs24Hour(), dataStyle);
 
-                // Boundary Top Left X
-                createCell(row, 12, parkingLot.getBoundaryTopLeftX(), dataStyle);
-
-                // Boundary Top Left Y
-                createCell(row, 13, parkingLot.getBoundaryTopLeftY(), dataStyle);
-
-                // Boundary Width
-                createCell(row, 14, parkingLot.getBoundaryWidth(), dataStyle);
-
-                // Boundary Height
-                createCell(row, 15, parkingLot.getBoundaryHeight(), dataStyle);
+                // Boundary Top Left
 
                 // Status
                 String status = parkingLot.getStatus() != null ? parkingLot.getStatus().name() : "";
