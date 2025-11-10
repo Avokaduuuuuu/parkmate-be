@@ -3,6 +3,7 @@ package com.parkmate.session;
 import com.parkmate.session.dto.req.SessionCreateRequest;
 import com.parkmate.session.dto.req.SessionSyncRequest;
 import com.parkmate.session.dto.req.SessionUpdateRequest;
+import com.parkmate.session.dto.resp.SessionDetailedResponse;
 import com.parkmate.session.dto.resp.SessionResponse;
 import org.springframework.data.domain.Page;
 
@@ -21,7 +22,7 @@ public interface SessionService {
             SessionFilterParams filterParams
     );
 
-    SessionResponse getSession(String cardUUID);
+    SessionDetailedResponse getSession(String id);
     SessionResponse updateSession(String cardUUID, SessionUpdateRequest request);
     Long count();
     void deleteSession(String cardUUID);

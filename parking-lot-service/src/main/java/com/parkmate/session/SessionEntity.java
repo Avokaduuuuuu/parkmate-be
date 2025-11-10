@@ -97,6 +97,18 @@ public class SessionEntity {
     @Column(name = "card_uuid")
     String cardUUID;
 
+    @Column(name = "entry_image")
+    String entryImage;
+
+    @Column(name = "entry_plate_image")
+    String entryPlateImage;
+
+    @Column(name = "exit_image")
+    String exitImage;
+
+    @Column(name = "exit_plate_image")
+    String exitPlateImage;
+
     @Column(name = "created_at")
     @CreatedDate
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")

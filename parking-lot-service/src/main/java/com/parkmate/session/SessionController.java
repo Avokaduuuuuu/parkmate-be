@@ -25,12 +25,12 @@ public class SessionController {
 
 
     @Operation(
-            summary = "Get parking session by card UUID",
+            summary = "Get parking session by session UUID",
             description = """
-                Retrieve detailed information about a specific parking session using the access card UUID.
+                Retrieve detailed information about a specific parking session using the session UUID.
                 
                 **Path Parameters:**
-                - `cardUUID` (required): The unique identifier of the access card associated with the parking session
+                - `id` (required): The unique identifier of the session
                 
                 **Returns:** Complete session details including:
                 - User and vehicle information
@@ -42,16 +42,16 @@ public class SessionController {
                 - Authentication method used
                 """
     )
-    @GetMapping("/{cardUUID}")
+    @GetMapping("/{id}")
     public ResponseEntity<?> getSession(
-            @Parameter(description = "Unique identifier of the access card", required = true, example = "CARD-UUID-123456")
-            @PathVariable("cardUUID") String cardUUID
+            @Parameter(description = "Unique identifier of the session", required = true, example = "ad09dba5-c172-4a98-8fda-d6d6f009276c")
+            @PathVariable("id") String id
     ) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(
                         ApiResponse.success(
                                 "Fetch session successfully",
-                                sessionService.getSession(cardUUID)
+                                sessionService.getSession(id)
                         )
                 );
     }

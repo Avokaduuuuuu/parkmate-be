@@ -9,6 +9,7 @@ import com.parkmate.pricing_rule.PricingRuleRepository;
 import com.parkmate.session.dto.req.SessionCreateRequest;
 import com.parkmate.session.dto.req.SessionSyncRequest;
 import com.parkmate.session.dto.req.SessionUpdateRequest;
+import com.parkmate.session.dto.resp.SessionDetailedResponse;
 import com.parkmate.session.dto.resp.SessionResponse;
 import com.parkmate.session.enums.SessionStatus;
 import com.parkmate.session.enums.SessionType;
@@ -75,10 +76,10 @@ public class SessionServiceImpl implements SessionService{
     }
 
     @Override
-    public SessionResponse getSession(String cardUUID) {
-        return SessionMapper.INSTANCE.toResponse(
-                sessionRepository.findByCardUUID(cardUUID)
-                        .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND, "Session with Card UUID " + cardUUID + " not found"))
+    public SessionDetailedResponse getSession(String id) {
+        return SessionMapper.INSTANCE.toDetailedResponse(
+                sessionRepository.findById(UUID.fromString(id))
+                        .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND, "Session with Card UUID " + id + " not found"))
         );
     }
 
