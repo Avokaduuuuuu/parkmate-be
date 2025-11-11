@@ -93,6 +93,8 @@ public abstract class UserSubscriptionMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "endDate", ignore = true)
     @Mapping(target = "syncStatus", ignore = true)
+    @Mapping(target = "autoRenew", ignore = true)
+    @Mapping(target = "paidAmount", ignore = true)
     public abstract UserSubscription toEntity(CreateUserSubscriptionRequest request);
 
     @Mapping(target = "id", ignore = true)

@@ -26,5 +26,5 @@ public interface AreaService {
 
     Long count();
 
-    List<AreaResponse> getSubscriptionAvailability(Long floorId, LocalDateTime startDateTime, LocalDateTime endDateTime);
+    List<AreaResponse> getSubscriptionAvailability(Long floorId, com.parkmate.common.enums.VehicleType vehicleType, LocalDateTime startDateTime, LocalDateTime endDateTime);
 }

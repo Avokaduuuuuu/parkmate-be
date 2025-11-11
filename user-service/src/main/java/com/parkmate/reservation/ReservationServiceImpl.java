@@ -40,7 +40,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -306,9 +305,9 @@ public class ReservationServiceImpl implements ReservationService {
                 "ĐẶT CHỖ THÀNH CÔNG",
                 reservation -> {
                     String parkingLotName = reservationMapper.getParkingLotName(parkingLotClient, reservation.getParkingLotId());
-                    String lotName = (parkingLotName != null) ? parkingLotName : "the parking lot";
-                    String time = reservation.getReservedFrom().format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"));
-                    return String.format("BẠN ĐÃ ĐẶT CHỖ THÀNH CÔNG CHO XE CÓ BIỂN SỐ %s TẠI BÃI XE %s VÀO LÚC %s",
+                    String lotName = (parkingLotName != null) ? parkingLotName : "bãi xe";
+                    String time = reservation.getReservedFrom().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'lúc' HH:mm"));
+                    return String.format("Bạn đã đặt chỗ thành công cho xe có biển số %s tại bãi xe %s vào %s",
                             reservation.getVehicle().getLicensePlate(),
                             lotName,
                             time);
@@ -331,13 +330,13 @@ public class ReservationServiceImpl implements ReservationService {
 
                     log.info("Feign call to get parking lot name took: {}ms", (feignEndTime - feignStartTime));
 
-                    String lotName = (parkingLotName != null) ? parkingLotName : "the parking lot";
-                    String time = ZonedDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"));
+                    String lotName = (parkingLotName != null) ? parkingLotName : "bãi xe";
+                    String time = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'lúc' HH:mm"));
 
                     long totalTime = System.currentTimeMillis() - startTime;
                     log.info("ACTIVE notification completed for reservation: {} in {}ms", reservationId, totalTime);
 
-                    return String.format("Xe của bạn đã vào bãi xe %s vào lúc %s", lotName, time);
+                    return String.format("Xe của bạn đã vào bãi xe %s vào %s", lotName, time);
                 }
         );
     }
@@ -351,17 +350,19 @@ public class ReservationServiceImpl implements ReservationService {
                 NotificationEventType.RESERVATION_COMPLETED,
                 "XE CỦA BẠN ĐÃ RA KHỎI BÃI",
                 reservation -> {
-                    String time = reservation.getReservedUntil().toString();
-                    String totalFee = (reservation.getTotalFee() != null) ? reservation.getTotalFee().toString() : "0";
+                    String time = reservation.getReservedUntil() != null
+                            ? reservation.getReservedUntil().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'lúc' HH:mm"))
+                            : "không xác định";
+
+                    String totalFee = (reservation.getTotalFee() != null)
+                            ? String.format("%,.0f", reservation.getTotalFee())
+                            : "0";
 
                     long totalTime = System.currentTimeMillis() - startTime;
                     log.info("COMPLETED notification completed for reservation: {} in {}ms", reservationId, totalTime);
 
                     return String.format(
-                            """
-                                    Lượt đặt chỗ tại của bạn đã hoàn thành vào lúc %s.\s
-                                     Tổng số phí phải trả: %s VND\s
-                                    Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Parkmate""",
+                            "Lượt đặt chỗ của bạn đã hoàn thành vào %s. Tổng số phí phải trả: %s VND. Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Parkmate!",
                             time, totalFee
                     );
                 }

@@ -26,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -70,12 +71,14 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         }
         int durationValue = 0;
         String subscriptionPackageName = null;
+        BigDecimal amount = null;
         Object data = parkingLotClient.getSubscription(request.getSubscriptionPackageId()).data();
         if (data == null) {
             throw new AppException(ErrorCode.OTHER_CLIENT_ERROR, ParkingLotServiceErrorCode.SUBSCRIPTION_NOT_FOUND);
         } else if (data instanceof ParkingLotClient.SubscriptionDto subscriptionDto) {
             durationValue = subscriptionDto.durationValue();
             subscriptionPackageName = subscriptionDto.name();
+            amount = subscriptionDto.amount();
         }
 
         if (!checkVehicleUser(request.getVehicleId(), request.getUserId())) {
@@ -91,8 +94,12 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         userSubscription.setVehicle(vehicle);
         userSubscription.setStatus(UserSubscriptionStatus.ACTIVE);
         userSubscription.setEndDate(endDate);
+        userSubscription.setSyncStatus(SyncStatus.PENDING);
+        userSubscription.setPaidAmount(amount);
+        userSubscription.setAutoRenew(true);
 
-        deductSubscriptionFee(userSubscription, subscriptionPackageName);
+
+        deductSubscriptionFee(userSubscription, subscriptionPackageName, amount);
 
         UserSubscription savedSubscription = userSubscriptionRepository.save(userSubscription);
         return getUserSubscriptionResponse(savedSubscription);
@@ -190,12 +197,12 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         }
     }
 
-    private void deductSubscriptionFee(UserSubscription userSubscription, String subscriptionPackageName) {
+    private void deductSubscriptionFee(UserSubscription userSubscription, String subscriptionPackageName, BigDecimal amount) {
         try {
             ResponseEntity<ApiResponse<WalletTransactionResponse>> paymentResult = paymentClient.deductWallet(
                     CreateTransactionRequest.builder()
                             .userId(userSubscription.getUser().getId())
-                            .amount(userSubscription.getPaidAmount())
+                            .amount(amount)
                             .transactionType(TransactionConstants.TYPE_DEDUCTION)
                             .processedAt(LocalDateTime.now())
                             .description("Thanh toán gói: " + subscriptionPackageName)
@@ -364,10 +371,27 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         // Call parking-lot-service to hold the spot
-        ApiResponse<Boolean> response = parkingLotClient.holdSpot(userId, spotId);
+        ApiResponse<ParkingLotClient.SpotHoldResponseDto> response = parkingLotClient.holdSpot(spotId, String.valueOf(userId));
 
         if (!response.success() || response.data() == null) {
             throw new AppException(ErrorCode.OTHER_CLIENT_ERROR, "Failed to hold spot");
+        }
+
+        return response.data().hasSession();
+    }
+
+    @Override
+    public Object releaseSpot(Long spotId, String userIdHeader) {
+        // Validate user exists
+        Long userId = Long.parseLong(userIdHeader);
+        userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Call parking-lot-service to release the spot
+        ApiResponse<ParkingLotClient.SpotHoldResponseDto> response = parkingLotClient.releaseSpot(spotId, userIdHeader);
+
+        if (!response.success()) {
+            throw new AppException(ErrorCode.OTHER_CLIENT_ERROR, response.message());
         }
 
         return response.data();

@@ -401,23 +401,23 @@ public class UserSubscriptionController {
             summary = "Hold a spot for subscription",
             description = """
                     Hold a spot for 15 minutes while user completes payment.
-                    
+
                     **Query Parameters:**
                     - `spotId` (required): ID of the spot to hold
-                    
+
                     **Returns:** Boolean indicating success
-                    
+
                     **Business Logic:**
                     - Spot is held for 15 minutes (600 seconds)
                     - During hold period, spot appears unavailable to other users
                     - Hold is automatically released after timeout
                     - User can release hold manually by not completing payment
                     - Hold uses Redis for fast concurrent access control
-                    
+
                     **Use Case:**
                     User selects spot → Hold spot → Complete payment → Create subscription
                     If payment fails/cancelled → Hold automatically expires
-                    
+
                     **Error Cases:**
                     - SPOT_NOT_FOUND: Invalid spot ID
                     - SPOT_ALREADY_HELD: Spot is currently held by another user
@@ -434,6 +434,45 @@ public class UserSubscriptionController {
         Long userId = Long.parseLong(userIdHeader);
         Boolean result = userSubscriptionService.holdSpot(userId, spotId);
         return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    @DeleteMapping("/hold-spot")
+    @Operation(
+            summary = "Release a held spot",
+            description = """
+                    Manually release a spot that was previously held for subscription.
+
+                    **Query Parameters:**
+                    - `spotId` (required): ID of the spot to release
+
+                    **Returns:** Spot details after release
+
+                    **Business Logic:**
+                    - Releases the hold on a spot that was previously held by the user
+                    - Only the user who held the spot can release it
+                    - Spot becomes immediately available to other users
+                    - If hold already expired, operation still succeeds
+
+                    **Use Cases:**
+                    - User cancels subscription payment
+                    - User decides not to subscribe
+                    - User wants to select a different spot
+
+                    **Error Cases:**
+                    - SPOT_NOT_FOUND: Invalid spot ID
+                    - UNAUTHORIZED: Spot is held by another user
+                    - SPOT_NOT_HELD: Spot is not currently held
+                    """
+    )
+    public ResponseEntity<ApiResponse<?>> releaseSpot(
+            @Parameter(description = "Spot ID to release", required = true, example = "1")
+            @RequestParam Long spotId,
+
+            @Parameter(hidden = true)
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader
+    ) {
+        var result = userSubscriptionService.releaseSpot(spotId, userIdHeader);
+        return ResponseEntity.ok(ApiResponse.success("Spot hold released successfully", result));
     }
 
     @PutMapping("/{id}/sync")

@@ -3,11 +3,9 @@ package com.parkmate.client;
 import com.parkmate.common.dto.ApiResponse;
 import com.parkmate.vehicle.VehicleType;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -52,10 +50,16 @@ public interface ParkingLotClient {
             @RequestParam("endDate") String endDate
     );
 
-    @PostMapping("/internal/parking-service/spots/hold")
-    ApiResponse<Boolean> holdSpot(
-            @RequestParam("userId") Long userId,
-            @RequestParam("spotId") Long spotId
+    @PostMapping("/api/v1/parking-service/spots/{spotId}/hold")
+    ApiResponse<SpotHoldResponseDto> holdSpot(
+            @PathVariable Long spotId,
+            @RequestHeader("X-User-Id") String userId
+    );
+
+    @DeleteMapping("/api/v1/parking-service/spots/{spotId}/hold")
+    ApiResponse<SpotHoldResponseDto> releaseSpot(
+            @PathVariable Long spotId,
+            @RequestHeader("X-User-Id") String userId
     );
 
 
@@ -68,13 +72,17 @@ public interface ParkingLotClient {
     record PricingRuleDto(Long id) {
     }
 
-    record SubscriptionDto(Long id, Integer durationValue, String name) {
+    record SubscriptionDto(Long id, Integer durationValue, String name, BigDecimal amount) {
     }
 
     record FloorSubscriptionAvailabilityDto(
             Long id,
             Integer floorNumber,
             String floorName,
+            Double floorTopLeftX,
+            Double floorTopLeftY,
+            Double floorWidth,
+            Double floorHeight,
             Boolean isActive,
             Integer totalSubscriptionSpots,
             Integer availableSubscriptionSpots
@@ -107,6 +115,19 @@ public interface ParkingLotClient {
             String status,
             Boolean isAvailableForSubscription,
             String subscriptionUnavailabilityReason
+    ) {
+    }
+
+    record SpotHoldResponseDto(
+            Long id,
+            String name,
+            Double spotTopLeftX,
+            Double spotTopLeftY,
+            Double spotWidth,
+            Double spotHeight,
+            String status,
+            String blockReason,
+            Boolean hasSession
     ) {
     }
 }

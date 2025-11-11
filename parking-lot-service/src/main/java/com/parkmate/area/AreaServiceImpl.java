@@ -160,12 +160,14 @@ public class AreaServiceImpl implements AreaService {
     }
 
     @Override
-    public List<AreaResponse> getSubscriptionAvailability(Long floorId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+    public List<AreaResponse> getSubscriptionAvailability(Long floorId, com.parkmate.common.enums.VehicleType vehicleType, LocalDateTime startDateTime, LocalDateTime endDateTime) {
 
         FloorEntity floor = floorRepository.findById(floorId)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_FLOOR_NOT_FOUND));
         List<AreaEntity> areas = floor.getAreas().stream().filter(
-                area -> area.getAreaType() == AreaType.SUBSCRIPTION_ONLY && area.getIsActive()
+                area -> area.getAreaType() == AreaType.SUBSCRIPTION_ONLY
+                        && area.getIsActive()
+                        && area.getVehicleType() == vehicleType
         ).toList();
 
         return areas.stream().map(areaEntity -> {
