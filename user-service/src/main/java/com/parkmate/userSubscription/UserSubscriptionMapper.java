@@ -24,6 +24,7 @@ public abstract class UserSubscriptionMapper {
     @Mapping(target = "vehicleId", source = "vehicle.id")
     @Mapping(target = "vehicleLicensePlate", ignore = true)
     @Mapping(target = "vehicleType", ignore = true)
+    @Mapping(target = "subscriptionPackageName", ignore = true)
     public abstract UserSubscriptionResponse toDto(UserSubscription userSubscription,
                                                    @Context ParkingLotClient parkingLotClient,
                                                    @Context VehicleService vehicleService);
@@ -41,6 +42,10 @@ public abstract class UserSubscriptionMapper {
         // Get parking lot name from external service
         if (entity.getParkingLotId() != null && parkingLotClient != null) {
             response.setParkingLotName(fetchParkingLotName(parkingLotClient, entity.getParkingLotId()));
+        }
+
+        if (entity.getSubscriptionPackageId() != null && parkingLotClient != null) {
+            response.setSubscriptionPackageName(fetchSubscriptionPackage(parkingLotClient, entity.getSubscriptionPackageId()));
         }
 
         // Get assigned spot name from external service
@@ -133,6 +138,19 @@ public abstract class UserSubscriptionMapper {
                 return null;
             }
             var response = client.getSpotName(spotId);
+            return response != null && response.data() != null ? response.data().name() : null;
+        } catch (Exception e) {
+            // Log error and return null
+            return null;
+        }
+    }
+
+    protected String fetchSubscriptionPackage(ParkingLotClient client, Long subscriptionPackageId) {
+        try {
+            if (subscriptionPackageId == null) {
+                return null;
+            }
+            var response = client.getSubscription(subscriptionPackageId);
             return response != null && response.data() != null ? response.data().name() : null;
         } catch (Exception e) {
             // Log error and return null

@@ -22,6 +22,7 @@ public class UserSubscriptionResponse {
     private Long vehicleType;
     private String vehicleLicensePlate;
     private Long subscriptionPackageId;
+    private String subscriptionPackageName;
     private Long parkingLotId;
     private String parkingLotName;
     private Long assignedSpotId;
