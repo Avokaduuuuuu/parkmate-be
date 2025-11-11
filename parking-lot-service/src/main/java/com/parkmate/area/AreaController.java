@@ -3,6 +3,7 @@ package com.parkmate.area;
 import com.parkmate.area.dto.req.AreaCreateRequest;
 import com.parkmate.area.dto.req.AreaUpdateRequest;
 import com.parkmate.common.ApiResponse;
+import com.parkmate.common.enums.VehicleType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -174,6 +175,10 @@ public class AreaController {
             Long floorId,
 
             @RequestParam
+            @Parameter(description = "Vehicle type to filter areas", required = true, example = "CAR_UP_TO_9_SEATS")
+            VehicleType vehicleType,
+
+            @RequestParam
             @Parameter(description = "Subscription start date", required = true, example = "2025-01-15T00:00:00")
             LocalDateTime startDate,
 
@@ -185,7 +190,7 @@ public class AreaController {
                 .body(
                         ApiResponse.success(
                                 "Fetch area subscription availability successfully",
-                                areaService.getSubscriptionAvailability(floorId, startDate, endDate)
+                                areaService.getSubscriptionAvailability(floorId, vehicleType, startDate, endDate)
                         )
                 );
     }

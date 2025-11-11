@@ -15,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+
 /**
  * Internal API endpoints for inter-service communication.
  * These endpoints are only accessible from other microservices (service-to-service calls).
@@ -83,7 +85,11 @@ public class InternalParkingController {
             @PathVariable @Parameter(description = "Subscription ID", required = true, example = "1") Long id
     ) {
         var subscription = subscriptionService.fetchSubscriptionById(id);
-        var response = new SubscriptionDto(subscription.getId(), subscription.getDurationValue(), subscription.getName());
+        var response = new SubscriptionDto(
+                subscription.getId(),
+                subscription.getDurationValue(),
+                subscription.getName(),
+                subscription.getPrice());
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success("Subscription fetched successfully", response));
 
@@ -106,6 +112,6 @@ public class InternalParkingController {
     public record PricingRuleDto(Long id, VehicleType vehicleType) {
     }
 
-    public record SubscriptionDto(Long id, Integer durationValue, String name) {
+    public record SubscriptionDto(Long id, Integer durationValue, String name, BigDecimal amount) {
     }
 }

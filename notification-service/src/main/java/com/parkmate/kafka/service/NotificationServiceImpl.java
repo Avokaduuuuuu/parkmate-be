@@ -172,7 +172,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     private String getDeepLinkForEventType(String eventType, String eventData) {
         return switch (eventType) {
-            case "RESERVATION_CREATED", "RESERVATION_UPDATED", "RESERVATION_COMPLETED" ->
+            case "RESERVATION_CREATED", "RESERVATION_UPDATED", "RESERVATION_ACTIVATED",
+                 "RESERVATION_COMPLETED", "RESERVATION_CANCELLED" ->
                     "parkmate://reservation/" + extractId(eventData);
 
             case "VEHICLE_ENTERED", "VEHICLE_EXITED" -> "parkmate://parking-session/" + extractId(eventData);

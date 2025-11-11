@@ -8,7 +8,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Schema(description = "Request to create a new user subscription")
@@ -44,11 +43,4 @@ public class CreateUserSubscriptionRequest {
     @Future(message = "End date must be in the future")
     private LocalDateTime startDate;
 
-    @Schema(description = "Whether to auto-renew the subscription", example = "false", defaultValue = "false")
-    private Boolean autoRenew;
-
-    @NotNull(message = "Paid amount is required")
-    @Positive(message = "Paid amount must be positive")
-    @Schema(description = "Amount paid for the subscription", example = "299.99")
-    private BigDecimal paidAmount;
 }

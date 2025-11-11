@@ -31,4 +31,6 @@ public interface UserSubscriptionService {
     List<?> getSpotAvailability(Long areaId, Long subscriptionPackageId, LocalDateTime startDate);
 
     Boolean holdSpot(Long userId, Long spotId);
+
+    Object releaseSpot(Long spotId, String userIdHeader);
 }
