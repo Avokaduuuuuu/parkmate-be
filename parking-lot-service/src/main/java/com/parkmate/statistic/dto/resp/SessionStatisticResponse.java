@@ -15,8 +15,8 @@ public class SessionStatisticResponse {
     Long completedSessions;
     Long activeSessions;
     Double averageDurationMinute;
-    long motorbikeCount;
-    long carCount;
-    long bikeCount;
-    long otherCount;
+    Long motorbikeCount;
+    Long carCount;
+    Long bikeCount;
+    Long otherCount;
 }
