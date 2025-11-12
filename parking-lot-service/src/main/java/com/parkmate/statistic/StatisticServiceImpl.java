@@ -22,6 +22,11 @@ public class StatisticServiceImpl implements StatisticService {
                         .sessionTotalAmount(cursor.getTotal())
                         .completedSessions((cursor.getCompletedCount()))
                         .activeSessions((cursor.getActiveCount()))
+                        .averageDurationMinute(cursor.getAverageDurationMinute())
+                        .motorbikeCount(cursor.getMotorbikeCount())
+                        .carCount(cursor.getCarCount())
+                        .bikeCount(cursor.getBikeCount())
+                        .otherCount(cursor.getOtherCount())
                         .build()
                 )
                 .build();
