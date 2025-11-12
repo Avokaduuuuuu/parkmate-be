@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,11 +99,15 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         userSubscription.setPaidAmount(amount);
         userSubscription.setAutoRenew(true);
 
-
-        deductSubscriptionFee(userSubscription, subscriptionPackageName, amount);
-
-        UserSubscription savedSubscription = userSubscriptionRepository.save(userSubscription);
-        return getUserSubscriptionResponse(savedSubscription);
+        try {
+            deductSubscriptionFee(userSubscription, subscriptionPackageName, amount);
+            UserSubscription savedSubscription = userSubscriptionRepository.save(userSubscription);
+            releaseSpotAfterSubscription(request.getAssignedSpotId(), String.valueOf(request.getUserId()));
+            return getUserSubscriptionResponse(savedSubscription);
+        } catch (Exception e) {
+            releaseSpotAfterSubscription(request.getAssignedSpotId(), String.valueOf(request.getUserId()));
+            throw e;
+        }
     }
 
     @Override
@@ -119,15 +124,14 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
                                                   int size,
                                                   String sortBy,
                                                   String sortOrder,
-                                                  String accountIdHeader,
+                                                  String userHeadId,
                                                   UserSubscriptionSearchCriteria searchCriteria) {
-        Long userHeadId = null;
-        if (accountIdHeader != null && searchCriteria.getOwnedByMe()) {
-            userHeadId = userRepository.getUserIdByAccountId(Long.parseLong(accountIdHeader));
+        if (userHeadId != null && searchCriteria.getOwnedByMe()) {
+            searchCriteria.setUserId(Long.valueOf(userHeadId));
         }
 
         Page<UserSubscription> userSubscriptionPage = userSubscriptionRepository.findAll(
-                UserSubscriptionSpecification.buildPredicate(searchCriteria, userHeadId),
+                UserSubscriptionSpecification.buildPredicate(searchCriteria),
                 PaginationUtil.parsePageable(page, size, sortBy, sortOrder));
 
         return userSubscriptionPage.map(this::getUserSubscriptionResponse);
@@ -256,11 +260,11 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     }
 
     private boolean checkDuplicateUserSubscription(CreateUserSubscriptionRequest request) {
-        return userSubscriptionRepository.existsByUserIdAndParkingLotIdAndUserIdAndStatus(
+        return userSubscriptionRepository.existsByUserIdAndParkingLotIdAndVehicleIdAndStatusIn(
                 request.getUserId(),
                 request.getParkingLotId(),
-                request.getUserId(),
-                UserSubscriptionStatus.ACTIVE
+                request.getVehicleId(),
+                List.of(UserSubscriptionStatus.ACTIVE, UserSubscriptionStatus.INACTIVE)
         );
     }
 
@@ -397,5 +401,25 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         return response.data();
     }
 
+    /**
+     * Release spot hold after subscription creation (success or failure).
+     * This method silently handles errors to prevent blocking the main subscription flow.
+     */
+    private void releaseSpotAfterSubscription(Long spotId, String userId) {
+        try {
+            log.info("Releasing spot hold for spotId: {}, userId: {}", spotId, userId);
+            ApiResponse<ParkingLotClient.SpotHoldResponseDto> response = parkingLotClient.releaseSpot(spotId, userId);
+
+            if (response.success()) {
+                log.info("Successfully released spot hold for spotId: {}", spotId);
+            } else {
+                log.warn("Failed to release spot hold for spotId: {}. Reason: {}. Hold will auto-expire.",
+                        spotId, response.message());
+            }
+        } catch (Exception e) {
+            // Log error but don't throw - spot hold will auto-expire after timeout
+            log.error("Error releasing spot hold for spotId: {}. Hold will auto-expire after timeout.", spotId, e);
+        }
+    }
 
 }

@@ -93,14 +93,31 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         PartnerRegistration partnerRegistration = partnerRegistrationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARTNER_REGISTRATION_NOT_FOUND));
 
-        if (!accountRepository.existsById(request.getReviewerId())) {
-            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        // Validate reviewer account if reviewerId or status is provided
+        if (request.getReviewerId() != null || request.getStatus() != null) {
+            Long reviewerId = request.getReviewerId();
+            if (reviewerId != null && !accountRepository.existsById(reviewerId)) {
+                throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+            }
         }
 
-        switch (request.getStatus()) {
-            case APPROVED -> approvePartnerRegistration(partnerRegistration, request);
-            case REJECTED -> rejectPartnerRegistration(partnerRegistration, request);
-            default -> mapper.updateEntityFromDto(request, partnerRegistration);
+        // Apply general field updates first (company info, contact person, etc.)
+        mapper.updateEntityFromDto(request, partnerRegistration);
+
+        // Handle status-specific updates if status is provided
+        if (request.getStatus() != null) {
+            switch (request.getStatus()) {
+                case APPROVED -> approvePartnerRegistration(partnerRegistration, request);
+                case REJECTED -> rejectPartnerRegistration(partnerRegistration, request);
+                case PENDING -> {
+                    // Allow setting status back to PENDING for re-review
+                    partnerRegistration.setStatus(RequestStatus.PENDING);
+                    partnerRegistration.setReviewedBy(null);
+                    partnerRegistration.setReviewedAt(null);
+                    partnerRegistration.setApprovalNotes(null);
+                    partnerRegistration.setRejectionReason(null);
+                }
+            }
         }
 
         PartnerRegistration savedPartnerRegistration = partnerRegistrationRepository.save(partnerRegistration);

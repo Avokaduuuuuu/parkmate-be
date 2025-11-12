@@ -177,14 +177,20 @@ public class AreaServiceImpl implements AreaService {
             if (spotIds.isEmpty()) {
                 response.setAvailableSubscriptionSpots(areaEntity.getTotalSpots());
             } else {
+                // Check occupied spots in database
                 List<Long> occupiedSpotIds = userClient.checkOccupiedSpots(
                         spotIds,
                         startDateTime,
                         endDateTime
                 );
 
-                int availableSubscriptionSpots = areaEntity.getTotalSpots() - occupiedSpotIds.size();
-                response.setAvailableSubscriptionSpots(availableSubscriptionSpots);
+                // Check held spots in Redis
+                long heldSpotsCount = spotIds.stream()
+                        .filter(spotHoldService::isSpotHold)
+                        .count();
+
+                int availableSubscriptionSpots = areaEntity.getTotalSpots() - occupiedSpotIds.size() - (int) heldSpotsCount;
+                response.setAvailableSubscriptionSpots(Math.max(0, availableSubscriptionSpots));
             }
             return response;
         }).toList();

@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 public class UserSubscriptionSpecification {
 
-    public static Predicate buildPredicate(UserSubscriptionSearchCriteria criteria, Long userId) {
+    public static Predicate buildPredicate(UserSubscriptionSearchCriteria criteria) {
 
         QUserSubscription userSubscription = QUserSubscription.userSubscription;
         BooleanBuilder builder = new BooleanBuilder();
@@ -18,9 +18,7 @@ public class UserSubscriptionSpecification {
         }
 
         // Filter by user ID from header or criteria
-        if (userId != null) {
-            builder.and(userSubscription.user.id.eq(userId));
-        } else if (criteria.getUserId() != null) {
+        if (criteria.getUserId() != null) {
             builder.and(userSubscription.user.id.eq(criteria.getUserId()));
         }
 
