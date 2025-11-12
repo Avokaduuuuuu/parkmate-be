@@ -18,6 +18,7 @@ import com.parkmate.floor_capacity.dto.resp.FloorCapacityResponse;
 import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.parking_lot.ParkingLotRepository;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
+import com.parkmate.spot.SpotHoldService;
 import com.parkmate.spot.SpotRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class FloorServiceImpl implements FloorService {
     private final AreaRepository areaRepository;
     private final SpotRepository spotRepository;
     private final UserClient userClient;
+    private final SpotHoldService spotHoldService;
 
     @Override
     public FloorResponse createFloor(Long parkingLotId, FloorCreateRequest request) {
@@ -163,9 +165,17 @@ public class FloorServiceImpl implements FloorService {
                         if (spotsIds.isEmpty()) {
                             available = totalSubscriptionSpots;
                         } else {
+                            // Check occupied spots in database
                             List<Long> occupiedSpotIds = userClient.checkOccupiedSpots(spotsIds, startDate, endDate);
                             System.out.println("Occupied spots: " + occupiedSpotIds.size());
-                            available = totalSubscriptionSpots - occupiedSpotIds.size();
+
+                            // Check held spots in Redis
+                            long heldSpotsCount = spotsIds.stream()
+                                    .filter(spotHoldService::isSpotHold)
+                                    .count();
+                            System.out.println("Held spots: " + heldSpotsCount);
+
+                            available = totalSubscriptionSpots - occupiedSpotIds.size() - (int) heldSpotsCount;
                         }
                     }
                     System.out.println("Available subscription spots: " + available);

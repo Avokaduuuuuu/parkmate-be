@@ -6,6 +6,7 @@ import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 public interface UserSubscriptionRepository extends JpaRepository<UserSubscription, Long>, QuerydslPredicateExecutor<UserSubscription> {
@@ -25,7 +26,7 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
             @Param("to") LocalDateTime to
     );
 
-    boolean existsByUserIdAndParkingLotIdAndUserIdAndStatus(Long userId, Long parkingLotId, Long userId1, UserSubscriptionStatus status);
+    boolean existsByUserIdAndParkingLotIdAndVehicleIdAndStatusIn(Long userId, Long parkingLotId, Long vehicleId, Collection<UserSubscriptionStatus> statuses);
 
     List<UserSubscription> findByParkingLotIdAndSyncStatus(Long parkingLotId, SyncStatus syncStatus);
 }
