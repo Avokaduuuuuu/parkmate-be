@@ -4,6 +4,11 @@ import java.math.BigDecimal;
 
 public interface ParkingLotStatisticProjection {
     BigDecimal getTotal();
-    Long getCompletedCount();
-    Long getActiveCount();
+    long getCompletedCount();
+    long getActiveCount();
+    double getAverageDurationMinute();
+    long getMotorbikeCount();
+    long getCarCount();
+    long getBikeCount();
+    long getOtherCount();
 }
