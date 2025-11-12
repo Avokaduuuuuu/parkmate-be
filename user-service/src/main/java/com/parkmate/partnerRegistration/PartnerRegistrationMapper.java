@@ -31,17 +31,6 @@ public interface PartnerRegistrationMapper {
     PartnerRegistration toEntity(CreatePartnerRegistrationRequest request);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "companyName", ignore = true)
-    @Mapping(target = "taxNumber", ignore = true)
-    @Mapping(target = "businessLicenseNumber", ignore = true)
-    @Mapping(target = "businessLicenseFileUrl", ignore = true)
-    @Mapping(target = "companyAddress", ignore = true)
-    @Mapping(target = "companyPhone", ignore = true)
-    @Mapping(target = "companyEmail", ignore = true)
-    @Mapping(target = "businessDescription", ignore = true)
-    @Mapping(target = "contactPersonName", ignore = true)
-    @Mapping(target = "contactPersonPhone", ignore = true)
-    @Mapping(target = "contactPersonEmail", ignore = true)
     @Mapping(target = "submittedAt", ignore = true)
     @Mapping(target = "reviewedBy", ignore = true)
     @Mapping(target = "reviewedAt", ignore = true)

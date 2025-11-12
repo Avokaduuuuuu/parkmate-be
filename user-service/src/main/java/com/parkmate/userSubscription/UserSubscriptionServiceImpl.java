@@ -119,15 +119,14 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
                                                   int size,
                                                   String sortBy,
                                                   String sortOrder,
-                                                  String accountIdHeader,
+                                                  String userHeadId,
                                                   UserSubscriptionSearchCriteria searchCriteria) {
-        Long userHeadId = null;
-        if (accountIdHeader != null && searchCriteria.getOwnedByMe()) {
-            userHeadId = userRepository.getUserIdByAccountId(Long.parseLong(accountIdHeader));
+        if (userHeadId != null && searchCriteria.getOwnedByMe()) {
+            searchCriteria.setUserId(Long.valueOf(userHeadId));
         }
 
         Page<UserSubscription> userSubscriptionPage = userSubscriptionRepository.findAll(
-                UserSubscriptionSpecification.buildPredicate(searchCriteria, userHeadId),
+                UserSubscriptionSpecification.buildPredicate(searchCriteria),
                 PaginationUtil.parsePageable(page, size, sortBy, sortOrder));
 
         return userSubscriptionPage.map(this::getUserSubscriptionResponse);
