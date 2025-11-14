@@ -16,6 +16,7 @@ import com.parkmate.partnerRegistration.dto.CreatePartnerRegistrationRequest;
 import com.parkmate.partnerRegistration.dto.PartnerRegistrationResponse;
 import com.parkmate.partnerRegistration.dto.PartnerRegistrationSearchRequest;
 import com.parkmate.partnerRegistration.dto.UpdatePartnerRegistrationRequest;
+import com.parkmate.s3.S3Service;
 import com.querydsl.core.types.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
     private final PartnerRepository partnerRepository;
     private final PasswordEncoder passwordEncoder;
     private final AccountEventPublisher accountEventPublisher;
+    private final S3Service s3Service;
 
     @Override
     public PartnerRegistrationResponse registerPartner(CreatePartnerRegistrationRequest request) {
@@ -81,7 +83,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
     public PartnerRegistrationResponse getPartnerRegistrationById(Long id) {
         PartnerRegistration partnerRegistration = partnerRegistrationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARTNER_REGISTRATION_NOT_FOUND));
-        return mapper.toDto(partnerRegistration);
+        return convertToResponseWithPresignedUrl(partnerRegistration);
     }
 
     @Override
@@ -128,7 +130,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
     public Page<PartnerRegistrationResponse> getPartnerRegistrations(PartnerRegistrationSearchRequest request, Pageable pageable) {
         Predicate predicate = PartnerRegistrationSpecification.buildPredicate(request.toCriteria());
         Page<PartnerRegistration> page = partnerRegistrationRepository.findAll(predicate, pageable);
-        return page.map(mapper::toDto);
+        return page.map(this::convertToResponseWithPresignedUrl);
     }
 
     @Override
@@ -136,7 +138,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         Predicate predicate = PartnerRegistrationSpecification.buildPredicate(request.toCriteria());
         Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
         Page<PartnerRegistration> registrationPage = partnerRegistrationRepository.findAll(predicate, pageable);
-        return registrationPage.map(mapper::toDto);
+        return registrationPage.map(this::convertToResponseWithPresignedUrl);
     }
 
     @Override
@@ -200,5 +202,16 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         Random random = new Random();
         return String.valueOf(100000 + random.nextInt(900000));
 
+    }
+
+    private PartnerRegistrationResponse convertToResponseWithPresignedUrl(PartnerRegistration partnerRegistration) {
+        PartnerRegistrationResponse response = mapper.toDto(partnerRegistration);
+
+        if (response.getBusinessLicenseFileUrl() != null && !response.getBusinessLicenseFileUrl().isEmpty()) {
+            String presignedUrl = s3Service.generatePresignedUrl(response.getBusinessLicenseFileUrl());
+            response.setBusinessLicenseFileUrl(presignedUrl);
+        }
+
+        return response;
     }
 }
