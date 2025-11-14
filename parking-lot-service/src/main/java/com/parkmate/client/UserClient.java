@@ -1,10 +1,12 @@
 package com.parkmate.client;
 
+import com.parkmate.client.dto.resp.UserServiceStatistic;
 import com.parkmate.common.ApiResponse;
 import com.parkmate.common.enums.VehicleType;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDateTime;
@@ -39,6 +41,15 @@ public interface UserClient {
             @RequestParam("spotIds") List<Long> spotIds,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate
+    );
+
+    @GetMapping("/api/v1/user-service/statistics/{lotId}/revenue")
+    ApiResponse<UserServiceStatistic> getUserRevenueStatistic(
+            @PathVariable("lotId") Long lotId,
+            @RequestParam("from")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam("to")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
     );
 
 
