@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -29,4 +30,28 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
     boolean existsByUserIdAndParkingLotIdAndVehicleIdAndStatusIn(Long userId, Long parkingLotId, Long vehicleId, Collection<UserSubscriptionStatus> statuses);
 
     List<UserSubscription> findByParkingLotIdAndSyncStatus(Long parkingLotId, SyncStatus syncStatus);
+
+    @Query("SELECT " +
+            "SUM(us.paidAmount) " +
+            "FROM UserSubscription us " +
+            "WHERE us.parkingLotId = :lotId AND us.startDate >= :from AND us.endDate <= :to"
+    )
+    BigDecimal getTotalRevenue(
+            @Param("lotId") Long lotId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
+
+    @Query("SELECT " +
+            "us.subscriptionPackageId as id, " +
+            "(us.subscriptionPackageId) AS total " +
+            "FROM UserSubscription us " +
+            "WHERE us.parkingLotId = :lotId AND us.startDate >= :from AND us.endDate <= :to " +
+            "GROUP BY us.subscriptionPackageId"
+    )
+    List<UserSubscriptionProjection> getUserSubscriptionStatistic(
+            @Param("lotId") Long lotId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
 }
