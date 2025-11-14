@@ -46,4 +46,16 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             @Param("to") LocalDateTime to,
             @Param("vehicleType") String vehicleType
     );
+
+    @Query("SELECT " +
+            "COUNT(CASE WHEN r.status = 'ACTIVE' THEN 1 END) AS activeCount, " +
+            "COUNT(CASE WHEN r.status = 'COMPLETED' THEN 1 END) AS completedCount, " +
+            "COUNT(CASE WHEN r.status = 'PENDING' THEN 1 END) AS pendingCount, " +
+            "COUNT(CASE WHEN r.status = 'CANCELLED' THEN 1 END) AS cancelledCount, " +
+            "COUNT(CASE WHEN r.status = 'EXPIRED' THEN 1 END) AS expiredCount, " +
+            "SUM(CASE WHEN r.status = 'COMPLETED' THEN r.totalFee END) AS totalRevenue " +
+            "FROM Reservation r " +
+            "WHERE r.parkingLotId = :lotId AND r.reservedFrom >= :from AND (r.reservedUntil <= :to OR r.reservedUntil IS NULL)"
+    )
+    ReservationProjection getStatistic(@Param("lotId") Long lotId,@Param("from") LocalDateTime from,@Param("to") LocalDateTime to);
 }
