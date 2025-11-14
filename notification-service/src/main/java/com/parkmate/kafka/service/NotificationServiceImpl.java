@@ -24,19 +24,22 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void sendNotification(NotificationEvent notificationEvent) {
         try {
-            log.info("Processing notification for event: {}", notificationEvent.getEventId());
+            log.info("🔔 [NOTIFICATION-SERVICE] Processing notification for event: {}, type: {}",
+                    notificationEvent.getEventId(), notificationEvent.getNotificationType());
 
             if (isEmailNotification(notificationEvent)) {
+                log.info("📧 [NOTIFICATION-SERVICE] Sending EMAIL notification for event: {}", notificationEvent.getEventId());
                 sendEmailNotification(notificationEvent);
             }
 
             if (isPushNotification(notificationEvent)) {
+                log.info("📱 [NOTIFICATION-SERVICE] Sending PUSH notification for event: {}", notificationEvent.getEventId());
                 sendPushNotification(notificationEvent);
             }
             logNotificationStatus(notificationEvent, true, "Notification sent successfully");
 
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            log.error("❌ [NOTIFICATION-SERVICE] Error processing notification: {}", e.getMessage(), e);
             logNotificationStatus(notificationEvent, false, e.getMessage());
             throw e;
         }
@@ -70,38 +73,43 @@ public class NotificationServiceImpl implements NotificationService {
             List<String> deviceTokens = notificationEvent.getDeviceTokens();
 
             if (deviceTokens == null || deviceTokens.isEmpty()) {
-                log.warn("No device tokens found for event: {}", notificationEvent.getEventId());
+                log.warn("⚠️ [FCM] No device tokens found for event: {}", notificationEvent.getEventId());
                 return;
             }
 
-            log.info("Sending push notification to {} device tokens", deviceTokens.size());
+            log.info("📱 [FCM] Sending push notification to {} device tokens", deviceTokens.size());
+            log.info("📱 [FCM] Title: {}, Body: {}", notificationEvent.getTitle(), notificationEvent.getMessage());
 
             String title = notificationEvent.getTitle();
             String body = notificationEvent.getMessage();
 
             Map<String, String> data = buildDataPayload(notificationEvent);
+            log.info("📱 [FCM] Data payload: {}", data);
 
             if (deviceTokens.size() == 1) {
+                log.info("📱 [FCM] Sending to single device: {}", deviceTokens.get(0));
                 String messageId = fcmService.sendToDevice(deviceTokens.get(0), title, body, data);
-                log.info("Message ID: {}", messageId);
+                log.info("📱 [FCM] Message ID: {}", messageId);
 
                 if (messageId != null) {
-                    log.info("Push notification sent successfully to: {}", deviceTokens.get(0));
+                    log.info("✅ [FCM] Push notification sent successfully to: {}", deviceTokens.get(0));
                 } else {
-                    log.error("Failed to send push notification to: {}", deviceTokens.get(0));
+                    log.error("❌ [FCM] Failed to send push notification to: {}", deviceTokens.get(0));
                 }
 
             } else {
+                log.info("📱 [FCM] Sending to multiple devices: {}", deviceTokens.size());
                 BatchResponse response = fcmService.sendToMultipleDevices(deviceTokens, title, body, data);
 
                 if (response != null) {
-                    log.info("Push notification sent successfully to {} device tokens", deviceTokens.size());
+                    log.info("✅ [FCM] Push notification sent to {} device tokens. Success: {}, Failure: {}",
+                            deviceTokens.size(), response.getSuccessCount(), response.getFailureCount());
                 } else {
-                    log.error("Failed to send push notification to {} device tokens", deviceTokens.size());
+                    log.error("❌ [FCM] Failed to send push notification to {} device tokens", deviceTokens.size());
                 }
             }
         } catch (Exception e) {
-            log.error("❌ Error sending push notification for event: {}",
+            log.error("❌ [FCM] Error sending push notification for event: {}",
                     notificationEvent.getEventId(), e);
         }
 

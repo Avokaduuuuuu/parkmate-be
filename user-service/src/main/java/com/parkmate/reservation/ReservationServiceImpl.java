@@ -60,7 +60,6 @@ public class ReservationServiceImpl implements ReservationService {
     private final UserService userService;
     private final VehicleService vehicleService;
     private final KafkaTemplate<String, NotificationEvent> kafkaTemplate;
-    private final UserSubscriptionRepository userSubscriptionRepository;
     private final ReservationHoldService reservationHoldService;
     private final VehicleRepository vehicleRepository;
 
@@ -164,7 +163,15 @@ public class ReservationServiceImpl implements ReservationService {
             reservationRepository.save(reservation);
             throw new AppException(ErrorCode.WALLET_DEDUCTION_FAILED, "Payment processing failed: " + e.getMessage());
         }
-        sendNotificationForStatus(reservation.getId(), ReservationStatus.PENDING);
+
+        log.info("🔔 [CREATE-RESERVATION] About to send PENDING notification for reservation: {}", reservation.getId());
+        try {
+            sendNotificationForStatus(reservation.getId(), ReservationStatus.PENDING);
+            log.info("✅ [CREATE-RESERVATION] Notification call completed for reservation: {}", reservation.getId());
+        } catch (Exception e) {
+            log.error("❌ [CREATE-RESERVATION] Failed to send notification for reservation: {}", reservation.getId(), e);
+        }
+
         return getReservationResponse(reservation);
     }
 
@@ -278,26 +285,37 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     private void sendNotificationForStatus(Long reservationId, ReservationStatus status) {
-        switch (status) {
-            case PENDING:
-                sendNewReservationNotification(reservationId);
-                break;
-            case ACTIVE:
-                sendActiveReservationNotification(reservationId);
-                break;
-            case COMPLETED:
-                sendCompletedReservationNotification(reservationId);
-                break;
-            case CANCELLED:
-                sendCancelledReservationNotification(reservationId);
-                break;
-            default:
-                log.debug("No notification configured for status: {}", status);
+        log.info("🔔 [SEND-NOTIFICATION] Called for reservation: {}, status: {}", reservationId, status);
+        try {
+            switch (status) {
+                case PENDING:
+                    log.info("🔔 [SEND-NOTIFICATION] Routing to sendNewReservationNotification");
+                    sendNewReservationNotification(reservationId);
+                    break;
+                case ACTIVE:
+                    log.info("🔔 [SEND-NOTIFICATION] Routing to sendActiveReservationNotification");
+                    sendActiveReservationNotification(reservationId);
+                    break;
+                case COMPLETED:
+                    log.info("🔔 [SEND-NOTIFICATION] Routing to sendCompletedReservationNotification");
+                    sendCompletedReservationNotification(reservationId);
+                    break;
+                case CANCELLED:
+                    log.info("🔔 [SEND-NOTIFICATION] Routing to sendCancelledReservationNotification");
+                    sendCancelledReservationNotification(reservationId);
+                    break;
+                default:
+                    log.debug("No notification configured for status: {}", status);
+            }
+            log.info("✅ [SEND-NOTIFICATION] Completed for reservation: {}, status: {}", reservationId, status);
+        } catch (Exception e) {
+            log.error("❌ [SEND-NOTIFICATION] Error for reservation: {}, status: {}", reservationId, status, e);
+            throw e;
         }
     }
 
     private void sendNewReservationNotification(Long reservationId) {
-        log.info("Starting PENDING notification for reservation: {}", reservationId);
+        log.info("🔔 Starting PENDING notification for reservation: {}", reservationId);
 
         sendReservationNotificationWithContent(
                 reservationId,
@@ -307,10 +325,12 @@ public class ReservationServiceImpl implements ReservationService {
                     String parkingLotName = reservationMapper.getParkingLotName(parkingLotClient, reservation.getParkingLotId());
                     String lotName = (parkingLotName != null) ? parkingLotName : "bãi xe";
                     String time = reservation.getReservedFrom().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'lúc' HH:mm"));
-                    return String.format("Bạn đã đặt chỗ thành công cho xe có biển số %s tại bãi xe %s vào %s",
+                    String message = String.format("Bạn đã đặt chỗ thành công cho xe có biển số %s tại bãi xe %s vào %s",
                             reservation.getVehicle().getLicensePlate(),
                             lotName,
                             time);
+                    log.info("🔔 Notification message built: {}", message);
+                    return message;
                 }
         );
     }
@@ -398,19 +418,25 @@ public class ReservationServiceImpl implements ReservationService {
             String title,
             java.util.function.Function<Reservation, String> messageBuilder) {
         try {
+            log.info("🔔 [NOTIFICATION] Starting notification process for reservation: {}, eventType: {}",
+                    reservationId, eventType.getValue());
+
             // 1. Get reservation info
             Reservation reservation = reservationRepository.findById(reservationId)
                     .orElseThrow(() -> new AppException(ErrorCode.RESERVATION_NOT_FOUND, "Reservation not found: " + reservationId));
+            log.info("🔔 [NOTIFICATION] Found reservation: {}", reservation.getId());
 
             // 2. Get user info
             User user = userRepository.findById(reservation.getUser().getId())
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found: " + reservation.getUser().getId()));
+            log.info("🔔 [NOTIFICATION] Found user: {} (ID: {})", user.getFullName(), user.getId());
 
             // 3. Get all FCM tokens for the user
             List<String> deviceTokens = mobileDeviceRepository.findActivePushTokensByUserId(user.getId());
+            log.info("🔔 [NOTIFICATION] Found {} device tokens for user {}", deviceTokens.size(), user.getId());
 
             if (deviceTokens.isEmpty()) {
-                log.warn("No active device tokens found for user: {} - notification type: {}",
+                log.warn("⚠️ [NOTIFICATION] No active device tokens found for user: {} - notification type: {}",
                         user.getId(), eventType.getValue());
                 return;
             }
@@ -440,15 +466,18 @@ public class ReservationServiceImpl implements ReservationService {
                     .sourceService("user-service")
                     .build();
 
+            log.info("🔔 [NOTIFICATION] Built notification event: eventId={}, eventType={}, recipientId={}, title={}, deviceTokens={}",
+                    event.getEventId(), event.getEventType(), event.getRecipientId(), event.getTitle(), deviceTokens.size());
+
             kafkaTemplate.send(
                     KafkaTopics.NOTIFICATION.getTopicName(),
                     event.getEventId(),
                     event);
 
-            log.info("{} notification published for reservation: {} to {} devices",
-                    eventType.getValue(), reservationId, deviceTokens.size());
+            log.info("✅ [NOTIFICATION] {} notification published to Kafka topic '{}' for reservation: {} to {} devices",
+                    eventType.getValue(), KafkaTopics.NOTIFICATION.getTopicName(), reservationId, deviceTokens.size());
         } catch (Exception e) {
-            log.error("Failed to publish {} notification for reservation: {}",
+            log.error("❌ [NOTIFICATION] Failed to publish {} notification for reservation: {}",
                     eventType.getValue(), reservationId, e);
         }
     }
@@ -458,7 +487,12 @@ public class ReservationServiceImpl implements ReservationService {
         data.put("reservationId", reservation.getId());
         data.put("parkingLotId", reservation.getParkingLotId());
         data.put("reservedFrom", reservation.getReservedFrom().toString());
-        data.put("reservedUntil", reservation.getReservedUntil().toString());
+
+        // reservedUntil is null for PENDING status
+        if (reservation.getReservedUntil() != null) {
+            data.put("reservedUntil", reservation.getReservedUntil().toString());
+        }
+
         data.put("initialFee", reservation.getInitialFee().toString());
 
         if (reservation.getTotalFee() != null) {

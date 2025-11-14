@@ -1,5 +1,6 @@
 package com.parkmate.partnerRegistration.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.parkmate.common.enums.RequestStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
@@ -72,8 +73,9 @@ public class UpdatePartnerRegistrationRequest {
     private String contactPersonEmail;
 
     // Custom validation method
+    @JsonIgnore
     public boolean isValid() {
-        if (status != null && RequestStatus.REJECTED.equals(status)) {
+        if (RequestStatus.REJECTED.equals(status)) {
             return rejectionReason != null && !rejectionReason.trim().isEmpty();
         }
         return true;
