@@ -34,18 +34,18 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class SessionServiceImpl implements SessionService{
+public class SessionServiceImpl implements SessionService {
     private final SessionRepository sessionRepository;
     private final ParkingLotRepository parkingLotRepository;
     private final PricingRuleRepository pricingRuleRepository;
 
     @Override
-    public SessionResponse createSession(Long lotId,SessionCreateRequest request) {
+    public SessionResponse createSession(Long lotId, SessionCreateRequest request) {
         SessionEntity sessionEntity = new SessionEntity();
         if (request.userId() != null) {
             sessionEntity.setUserId(request.userId());
             sessionEntity.setSessionType(SessionType.MEMBER);
-        }else {
+        } else {
             sessionEntity.setSessionType(SessionType.OCCASIONAL);
         }
         sessionEntity.setLicensePlate(request.licensePlate());
@@ -74,7 +74,7 @@ public class SessionServiceImpl implements SessionService{
         Long userId = userIdHeader == null ? null : Long.parseLong(userIdHeader);
         Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<SessionEntity> sessionEntities = sessionRepository.findAll(params.getSpecification(userId),pageable);
+        Page<SessionEntity> sessionEntities = sessionRepository.findAll(params.getSpecification(userId), pageable);
         return sessionEntities.map(SessionMapper.INSTANCE::toResponse);
     }
 

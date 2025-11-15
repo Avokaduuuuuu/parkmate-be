@@ -54,7 +54,7 @@ public class ParkingLotExportService {
 
             // Create header style
             CellStyle headerStyle = createHeaderStyle(workbook);
-            
+
             // Create data style
             CellStyle dataStyle = createDataStyle(workbook);
 
@@ -70,7 +70,7 @@ public class ParkingLotExportService {
 
                 // ID
                 createCell(row, 0, parkingLot.getId(), dataStyle);
-                
+
                 // Partner ID
                 createCell(row, 1, parkingLot.getPartnerId(), dataStyle);
 
@@ -96,15 +96,15 @@ public class ParkingLotExportService {
                 createCell(row, 8, parkingLot.getTotalFloors(), dataStyle);
 
                 // Operating Hours Start
-                String startTime = parkingLot.getOperatingHoursStart() != null 
-                    ? parkingLot.getOperatingHoursStart().format(timeFormatter) 
-                    : "";
+                String startTime = parkingLot.getOperatingHoursStart() != null
+                        ? parkingLot.getOperatingHoursStart().format(timeFormatter)
+                        : "";
                 createCell(row, 9, startTime, dataStyle);
 
                 // Operating Hours End
-                String endTime = parkingLot.getOperatingHoursEnd() != null 
-                    ? parkingLot.getOperatingHoursEnd().format(timeFormatter) 
-                    : "";
+                String endTime = parkingLot.getOperatingHoursEnd() != null
+                        ? parkingLot.getOperatingHoursEnd().format(timeFormatter)
+                        : "";
                 createCell(row, 10, endTime, dataStyle);
 
                 // Is 24 Hour
@@ -120,15 +120,15 @@ public class ParkingLotExportService {
                 createCell(row, 17, parkingLot.getReason(), dataStyle);
 
                 // Created At
-                String createdAt = parkingLot.getCreatedAt() != null 
-                    ? parkingLot.getCreatedAt().toString() 
-                    : "";
+                String createdAt = parkingLot.getCreatedAt() != null
+                        ? parkingLot.getCreatedAt().toString()
+                        : "";
                 createCell(row, 18, createdAt, dataStyle);
 
                 // Updated At
-                String updatedAt = parkingLot.getUpdatedAt() != null 
-                    ? parkingLot.getUpdatedAt().toString() 
-                    : "";
+                String updatedAt = parkingLot.getUpdatedAt() != null
+                        ? parkingLot.getUpdatedAt().toString()
+                        : "";
                 createCell(row, 19, updatedAt, dataStyle);
             }
 
@@ -191,7 +191,7 @@ public class ParkingLotExportService {
 
     private void createCell(Row row, int column, Object value, CellStyle style) {
         Cell cell = row.createCell(column);
-        
+
         if (value == null) {
             cell.setCellValue("");
         } else if (value instanceof String) {
@@ -207,7 +207,7 @@ public class ParkingLotExportService {
         } else {
             cell.setCellValue(value.toString());
         }
-        
+
         cell.setCellStyle(style);
     }
 }

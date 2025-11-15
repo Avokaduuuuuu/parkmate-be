@@ -49,7 +49,8 @@ public enum ParkingLotServiceErrorCode {
     INVALID_IMAGE(3602, "Invalid image", HttpStatus.BAD_REQUEST),
 
     // Subscription errors
-    SUBSCRIPTION_NOT_FOUND(3701, "Subscription not found", HttpStatus.NOT_FOUND),;
+    SUBSCRIPTION_NOT_FOUND(3701, "Subscription not found", HttpStatus.NOT_FOUND),
+    ;
 
     private final int code;
     private final String message;

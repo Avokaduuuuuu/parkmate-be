@@ -53,6 +53,22 @@ public class InternalParkingController {
                 .body(ApiResponse.success("Parking lot name fetched successfully", response));
     }
 
+    @GetMapping("/lots/{id}/partner")
+    @Operation(
+            summary = "Get parking lot partner ID by parking lot ID",
+            description = "Retrieve the partner (owner) ID for a parking lot. Used internally for wallet transactions."
+    )
+    public ResponseEntity<?> getPartnerIdByParkingLotId(
+            @PathVariable @Parameter(description = "Parking lot ID", required = true, example = "1")
+            Long id
+    ) {
+        log.debug("Getting partner ID for parking lot ID: {}", id);
+        var parkingLot = parkingLotService.getParkingLotById(id);
+        var response = new PartnerIdDto(parkingLot.getPartnerId());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success("Partner ID fetched successfully", response));
+    }
+
     @GetMapping("/spots/{id}/name")
     @Operation(
             summary = "Get spot name by ID",
@@ -113,5 +129,8 @@ public class InternalParkingController {
     }
 
     public record SubscriptionDto(Long id, Integer durationValue, String name, BigDecimal amount) {
+    }
+
+    public record PartnerIdDto(Long partnerId) {
     }
 }

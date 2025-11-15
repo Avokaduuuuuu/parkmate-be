@@ -43,6 +43,7 @@ public class VehicleServiceImpl implements VehicleService {
     private final ReservationRepository reservationRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
     private final Validator validator;
+    private final com.parkmate.client.ParkingLotClient parkingLotClient;
 
     private static final List<String> ALLOWED_EXTENSIONS = List.of("xlsx", "xls");
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -102,7 +103,6 @@ public class VehicleServiceImpl implements VehicleService {
                                          VehicleSearchCriteria searchCriteria,
                                          String userIdHeader) {
         Long userId = null;
-        // X-User-Id header now contains userId directly
         if (userIdHeader != null && !userIdHeader.isEmpty() && searchCriteria.isOwnedByMe()) {
             userId = Long.parseLong(userIdHeader);
         }
@@ -120,17 +120,40 @@ public class VehicleServiceImpl implements VehicleService {
 
         List<Long> vehicleIdsHasSubscription;
         List<Long> vehicleIdsHasReservation;
+        Map<VehicleType, Boolean> vehicleTypeSupportMap = new HashMap<>();
+
         if (searchCriteria.getParkingLotId() != null) {
             vehicleIdsHasReservation = checkVehicleInReservation(vehiclePage.getContent());
             vehicleIdsHasSubscription = checkVehicleInSubscription(searchCriteria.getParkingLotId(), vehiclePage.getContent());
+
+            // Pre-fetch vehicle type support for all unique vehicle types in the current page
+            Set<VehicleType> uniqueVehicleTypes = vehiclePage.getContent().stream()
+                    .map(Vehicle::getVehicleType)
+                    .collect(Collectors.toSet());
+
+            for (VehicleType vehicleType : uniqueVehicleTypes) {
+                try {
+                    Boolean isSupported = parkingLotClient.supportsVehicleType(
+                            searchCriteria.getParkingLotId(),
+                            vehicleType
+                    ).data();
+                    vehicleTypeSupportMap.put(vehicleType, isSupported != null && isSupported);
+                } catch (Exception e) {
+                    log.warn("Failed to check vehicle type {} support for parking lot {}: {}",
+                            vehicleType, searchCriteria.getParkingLotId(), e.getMessage());
+                    vehicleTypeSupportMap.put(vehicleType, false);
+                }
+            }
         } else {
             vehicleIdsHasSubscription = new ArrayList<>();
             vehicleIdsHasReservation = new ArrayList<>();
         }
+
         return vehiclePage.map(vehicle -> {
             VehicleResponse response = vehicleMapper.toDTO(vehicle);
             response.setInReservation(vehicleIdsHasReservation.contains(vehicle.getId()));
             response.setHasSubscriptionInThisParkingLot(vehicleIdsHasSubscription.contains(vehicle.getId()));
+            response.setSupported(vehicleTypeSupportMap.getOrDefault(vehicle.getVehicleType(), false));
             return response;
         });
     }

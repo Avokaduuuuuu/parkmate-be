@@ -34,7 +34,7 @@ public class ParkingLotImportService {
 
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
-            
+
             // Skip header row
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
@@ -44,7 +44,7 @@ public class ParkingLotImportService {
                     ParkingLotExcelImportDTO dto = parseRow(row);
                     ParkingLotEntity entity = convertToEntity(dto);
                     parkingLots.add(entity);
-                    
+
                     // Batch insert every 500 records for better performance
                     if (parkingLots.size() >= 500) {
                         parkingLotRepository.saveAll(parkingLots);

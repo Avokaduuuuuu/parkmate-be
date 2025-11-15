@@ -12,9 +12,11 @@ import java.util.List;
 
 public interface FloorService {
     FloorResponse createFloor(Long parkingLotId, FloorCreateRequest request);
+
     FloorDetailedResponse getFloorById(Long parkingLotId);
 
     Page<FloorResponse> findAll(int page, int size, String sortBy, String sortOrder, FloorFilterParams params);
+
     void deleteFloor(Long id);
 
     FloorResponse updateFloor(Long id, FloorUpdateRequest request);

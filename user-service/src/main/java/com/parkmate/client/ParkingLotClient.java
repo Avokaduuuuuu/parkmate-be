@@ -18,6 +18,9 @@ public interface ParkingLotClient {
     @GetMapping("/internal/parking-service/lots/{id}/name")
     ApiResponse<ParkingLotSimpleDto> getParkingLotName(@PathVariable Long id);
 
+    @GetMapping("/internal/parking-service/lots/{id}/partner")
+    ApiResponse<PartnerIdDto> getPartnerIdByParkingLotId(@PathVariable Long id);
+
     @GetMapping("/internal/parking-service/spots/{id}/name")
     ApiResponse<SpotNameDto> getSpotName(@PathVariable Long id);
 
@@ -62,8 +65,17 @@ public interface ParkingLotClient {
             @RequestHeader("X-User-Id") String userId
     );
 
+    @GetMapping("/api/v1/parking-service/lots/internal/{id}/supports-vehicle-type")
+    ApiResponse<Boolean> supportsVehicleType(
+            @PathVariable Long id,
+            @RequestParam VehicleType vehicleType
+    );
+
 
     record ParkingLotSimpleDto(Long id, String name, Integer horizonTime) {
+    }
+
+    record PartnerIdDto(Long partnerId) {
     }
 
     record SpotNameDto(Long id, String name) {

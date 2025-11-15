@@ -23,7 +23,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendPartnerVerificationEmail(String toEmail, String token, String recipientName) {
         try {
             sendEmail(toEmail, "ParkMate Partner Registration Verification",
-                     buildVerificationEmailText(recipientName, token));
+                    buildVerificationEmailText(recipientName, token));
             log.info("Partner verification email sent successfully to: {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send verification email to: {}", toEmail, e);
@@ -35,7 +35,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendMemberVerificationEmail(String toEmail, String token, String recipientName) {
         try {
             sendEmail(toEmail, "ParkMate Member Registration Verification",
-                     buildMemberVerificationEmailText(recipientName, token));
+                    buildMemberVerificationEmailText(recipientName, token));
             log.info("Member verification email sent successfully to: {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send verification email to: {}", toEmail, e);
