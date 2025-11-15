@@ -10,7 +10,7 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 public interface SessionService {
-    SessionResponse createSession(Long lotId,SessionCreateRequest request);
+    SessionResponse createSession(Long lotId, SessionCreateRequest request);
 
     Page<SessionResponse> getSessions(
             String userIdHeader,
@@ -22,9 +22,13 @@ public interface SessionService {
     );
 
     SessionDetailedResponse getSession(String id);
+
     SessionResponse updateSession(String cardUUID, SessionUpdateRequest request);
+
     Long count();
+
     void deleteSession(String cardUUID);
+
     Integer syncSessions(Long lotId, List<SessionSyncRequest> requests);
 }
 

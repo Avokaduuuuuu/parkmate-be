@@ -57,25 +57,29 @@ public class WalletController {
             summary = "Request withdrawal",
             description = """
                     Partner requests to withdraw money from their wallet to bank account.
-
+                    
                     **Requirements:**
                     - Minimum withdrawal: 10,000 VND
                     - Maximum withdrawal: 50,000,000 VND
                     - Wallet must have sufficient balance
                     - Valid bank account information required
-
+                    
                     **Process:**
                     1. Wallet balance is deducted immediately
                     2. Payout request is sent to PayOS
                     3. Partner is notified when payout completes
                     4. If payout fails, amount is automatically refunded to wallet
-
-                    **Bank Codes (examples):**
-                    - VCB: Vietcombank
-                    - TCB: Techcombank
-                    - MB: MBBank
-                    - ACB: ACB
-                    - VPBank: VPBank
+                    
+                    **Bank BIN/Codes (examples):**
+                    - 970436: Vietcombank (VCB)
+                    - 970407: Techcombank (TCB)
+                    - 970422: MBBank (MB)
+                    - 970416: ACB
+                    - 970432: VPBank
+                    - 970403: Sacombank
+                    - 970415: Vietinbank
+                    
+                    **Note:** Use the 6-digit BIN code, not the short name.
                     """
     )
     public ResponseEntity<ApiResponse<WithdrawalResponse>> requestWithdrawal(

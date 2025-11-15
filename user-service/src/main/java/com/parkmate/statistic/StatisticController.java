@@ -22,9 +22,9 @@ public class StatisticController {
     @Operation(
             summary = "Get user-service revenue statistics",
             description = """
-                Retrieve the revenue, all status reservation and subscription 
-                for a specific parking lot within a given time range.
-                """,
+                    Retrieve the revenue, all status reservation and subscription 
+                    for a specific parking lot within a given time range.
+                    """,
             parameters = {
                     @Parameter(
                             name = "lotId",

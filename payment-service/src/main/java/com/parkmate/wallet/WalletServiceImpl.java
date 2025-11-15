@@ -174,7 +174,7 @@ public class WalletServiceImpl implements WalletService {
                 .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND, userId));
 
         // 3. Validate wallet is active
-        if (!wallet.getIsActive()) {
+        if (!wallet.isActive()) {
             throw new AppException(ErrorCode.WALLET_IS_INACTIVE);
         }
 
@@ -227,14 +227,13 @@ public class WalletServiceImpl implements WalletService {
         log.info("Withdrawal transaction created - transactionId: {}, referenceId: {}", transaction.getId(), referenceId);
 
         // 10. Call PayOS to create payout
-        Payout payout = null;
+        Payout payout;
         try {
             PayoutRequests payoutRequest = PayoutRequests.builder()
                     .referenceId(referenceId)
                     .amount(amount.longValue())
-                    .accountNumber(request.getBankAccount().getAccountNumber())
-                    .accountName(request.getBankAccount().getAccountName())
-                    .bankCode(request.getBankAccount().getBankCode())
+                    .toAccountNumber(request.getBankAccount().getAccountNumber())
+                    .toBin(request.getBankAccount().getBankCode())
                     .description(request.getBankAccount().getDescription() != null ?
                             request.getBankAccount().getDescription() : "Partner withdrawal")
                     .build();

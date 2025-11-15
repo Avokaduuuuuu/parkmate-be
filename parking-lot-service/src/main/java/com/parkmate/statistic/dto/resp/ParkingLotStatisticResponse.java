@@ -1,11 +1,7 @@
 package com.parkmate.statistic.dto.resp;
 
-import com.parkmate.client.dto.resp.SubscriptionStatistic;
-import com.parkmate.client.dto.resp.UserServiceStatistic;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.util.List;
 
 @Data
 @AllArgsConstructor

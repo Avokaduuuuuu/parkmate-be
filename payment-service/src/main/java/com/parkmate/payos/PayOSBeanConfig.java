@@ -8,15 +8,15 @@ import vn.payos.PayOS;
 @Configuration
 @RequiredArgsConstructor
 public class PayOSBeanConfig {
-    
+
     private final PayOSConfig payOSConfig;
-    
+
     @Bean
     public PayOS payOS() {
         return new PayOS(
-            payOSConfig.getClientId(),
-            payOSConfig.getApiKey(),
-            payOSConfig.getChecksumKey()
+                payOSConfig.getClientId(),
+                payOSConfig.getApiKey(),
+                payOSConfig.getChecksumKey()
         );
     }
 }

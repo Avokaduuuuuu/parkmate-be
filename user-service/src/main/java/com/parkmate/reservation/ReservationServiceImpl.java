@@ -18,7 +18,6 @@ import com.parkmate.kafka.KafkaTopics;
 import com.parkmate.kafka.event.NotificationEvent;
 import com.parkmate.kafka.event.NotificationEventType;
 import com.parkmate.mobileDevice.MobileDeviceRepository;
-import com.parkmate.partner.Partner;
 import com.parkmate.partner.PartnerRepository;
 import com.parkmate.reservation.dto.*;
 import com.parkmate.user.User;
@@ -114,14 +113,14 @@ public class ReservationServiceImpl implements ReservationService {
         Long partnerId = null;
         try {
             ApiResponse<ParkingLotClient.PartnerIdDto> partnerResponse =
-                parkingLotClient.getPartnerIdByParkingLotId(request.getParkingLotId());
+                    parkingLotClient.getPartnerIdByParkingLotId(request.getParkingLotId());
             if (partnerResponse != null && partnerResponse.data() != null) {
                 partnerId = partnerResponse.data().partnerId();
                 log.info("Retrieved partner ID {} for parking lot {}", partnerId, request.getParkingLotId());
             }
         } catch (Exception e) {
             log.error("Failed to get partner ID for parking lot {}. Proceeding without partner credit.",
-                     request.getParkingLotId(), e);
+                    request.getParkingLotId(), e);
         }
 
         try {
@@ -548,13 +547,13 @@ public class ReservationServiceImpl implements ReservationService {
             Long partnerId = null;
             try {
                 ApiResponse<ParkingLotClient.PartnerIdDto> partnerResponse =
-                    parkingLotClient.getPartnerIdByParkingLotId(reservation.getParkingLotId());
+                        parkingLotClient.getPartnerIdByParkingLotId(reservation.getParkingLotId());
                 if (partnerResponse != null && partnerResponse.data() != null) {
                     partnerId = partnerResponse.data().partnerId();
                 }
             } catch (Exception e) {
                 log.error("Failed to get partner ID for parking lot {}. Proceeding without partner credit.",
-                         reservation.getParkingLotId(), e);
+                        reservation.getParkingLotId(), e);
             }
 
             try {

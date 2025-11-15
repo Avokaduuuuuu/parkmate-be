@@ -17,5 +17,6 @@ public interface AreaMapper {
     AreaMapper INSTANCE = Mappers.getMapper(AreaMapper.class);
 
     AreaResponse toResponse(AreaEntity entity);
+
     AreaDetailedResponse toDetailResponse(AreaEntity entity);
 }

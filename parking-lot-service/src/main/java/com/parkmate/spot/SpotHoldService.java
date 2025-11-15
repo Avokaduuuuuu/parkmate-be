@@ -39,7 +39,7 @@ public class SpotHoldService {
         if (heldByUserId != null && heldByUserId.equals(String.valueOf(userId))) {
             redisTemplate.delete(key);
             log.info("Spot hold released: spotId={}, userId={}", spotId, userId);
-        } else{
+        } else {
             throw new AppException(ErrorCode.SPOT_RELEASED_FAILED, "\"You cannot release this spot hold\"");
         }
     }

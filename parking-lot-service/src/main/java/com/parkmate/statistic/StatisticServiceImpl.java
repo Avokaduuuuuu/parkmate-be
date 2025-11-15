@@ -25,7 +25,7 @@ public class StatisticServiceImpl implements StatisticService {
 
     @Override
     public ParkingLotStatisticResponse getParkingLotStatistic(Long lotId, LocalDateTime from, LocalDateTime to) {
-        ParkingLotStatisticProjection cursor =  sessionRepository.getParkingLotStatistic(lotId, from, to);
+        ParkingLotStatisticProjection cursor = sessionRepository.getParkingLotStatistic(lotId, from, to);
         UserServiceStatistic userServiceStatistic = userClient.getUserRevenueStatistic(lotId, from, to).getData();
 
 

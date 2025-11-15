@@ -98,18 +98,18 @@ public class PartnerRegistrationController {
             summary = "Update Partner Registration",
             description = """
                     Update a partner registration request. Supports both general field updates and status changes.
-
+                    
                     **Parameters:**
                     - `id` (path): Partner registration ID to update
-
+                    
                     **Request Body (UpdatePartnerRegistrationRequest) - All fields are optional:**
-
+                    
                     **Status and Review Fields:**
                     - `status` (optional): New status - PENDING, APPROVED, or REJECTED
                     - `reviewerId` (optional): Admin account ID performing the review (required when changing status)
                     - `approvalNotes` (optional): Admin notes when approving
                     - `rejectionReason` (required if status=REJECTED): Reason for rejection
-
+                    
                     **Company Information Fields:**
                     - `companyName` (optional): Company/business name
                     - `taxNumber` (optional): Tax identification number
@@ -119,18 +119,18 @@ public class PartnerRegistrationController {
                     - `companyPhone` (optional): Company contact phone
                     - `companyEmail` (optional): Company contact email
                     - `businessDescription` (optional): Description of business operations
-
+                    
                     **Contact Person Fields:**
                     - `contactPersonName` (optional): Contact person full name
                     - `contactPersonPhone` (optional): Contact person phone number
                     - `contactPersonEmail` (optional): Contact person email
-
+                    
                     **Business Logic:**
                     - All fields support partial updates (only provided fields are updated)
                     - If status is APPROVED: Creates Partner entity, sets account status to ACTIVE
                     - If status is REJECTED: Updates status and rejection reason
                     - If status is PENDING: Resets review metadata for re-review
-
+                    
                     **Returns:** Updated partner registration with all current information
                     """
     )

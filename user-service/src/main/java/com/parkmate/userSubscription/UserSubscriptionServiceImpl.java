@@ -28,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -206,14 +205,14 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         Long partnerId = null;
         try {
             ApiResponse<ParkingLotClient.PartnerIdDto> partnerResponse =
-                parkingLotClient.getPartnerIdByParkingLotId(userSubscription.getParkingLotId());
+                    parkingLotClient.getPartnerIdByParkingLotId(userSubscription.getParkingLotId());
             if (partnerResponse != null && partnerResponse.data() != null) {
                 partnerId = partnerResponse.data().partnerId();
                 log.info("Retrieved partner ID {} for parking lot {}", partnerId, userSubscription.getParkingLotId());
             }
         } catch (Exception e) {
             log.error("Failed to get partner ID for parking lot {}. Proceeding without partner credit.",
-                     userSubscription.getParkingLotId(), e);
+                    userSubscription.getParkingLotId(), e);
         }
 
         try {
