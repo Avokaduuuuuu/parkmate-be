@@ -3,19 +3,14 @@ package com.parkmate.userSubscription;
 import com.parkmate.user.User;
 import com.parkmate.vehicle.Vehicle;
 import jakarta.persistence.*;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.*;
 import org.hibernate.type.SqlTypes;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -82,7 +77,7 @@ public class UserSubscription {
     private SyncStatus syncStatus;
 
     @Column(name = "cancelled_at")
-    private Instant cancelledAt;
+    private LocalDateTime cancelledAt;
 
     @Column(name = "cancellation_reason", length = Integer.MAX_VALUE)
     private String cancellationReason;
@@ -91,12 +86,12 @@ public class UserSubscription {
     private BigDecimal refundAmount;
 
     @Column(name = "created_at")
-    @CreatedDate
+    @UpdateTimestamp
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    @LastModifiedDate
-    private Instant updatedAt;
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
 
 }

@@ -14,5 +14,6 @@ public interface SpotMapper {
     SpotMapper INSTANCE = Mappers.getMapper(SpotMapper.class);
 
     SpotEntity toEntity(SpotCreateRequest spotCreateRequest);
+
     SpotResponse toResponse(SpotEntity spotEntity);
 }

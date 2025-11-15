@@ -385,4 +385,16 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     public int getCurrentWalkIn(Long parkingLotId, LocalDateTime entryTimeFrom, Long horizon, VehicleType vehicleType) {
         return sessionRepository.countActiveWalkInsSince(parkingLotId, entryTimeFrom.minusMinutes(horizon), vehicleType);
     }
+
+    @Override
+    public boolean supportsVehicleType(Long parkingLotId, VehicleType vehicleType) {
+        ParkingLotEntity parkingLot = parkingLotRepository.findById(parkingLotId)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND));
+
+        return parkingLot.getLotCapacity().stream()
+                .anyMatch(capacity -> capacity.getVehicleType() == vehicleType
+                        && capacity.getIsActive()
+                        && capacity.getCapacity() != null
+                        && capacity.getCapacity() > 0);
+    }
 }

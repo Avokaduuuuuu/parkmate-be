@@ -13,7 +13,7 @@ public class ImportError {
     private int rowNumber;
     private String fieldName;
     private String errorMessage;
-    
+
     public ImportError(int rowNumber, String errorMessage) {
         this.rowNumber = rowNumber;
         this.errorMessage = errorMessage;

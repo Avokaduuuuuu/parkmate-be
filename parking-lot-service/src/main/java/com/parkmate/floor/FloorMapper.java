@@ -17,5 +17,6 @@ public interface FloorMapper {
     FloorMapper INSTANCE = Mappers.getMapper(FloorMapper.class);
 
     FloorResponse toResponse(FloorEntity entity);
+
     FloorDetailedResponse toResponseDetailed(FloorEntity entity);
 }

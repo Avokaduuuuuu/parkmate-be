@@ -476,6 +476,19 @@ public class ParkingLotController {
 //        return ResponseEntity.ok(ApiResponse.success(parkingLotService.countAvailableSpot(id, reservedFrom, assumedStayMinute, vehicleType, isElectric)));
 //    }
 
-
+    @GetMapping("/internal/{id}/supports-vehicle-type")
+    @Operation(
+            summary = "Check if parking lot supports vehicle type (Internal)",
+            description = "Internal endpoint to check if a parking lot supports a specific vehicle type based on lot capacity configuration."
+    )
+    public ResponseEntity<?> supportsVehicleType(
+            @Parameter(description = "Parking lot ID", required = true, example = "1")
+            @PathVariable Long id,
+            @Parameter(description = "Vehicle type to check", required = true, example = "CAR_UP_TO_9_SEATS")
+            @RequestParam VehicleType vehicleType
+    ) {
+        boolean isSupported = parkingLotService.supportsVehicleType(id, vehicleType);
+        return ResponseEntity.ok(ApiResponse.success("Check vehicle type support successfully", isSupported));
+    }
 
 }

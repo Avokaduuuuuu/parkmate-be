@@ -11,7 +11,8 @@ import org.springframework.context.annotation.Configuration;
 @Setter
 public class PayOSConfig {
     private String clientId;
-    private String apiKey;
+    private String apiKey;           // Payment API Key
+    private String payoutApiKey;     // Payout API Key (for withdrawals)
     private String checksumKey;
     private String returnUrl;
     private String cancelUrl;

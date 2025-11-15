@@ -183,10 +183,10 @@ public record ParkingLotCreateRequest(
         List<PolicyCreateRequest> policyCreateRequests
 ) {
 
-        @Schema(hidden = true)
-        public boolean isValid() {
-                return operatingHoursStart != null &&
-                        operatingHoursEnd != null &&
-                        !operatingHoursStart.equals(operatingHoursEnd);
-        }
+    @Schema(hidden = true)
+    public boolean isValid() {
+        return operatingHoursStart != null &&
+                operatingHoursEnd != null &&
+                !operatingHoursStart.equals(operatingHoursEnd);
+    }
 }

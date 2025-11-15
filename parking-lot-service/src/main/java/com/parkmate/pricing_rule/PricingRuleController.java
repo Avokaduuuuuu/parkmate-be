@@ -30,7 +30,7 @@ public class PricingRuleController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(
                         ApiResponse.success(
-                            "Fetch Pricing Rules successfully",
+                                "Fetch Pricing Rules successfully",
                                 pricingRuleService.findAllPricingRules(page, size, sortBy, sortOrder)
                         )
                 );
@@ -53,7 +53,7 @@ public class PricingRuleController {
     public ResponseEntity<?> addPricingRule(
             @PathVariable("parkingLotId") Long parkingLotId,
             @RequestBody @Valid PricingRuleCreateRequest request
-    ){
+    ) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(
                         ApiResponse.success(
@@ -107,7 +107,7 @@ public class PricingRuleController {
     @PutMapping("/sync")
     public ResponseEntity<?> syncPricingRules(
             @RequestBody SyncedPricingRulesUpdateRequest request
-            ) {
+    ) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(
                         ApiResponse.success(

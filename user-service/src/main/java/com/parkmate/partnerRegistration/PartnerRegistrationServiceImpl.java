@@ -3,6 +3,8 @@ package com.parkmate.partnerRegistration;
 import com.parkmate.account.Account;
 import com.parkmate.account.AccountRepository;
 import com.parkmate.account.publisher.AccountEventPublisher;
+import com.parkmate.client.PaymentClient;
+import com.parkmate.client.dto.request.CreateWalletRequest;
 import com.parkmate.common.enums.AccountRole;
 import com.parkmate.common.enums.AccountStatus;
 import com.parkmate.common.enums.RequestStatus;
@@ -16,6 +18,7 @@ import com.parkmate.partnerRegistration.dto.CreatePartnerRegistrationRequest;
 import com.parkmate.partnerRegistration.dto.PartnerRegistrationResponse;
 import com.parkmate.partnerRegistration.dto.PartnerRegistrationSearchRequest;
 import com.parkmate.partnerRegistration.dto.UpdatePartnerRegistrationRequest;
+import com.parkmate.s3.S3Service;
 import com.querydsl.core.types.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +41,8 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
     private final PartnerRepository partnerRepository;
     private final PasswordEncoder passwordEncoder;
     private final AccountEventPublisher accountEventPublisher;
+    private final S3Service s3Service;
+    private final PaymentClient paymentClient;
 
     @Override
     public PartnerRegistrationResponse registerPartner(CreatePartnerRegistrationRequest request) {
@@ -81,7 +86,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
     public PartnerRegistrationResponse getPartnerRegistrationById(Long id) {
         PartnerRegistration partnerRegistration = partnerRegistrationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARTNER_REGISTRATION_NOT_FOUND));
-        return mapper.toDto(partnerRegistration);
+        return convertToResponseWithPresignedUrl(partnerRegistration);
     }
 
     @Override
@@ -93,7 +98,6 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         PartnerRegistration partnerRegistration = partnerRegistrationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARTNER_REGISTRATION_NOT_FOUND));
 
-        // Validate reviewer account if reviewerId or status is provided
         if (request.getReviewerId() != null || request.getStatus() != null) {
             Long reviewerId = request.getReviewerId();
             if (reviewerId != null && !accountRepository.existsById(reviewerId)) {
@@ -101,10 +105,8 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
             }
         }
 
-        // Apply general field updates first (company info, contact person, etc.)
         mapper.updateEntityFromDto(request, partnerRegistration);
 
-        // Handle status-specific updates if status is provided
         if (request.getStatus() != null) {
             switch (request.getStatus()) {
                 case APPROVED -> approvePartnerRegistration(partnerRegistration, request);
@@ -128,7 +130,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
     public Page<PartnerRegistrationResponse> getPartnerRegistrations(PartnerRegistrationSearchRequest request, Pageable pageable) {
         Predicate predicate = PartnerRegistrationSpecification.buildPredicate(request.toCriteria());
         Page<PartnerRegistration> page = partnerRegistrationRepository.findAll(predicate, pageable);
-        return page.map(mapper::toDto);
+        return page.map(this::convertToResponseWithPresignedUrl);
     }
 
     @Override
@@ -136,7 +138,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         Predicate predicate = PartnerRegistrationSpecification.buildPredicate(request.toCriteria());
         Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
         Page<PartnerRegistration> registrationPage = partnerRegistrationRepository.findAll(predicate, pageable);
-        return registrationPage.map(mapper::toDto);
+        return registrationPage.map(this::convertToResponseWithPresignedUrl);
     }
 
     @Override
@@ -169,6 +171,15 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         account.setPartner(createPartner(savedRegistration));
         log.info("Partner created with ID: {} for registration ID: {}", account.getPartner().getId(), savedRegistration.getId());
         accountRepository.save(account);
+        createWallet(account.getPartner().getId());
+    }
+
+    private void createWallet(Long partnerId) {
+        try {
+            paymentClient.createWallet(new CreateWalletRequest(partnerId, "PARTNER"));
+        } catch (Exception e) {
+            log.error("Failed to create wallet for partner ID: {}", partnerId, e);
+        }
     }
 
     private void rejectPartnerRegistration(PartnerRegistration partnerRegistration, UpdatePartnerRegistrationRequest request) {
@@ -200,5 +211,16 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         Random random = new Random();
         return String.valueOf(100000 + random.nextInt(900000));
 
+    }
+
+    private PartnerRegistrationResponse convertToResponseWithPresignedUrl(PartnerRegistration partnerRegistration) {
+        PartnerRegistrationResponse response = mapper.toDto(partnerRegistration);
+
+        if (response.getBusinessLicenseFileUrl() != null && !response.getBusinessLicenseFileUrl().isEmpty()) {
+            String presignedUrl = s3Service.generatePresignedUrl(response.getBusinessLicenseFileUrl());
+            response.setBusinessLicenseFileUrl(presignedUrl);
+        }
+
+        return response;
     }
 }
