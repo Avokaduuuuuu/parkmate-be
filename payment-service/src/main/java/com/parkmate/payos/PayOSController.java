@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import vn.payos.model.v1.payouts.PayoutRequests;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 
 @RestController
@@ -48,6 +49,23 @@ public class PayOSController {
             @RequestHeader(value = "x-payos-signature", required = false) String signature) {
         log.info("Received PayOS webhook with signature: {}", signature);
         return ResponseEntity.ok(ApiResponse.success(payOSService.processWebhook(webhookBody, signature), "Webhook processed successfully"));
+    }
+
+    /**
+     * PayOS payout webhook callback endpoint
+     * This endpoint receives payout status updates from PayOS
+     */
+    @PostMapping("/payout-webhook")
+    @Hidden
+    @Operation(summary = "PayOS payout webhook callback", description = "Receives payout status notifications from PayOS")
+    public ResponseEntity<ApiResponse<Boolean>> handlePayoutWebhook(
+            @RequestBody String webhookBody,
+            @RequestHeader(value = "x-payos-signature", required = false) String signature) {
+        log.info("Received PayOS payout webhook with signature: {}", signature);
+        return ResponseEntity.ok(ApiResponse.success(
+                payOSService.processPayoutWebhook(webhookBody, signature),
+                "Payout webhook processed successfully"
+        ));
     }
 
     /**
@@ -107,5 +125,10 @@ public class PayOSController {
     @GetMapping("/status/{orderCode}")
     public ResponseEntity<ApiResponse<PaymentStatusResponse>> statusPayment(@PathVariable Long orderCode) {
         return ResponseEntity.ok(ApiResponse.success(payOSService.retrievePaymentStatus(orderCode)));
+    }
+
+    @PostMapping("/payouts")
+    public ResponseEntity<?> createPayouts(@RequestBody PayoutRequests body) {
+        return ResponseEntity.ok(ApiResponse.success(payOSService.retrievePayout(body)));
     }
 }

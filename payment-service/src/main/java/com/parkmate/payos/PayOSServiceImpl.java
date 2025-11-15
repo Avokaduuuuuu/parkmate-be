@@ -17,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.payos.PayOS;
+import vn.payos.model.v1.payouts.Payout;
+import vn.payos.model.v1.payouts.PayoutRequests;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 import vn.payos.model.v2.paymentRequests.PaymentLinkItem;
@@ -242,5 +244,175 @@ public class PayOSServiceImpl implements PayOSService {
                 .build();
 
 
+    }
+
+    @Override
+    public Payout retrievePayout(PayoutRequests payoutRequests) {
+        try {
+            if (payoutRequests.getReferenceId().isEmpty()) {
+                payoutRequests.setReferenceId("payout_" + (System.currentTimeMillis() / 1000));
+            }
+            return payOS.payouts().create(payoutRequests);
+        } catch (Exception e) {
+            log.error("create payout failed", e);
+            return null;
+        }
+    }
+
+    @Override
+    public Payout getPayout(String payoutId) {
+        try {
+            return payOS.payouts().get(payoutId);
+        } catch (Exception e) {
+            log.error("Failed to get payout status for payoutId: {}", payoutId, e);
+            throw new AppException(ErrorCode.PAYOUT_STATUS_CHECK_FAILED, payoutId);
+        }
+    }
+
+    @Override
+    @Transactional
+    public Boolean processPayoutWebhook(String webhookBody, String signature) {
+        try {
+            log.info("Processing PayOS payout webhook - signature present: {}", signature != null);
+            log.debug("Raw payout webhook body: {}", webhookBody);
+
+            // Verify webhook signature and parse data
+            WebhookData webhookData = payOS.webhooks().verify(webhookBody);
+
+            log.info("PayOS payout webhook verified - referenceId: {}, code: {}",
+                    webhookData.getReference(), webhookData.getCode());
+
+            String referenceId = webhookData.getReference();
+
+            // Find transaction by referenceId (which we stored as externalTransactionId)
+            WalletTransaction transaction = walletTransactionRepository
+                    .findByExternalTransactionId(referenceId)
+                    .orElse(null);
+
+            if (transaction == null) {
+                log.warn("Payout transaction not found for referenceId: {} - This might be a test webhook",
+                        referenceId);
+                return true;
+            }
+
+            if (transaction.getStatus() == TransactionStatus.COMPLETED) {
+                log.info("Payout transaction already completed - referenceId: {}, ignoring duplicate webhook",
+                        referenceId);
+                return true;
+            }
+
+            if (transaction.getStatus() == TransactionStatus.FAILED) {
+                log.info("Payout transaction already marked as failed - referenceId: {}, ignoring webhook",
+                        referenceId);
+                return true;
+            }
+
+            // Update with webhook data
+            transaction.setGatewayResponse(webhookBody);
+            transaction.setProcessedAt(LocalDateTime.now());
+
+            String status = webhookData.getCode();
+
+            if ("SUCCESSFUL".equals(status)) {
+                transaction.setStatus(TransactionStatus.COMPLETED);
+                log.info("✓ Payout completed successfully - referenceId: {}, amount: {}",
+                        referenceId, transaction.getAmount());
+            } else if ("FAILED".equals(status) || "CANCELLED".equals(status)) {
+                // Hoàn tiền vào ví khi payout thất bại
+                refundFailedPayout(transaction);
+                log.warn("✗ Payout failed/cancelled - referenceId: {}, status: {}, refunded to wallet",
+                        referenceId, status);
+            } else {
+                // PROCESSING or other status - keep as pending
+                transaction.setStatus(TransactionStatus.PROCESSING);
+                log.info("Payout still processing - referenceId: {}, status: {}", referenceId, status);
+            }
+
+            walletTransactionRepository.save(transaction);
+            return true;
+
+        } catch (AppException e) {
+            log.error("Business error processing payout webhook: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Error processing payout webhook: {}", e.getMessage(), e);
+            throw new AppException(ErrorCode.WEBHOOK_PROCESS_FAILED, e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void checkPendingPayouts() {
+        List<WalletTransaction> pendingPayouts = walletTransactionRepository
+                .findByTransactionTypeAndStatus(TransactionType.WITHDRAW, TransactionStatus.PENDING);
+
+        if (pendingPayouts.isEmpty()) {
+            log.debug("No pending payouts to check");
+            return;
+        }
+
+        log.info("Checking {} pending payout(s)", pendingPayouts.size());
+
+        for (WalletTransaction transaction : pendingPayouts) {
+            try {
+                checkPayoutStatus(transaction);
+            } catch (Exception e) {
+                log.error("Error checking payout status for transaction: {}", transaction.getId(), e);
+            }
+        }
+    }
+
+    /**
+     * Helper method to check individual payout status
+     */
+    private void checkPayoutStatus(WalletTransaction transaction) {
+        try {
+            String payoutId = transaction.getExternalTransactionId();
+            Payout payout = getPayout(payoutId);
+
+            // PayOS Payout uses 'state' field instead of 'status'
+            String status = String.valueOf(payout.getApprovalState());
+            log.info("Payout status check - referenceId: {}, status: {}", payoutId, status);
+
+            transaction.setProcessedAt(LocalDateTime.now());
+
+            if ("SUCCESSFUL".equals(status) || "SUCCESS".equals(status)) {
+                transaction.setStatus(TransactionStatus.COMPLETED);
+                log.info("✓ Payout completed via polling - referenceId: {}, amount: {}",
+                        payoutId, transaction.getAmount());
+            } else if ("FAILED".equals(status) || "CANCELLED".equals(status)) {
+                refundFailedPayout(transaction);
+                log.warn("✗ Payout failed via polling - referenceId: {}, status: {}, refunded to wallet",
+                        payoutId, status);
+            } else if ("PROCESSING".equals(status) || "PENDING".equals(status)) {
+                transaction.setStatus(TransactionStatus.PROCESSING);
+                log.info("Payout still processing - referenceId: {}", payoutId);
+            }
+
+            walletTransactionRepository.save(transaction);
+
+        } catch (Exception e) {
+            log.error("Error checking payout status for transaction: {}", transaction.getId(), e);
+        }
+    }
+
+    /**
+     * Helper method to refund failed payout back to wallet
+     * Note: Removed @Transactional as this is a private method called within a transactional context
+     */
+    private void refundFailedPayout(WalletTransaction transaction) {
+        // Update transaction status to failed
+        transaction.setStatus(TransactionStatus.FAILED);
+
+        // Find wallet and refund the amount
+        Wallet wallet = walletRepository.findById(transaction.getWalletId())
+                .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND, transaction.getWalletId()));
+
+        BigDecimal oldBalance = wallet.getBalance();
+        wallet.setBalance(wallet.getBalance().add(transaction.getAmount()));
+        walletRepository.save(wallet);
+
+        log.info("Refunded failed payout to wallet - walletId: {}, amount: {}, balance: {} -> {}",
+                wallet.getId(), transaction.getAmount(), oldBalance, wallet.getBalance());
     }
 }

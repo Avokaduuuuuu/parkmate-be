@@ -8,5 +8,5 @@ import lombok.Data;
 @Data
 public class CreateWalletRequest {
     Long userId;
-    WalletOwner walletOwnerType;
+    String walletOwnerType;
 }

@@ -3,8 +3,12 @@ package com.parkmate.wallet;
 import com.parkmate.common.ApiResponse;
 import com.parkmate.wallet.dto.CreateWalletRequest;
 import com.parkmate.wallet.dto.WalletResponse;
+import com.parkmate.wallet.dto.WithdrawalRequest;
+import com.parkmate.wallet.dto.WithdrawalResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -46,5 +50,40 @@ public class WalletController {
     @GetMapping("/sync")
     public ResponseEntity<ApiResponse<Map<Long, BigDecimal>>> syncWallets(@RequestParam List<Long> userIds) {
         return ResponseEntity.ok(ApiResponse.success(walletService.getUserWallets(userIds)));
+    }
+
+    @PostMapping("/withdraw")
+    @Operation(
+            summary = "Request withdrawal",
+            description = """
+                    Partner requests to withdraw money from their wallet to bank account.
+
+                    **Requirements:**
+                    - Minimum withdrawal: 10,000 VND
+                    - Maximum withdrawal: 50,000,000 VND
+                    - Wallet must have sufficient balance
+                    - Valid bank account information required
+
+                    **Process:**
+                    1. Wallet balance is deducted immediately
+                    2. Payout request is sent to PayOS
+                    3. Partner is notified when payout completes
+                    4. If payout fails, amount is automatically refunded to wallet
+
+                    **Bank Codes (examples):**
+                    - VCB: Vietcombank
+                    - TCB: Techcombank
+                    - MB: MBBank
+                    - ACB: ACB
+                    - VPBank: VPBank
+                    """
+    )
+    public ResponseEntity<ApiResponse<WithdrawalResponse>> requestWithdrawal(
+            @Valid @RequestBody WithdrawalRequest request,
+            @RequestHeader(value = "X-User-Id") @Parameter(hidden = true) String userIdHeader) {
+        return ResponseEntity.ok(ApiResponse.success(
+                walletService.requestWithdrawal(userIdHeader, request),
+                "Withdrawal request submitted successfully"
+        ));
     }
 }

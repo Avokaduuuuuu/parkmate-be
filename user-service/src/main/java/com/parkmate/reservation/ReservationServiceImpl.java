@@ -18,11 +18,12 @@ import com.parkmate.kafka.KafkaTopics;
 import com.parkmate.kafka.event.NotificationEvent;
 import com.parkmate.kafka.event.NotificationEventType;
 import com.parkmate.mobileDevice.MobileDeviceRepository;
+import com.parkmate.partner.Partner;
+import com.parkmate.partner.PartnerRepository;
 import com.parkmate.reservation.dto.*;
 import com.parkmate.user.User;
 import com.parkmate.user.UserRepository;
 import com.parkmate.user.UserService;
-import com.parkmate.userSubscription.UserSubscriptionRepository;
 import com.parkmate.vehicle.Vehicle;
 import com.parkmate.vehicle.VehicleRepository;
 import com.parkmate.vehicle.VehicleService;
@@ -62,6 +63,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final KafkaTemplate<String, NotificationEvent> kafkaTemplate;
     private final ReservationHoldService reservationHoldService;
     private final VehicleRepository vehicleRepository;
+    private final PartnerRepository partnerRepository;
 
     @Override
     @Transactional
@@ -108,10 +110,26 @@ public class ReservationServiceImpl implements ReservationService {
 
         reservation = reservationRepository.save(reservation);
 
+        // Get partner ID for the parking lot
+        Long partnerId = null;
         try {
+            ApiResponse<ParkingLotClient.PartnerIdDto> partnerResponse =
+                parkingLotClient.getPartnerIdByParkingLotId(request.getParkingLotId());
+            if (partnerResponse != null && partnerResponse.data() != null) {
+                partnerId = partnerResponse.data().partnerId();
+                log.info("Retrieved partner ID {} for parking lot {}", partnerId, request.getParkingLotId());
+            }
+        } catch (Exception e) {
+            log.error("Failed to get partner ID for parking lot {}. Proceeding without partner credit.",
+                     request.getParkingLotId(), e);
+        }
+
+        try {
+
             ResponseEntity<ApiResponse<WalletTransactionResponse>> paymentResult = paymentClient.deductWallet(
                     CreateTransactionRequest.builder()
                             .userId(reservation.getUser().getId())
+                            .partnerId(partnerId)
                             .amount(reservation.getInitialFee())
                             .transactionType(TransactionConstants.TYPE_DEDUCTION)
                             .processedAt(LocalDateTime.now())
@@ -133,7 +151,6 @@ public class ReservationServiceImpl implements ReservationService {
                         reservation.getId(), paymentResponse.message());
                 reservation.setStatus(ReservationStatus.CANCELLED);
                 reservationRepository.save(reservation);
-                // Return the specific error message from payment service (e.g., "Insufficient balance")
                 throw new AppException(ErrorCode.WALLET_DEDUCTION_FAILED, paymentResponse.message());
             }
 
@@ -527,10 +544,24 @@ public class ReservationServiceImpl implements ReservationService {
                 reservation.getId(), reservation.getTotalFee(), reservation.getInitialFee(), deductionAmount);
 
         if (deductionAmount.compareTo(BigDecimal.ZERO) > 0) {
+            // Get partner ID for the parking lot
+            Long partnerId = null;
+            try {
+                ApiResponse<ParkingLotClient.PartnerIdDto> partnerResponse =
+                    parkingLotClient.getPartnerIdByParkingLotId(reservation.getParkingLotId());
+                if (partnerResponse != null && partnerResponse.data() != null) {
+                    partnerId = partnerResponse.data().partnerId();
+                }
+            } catch (Exception e) {
+                log.error("Failed to get partner ID for parking lot {}. Proceeding without partner credit.",
+                         reservation.getParkingLotId(), e);
+            }
+
             try {
                 ResponseEntity<ApiResponse<WalletTransactionResponse>> response = paymentClient.deductWallet(
                         CreateTransactionRequest.builder()
                                 .userId(reservation.getUser().getId())
+                                .partnerId(partnerId)
                                 .amount(deductionAmount)
                                 .transactionType(TransactionConstants.TYPE_DEDUCTION)
                                 .description(String.format("Additional charge for reservation %d (Total: %s VND - Prepaid: %s VND)",

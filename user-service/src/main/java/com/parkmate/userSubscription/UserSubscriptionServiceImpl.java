@@ -202,12 +202,27 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     }
 
     private void deductSubscriptionFee(UserSubscription userSubscription, String subscriptionPackageName, BigDecimal amount) {
+        // Get partner ID for the parking lot
+        Long partnerId = null;
+        try {
+            ApiResponse<ParkingLotClient.PartnerIdDto> partnerResponse =
+                parkingLotClient.getPartnerIdByParkingLotId(userSubscription.getParkingLotId());
+            if (partnerResponse != null && partnerResponse.data() != null) {
+                partnerId = partnerResponse.data().partnerId();
+                log.info("Retrieved partner ID {} for parking lot {}", partnerId, userSubscription.getParkingLotId());
+            }
+        } catch (Exception e) {
+            log.error("Failed to get partner ID for parking lot {}. Proceeding without partner credit.",
+                     userSubscription.getParkingLotId(), e);
+        }
+
         try {
             ResponseEntity<ApiResponse<WalletTransactionResponse>> paymentResult = paymentClient.deductWallet(
                     CreateTransactionRequest.builder()
                             .userId(userSubscription.getUser().getId())
+                            .partnerId(partnerId)
                             .amount(amount)
-                            .transactionType(TransactionConstants.TYPE_DEDUCTION)
+                            .transactionType(TransactionConstants.TYPE_SUBSCRIPTION)
                             .processedAt(LocalDateTime.now())
                             .description("Thanh toán gói: " + subscriptionPackageName)
                             .build()
@@ -401,10 +416,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         return response.data();
     }
 
-    /**
-     * Release spot hold after subscription creation (success or failure).
-     * This method silently handles errors to prevent blocking the main subscription flow.
-     */
+
     private void releaseSpotAfterSubscription(Long spotId, String userId) {
         try {
             log.info("Releasing spot hold for spotId: {}, userId: {}", spotId, userId);
@@ -417,7 +429,6 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
                         spotId, response.message());
             }
         } catch (Exception e) {
-            // Log error but don't throw - spot hold will auto-expire after timeout
             log.error("Error releasing spot hold for spotId: {}. Hold will auto-expire after timeout.", spotId, e);
         }
     }
