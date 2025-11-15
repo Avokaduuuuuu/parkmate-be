@@ -6,6 +6,8 @@ import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.parking_lot.ParkingLotRepository;
 import com.parkmate.pricing_rule.PricingRuleEntity;
 import com.parkmate.pricing_rule.PricingRuleRepository;
+import com.parkmate.pricing_rule.PricingRuleService;
+import com.parkmate.s3.S3Service;
 import com.parkmate.session.dto.req.SessionCreateRequest;
 import com.parkmate.session.dto.req.SessionSyncRequest;
 import com.parkmate.session.dto.req.SessionUpdateRequest;
@@ -38,6 +40,7 @@ public class SessionServiceImpl implements SessionService {
     private final SessionRepository sessionRepository;
     private final ParkingLotRepository parkingLotRepository;
     private final PricingRuleRepository pricingRuleRepository;
+    private final S3Service s3Service;
 
     @Override
     public SessionResponse createSession(Long lotId, SessionCreateRequest request) {
@@ -80,10 +83,15 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public SessionDetailedResponse getSession(String id) {
-        return SessionMapper.INSTANCE.toDetailedResponse(
+        SessionDetailedResponse sessionDetailedResponse = SessionMapper.INSTANCE.toDetailedResponse(
                 sessionRepository.findById(UUID.fromString(id))
-                        .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND, "Session with Card UUID " + id + " not found"))
+                        .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND, "Session with UUID " + id + " not found"))
         );
+        sessionDetailedResponse.setEntryImage(s3Service.getPresignedUrl(sessionDetailedResponse.getEntryImage()));
+        sessionDetailedResponse.setEntryPlateImage(s3Service.getPresignedUrl(sessionDetailedResponse.getEntryPlateImage()));
+        sessionDetailedResponse.setExitImage(s3Service.getPresignedUrl(sessionDetailedResponse.getExitImage()));
+        sessionDetailedResponse.setExitPlateImage(s3Service.getPresignedUrl(sessionDetailedResponse.getExitPlateImage()));
+        return sessionDetailedResponse;
     }
 
     @Override
@@ -175,6 +183,10 @@ public class SessionServiceImpl implements SessionService {
         sessionEntity.setNote(request.note());
         sessionEntity.setReferenceType(request.referenceType());
         sessionEntity.setSyncedFromLocal(LocalDateTime.now());
+        sessionEntity.setEntryImage(request.entryImage());
+        sessionEntity.setEntryPlateImage(request.entryImagePlate());
+        sessionEntity.setExitImage(request.exitImage());
+        sessionEntity.setExitPlateImage(request.exitImagePlate());
         return sessionEntity;
     }
 }
