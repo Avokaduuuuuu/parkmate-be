@@ -38,7 +38,7 @@ public class StatisticServiceImpl implements StatisticService {
                 .totalRevenue(userServiceStatistic.getReservationStatistic().getTotalRevenue())
                 .build();
 
-        Map<Long, String> subscriptionNameMap = subscriptionRepository.findAll()
+        Map<Long, String> subscriptionNameMap = subscriptionRepository.findAllByParkingLotId(lotId)
                 .stream()
                 .collect(Collectors.toMap(SubscriptionEntity::getId, SubscriptionEntity::getName));
 
