@@ -5,6 +5,7 @@ import com.parkmate.common.PaginationUtil;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.wallet.Wallet;
+import com.parkmate.wallet.WalletOwner;
 import com.parkmate.wallet.WalletRepository;
 import com.parkmate.walletTransaction.dto.CreateTransactionRequest;
 import com.parkmate.walletTransaction.dto.TransactionSearchCriteria;
@@ -137,12 +138,24 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
     }
 
     @Override
-    public Page<WalletTransactionResponse> getTransactions(int page, int size, String sortBy, String sortOrder, TransactionSearchCriteria criteria, String userHeaderId) {
+    public Page<WalletTransactionResponse> getTransactions(int page, int size, String sortBy, String sortOrder, TransactionSearchCriteria criteria, String userHeaderId, String role) {
         Long userId = null;
+        Long walletId = null;
+
         if (userHeaderId != null) {
             try {
                 userId = Long.parseLong(userHeaderId);
                 log.info("Parsed user ID from header: {}", userId);
+
+                // Get the correct wallet based on user role
+                if (role != null) {
+                    WalletOwner walletOwner = determineWalletOwnerFromRole(role);
+                    Long finalUserId = userId;
+                    Wallet wallet = walletRepository.findByHolderIdAndWalletOwner(userId, walletOwner)
+                            .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND, finalUserId));
+                    walletId = wallet.getId();
+                    log.info("Found wallet ID {} for user {} with role {}", walletId, userId, role);
+                }
             } catch (NumberFormatException e) {
                 log.warn("Invalid user ID in header: {}", userHeaderId);
             }
@@ -151,14 +164,29 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
         // Create pageable
         Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
 
-        // Build predicate from criteria and userId
-        Predicate predicate = TransactionSpecification.buildPredicate(criteria, userId);
+        // Build predicate from criteria and walletId (not userId)
+        Predicate predicate = TransactionSpecification.buildPredicate(criteria, walletId);
 
         // Query with predicate
         Page<WalletTransaction> transactions = walletTransactionRepository.findAll(predicate, pageable);
 
         // Map to response
         return transactions.map(walletTransactionMapper::toResponse);
+    }
+
+    private WalletOwner determineWalletOwnerFromRole(String role) {
+        if (role == null) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "User role is required");
+        }
+
+        // Role from gateway is typically "ROLE_PARTNER" or "ROLE_MEMBER" or "ROLE_DRIVER"
+        if (role.contains("PARTNER")) {
+            return WalletOwner.PARTNER;
+        } else if (role.contains("MEMBER") || role.contains("DRIVER")) {
+            return WalletOwner.MEMBER;
+        } else {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "Invalid role: " + role);
+        }
     }
 
 

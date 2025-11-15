@@ -42,9 +42,10 @@ public class WalletController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<WalletResponse>> getWalletByUserId(
-            @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader) {
+            @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader,
+            @RequestHeader(value = "X-User-Role", required = false) @Parameter(hidden = true) String role) {
         return ResponseEntity.ok(
-                ApiResponse.success(walletService.getByUserId(userIdHeader)));
+                ApiResponse.success(walletService.getByUserId(userIdHeader, role)));
     }
 
     @GetMapping("/sync")
