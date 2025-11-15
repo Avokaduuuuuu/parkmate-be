@@ -42,8 +42,8 @@ public interface SessionRepository extends JpaRepository<SessionEntity, UUID>, J
             "FROM SessionEntity s " +
             "WHERE s.parkingLot.id = :lotId AND s.entryTime >= :from AND (s.exitTime <= :to OR s.exitTime IS NULL)")
     ParkingLotStatisticProjection getParkingLotStatistic(
-      @Param("lotId") Long lotId,
-      @Param("from") LocalDateTime from,
-      @Param("to") LocalDateTime to
+            @Param("lotId") Long lotId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
     );
 }

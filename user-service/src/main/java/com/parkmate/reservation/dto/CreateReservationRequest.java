@@ -36,7 +36,7 @@ public class CreateReservationRequest {
     @Schema(description = "Start time of the reservation", example = "2024-07-01T10:00:00")
     @NotNull
     LocalDateTime reservedFrom;
-    @Schema(description = "Start time of the reservation", example = "2024-07-01T10:00:00")
+    @Schema(example = "360")
     Integer assumedStayMinute;
 
     @Schema(description = "Hold ID from temporary slot reservation (optional)", example = "550e8400-e29b-41d4-a716-446655440000")

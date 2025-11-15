@@ -26,17 +26,21 @@ public class NotificationEventListener {
             @Payload NotificationEvent notificationEvent,
             Acknowledgment acknowledgment) {
         try {
-            log.info("Received notification event: {}", notificationEvent.getEventId());
+            log.info("📥 [KAFKA] Received notification event: eventId={}, eventType={}, recipientId={}",
+                    notificationEvent.getEventId(),
+                    notificationEvent.getEventType(),
+                    notificationEvent.getRecipientId());
 
             // Acknowledge immediately - async processing will handle sending
             acknowledgment.acknowledge();
+            log.info("✅ [KAFKA] Acknowledged message: {}", notificationEvent.getEventId());
 
             // Process async to avoid blocking Kafka consumer
             sendNotificationAsync(notificationEvent);
 
-            log.info("Notification event queued for sending: {}", notificationEvent.getEventId());
+            log.info("📤 [KAFKA] Notification event queued for async sending: {}", notificationEvent.getEventId());
         } catch (Exception e) {
-            log.error("Error occurred while processing notification event: {}", notificationEvent.getEventId(), e);
+            log.error("❌ [KAFKA] Error occurred while processing notification event: {}", notificationEvent.getEventId(), e);
         }
 
     }
@@ -44,10 +48,11 @@ public class NotificationEventListener {
     @Async("emailExecutor")
     public void sendNotificationAsync(NotificationEvent notificationEvent) {
         try {
+            log.info("🔄 [ASYNC] Starting async notification processing: {}", notificationEvent.getEventId());
             notificationService.sendNotification(notificationEvent);
-            log.info("Notification sent successfully: {}", notificationEvent.getEventId());
+            log.info("✅ [ASYNC] Notification sent successfully: {}", notificationEvent.getEventId());
         } catch (Exception e) {
-            log.error("Error sending notification: {}", notificationEvent.getEventId(), e);
+            log.error("❌ [ASYNC] Error sending notification: {}", notificationEvent.getEventId(), e);
         }
     }
 

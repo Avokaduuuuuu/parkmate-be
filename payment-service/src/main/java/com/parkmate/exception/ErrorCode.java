@@ -70,6 +70,18 @@ public enum ErrorCode {
     PAYOS_ORDER_NOT_FOUND(3306, "PayOS order not found", HttpStatus.NOT_FOUND),
 
     CANCEL_FAILED(3307, "Failed to cancel with PayOS", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    PAYOUT_STATUS_CHECK_FAILED(3308, "Failed to check payout status for ID '{0}'", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    WITHDRAWAL_AMOUNT_TOO_LOW(3309, "Minimum withdrawal amount is 10,000 VND", HttpStatus.BAD_REQUEST),
+
+    WITHDRAWAL_AMOUNT_TOO_HIGH(3310, "Maximum withdrawal amount is {0} VND", HttpStatus.BAD_REQUEST),
+
+    PAYOUT_CREATION_FAILED(3311, "Failed to create payout request: {0}", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    WALLET_DEDUCTION_FAILED(3312, "Failed to deduct amount from wallet: {0}", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    INVALID_BANK_ACCOUNT(3313, "Invalid bank account information", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;

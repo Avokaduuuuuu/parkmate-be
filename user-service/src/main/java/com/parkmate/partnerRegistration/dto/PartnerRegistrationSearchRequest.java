@@ -13,44 +13,33 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class PartnerRegistrationSearchRequest {
 
-    // Company information fields
     private String companyName;
     private String taxNumber;
     private String businessLicenseNumber;
     private String companyAddress;
     private String companyEmail;
     private String companyPhone;
-
-    // Contact person fields
     private String contactPersonName;
     private String contactPersonEmail;
 
-    // Status
     private RequestStatus status;
 
-    // Date range filters - Submitted
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime submittedAfter;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime submittedBefore;
 
-    // Date range filters - Reviewed
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime reviewedAfter;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime reviewedBefore;
 
-    // Reviewer ID
     private Long reviewedBy;
 
-    // Boolean filter
     private Boolean hasPartner;
 
-    /**
-     * Convert search request to criteria object
-     */
     public PartnerRegistrationSearchCriteria toCriteria() {
         return PartnerRegistrationSearchCriteria.builder()
                 .companyName(this.companyName)

@@ -27,7 +27,7 @@ import java.util.List;
 @Entity
 @Table(name = "parking_lot")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class    ParkingLotEntity extends BaseEntity {
+public class ParkingLotEntity extends BaseEntity {
 
     @Column(name = "partner_id")
     Long partnerId;

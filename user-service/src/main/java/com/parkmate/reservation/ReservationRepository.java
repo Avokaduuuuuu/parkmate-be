@@ -57,5 +57,5 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             "FROM Reservation r " +
             "WHERE r.parkingLotId = :lotId AND r.reservedFrom >= :from AND (r.reservedUntil <= :to OR r.reservedUntil IS NULL)"
     )
-    ReservationProjection getStatistic(@Param("lotId") Long lotId,@Param("from") LocalDateTime from,@Param("to") LocalDateTime to);
+    ReservationProjection getStatistic(@Param("lotId") Long lotId, @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 }

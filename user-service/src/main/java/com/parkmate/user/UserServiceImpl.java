@@ -117,11 +117,11 @@ public class UserServiceImpl implements UserService {
 
     private void createWalletIfNotExists(User user) {
         if (hasIdentityInfo(user)) {
-            // Call wallet service to create wallet
             CreateWalletRequest createWalletRequest = CreateWalletRequest.builder()
-                    .userId(user.getId())
+                    .holderId(user.getId())
+                    .walletType("MEMBER")
                     .build();
-            paymentClient.createPayment(createWalletRequest);
+            paymentClient.createWallet(createWalletRequest);
             log.info("Creating wallet for user ID: {}", user.getId());
         }
     }
@@ -130,7 +130,6 @@ public class UserServiceImpl implements UserService {
     public ImportUserResponse importUsersFromExcel(MultipartFile file) {
         ImportUserResponse response = new ImportUserResponse();
 
-        // Validate file
         String validationError = validateFile(file);
         if (validationError != null) {
             response.addError(new ImportError(0, validationError));

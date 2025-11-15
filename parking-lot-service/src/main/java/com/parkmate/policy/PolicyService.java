@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface PolicyService {
     List<PolicyResponse> pullPolicies(Long lotId);
+
     Integer syncPolicies(List<Long> policyIds);
+
     PolicyResponse updatePolicy(Long id, PolicyUpdateRequest policyUpdateRequest);
 }

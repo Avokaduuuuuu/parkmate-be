@@ -73,7 +73,7 @@ public class SubscriptionController {
                 .body(
                         com.parkmate.common.ApiResponse.success(
                                 "Fetching all subscriptions.",
-                                subscriptionService.fetchAllSubscriptions(userHeaderId,page, size, sortBy, sortOrder, filterParams)
+                                subscriptionService.fetchAllSubscriptions(userHeaderId, page, size, sortBy, sortOrder, filterParams)
                         )
                 );
     }
@@ -215,7 +215,7 @@ public class SubscriptionController {
     )
     public ResponseEntity<?> deleteSubscription(
             @PathVariable("id") Long id
-    ){
+    ) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(
                         com.parkmate.common.ApiResponse.success(

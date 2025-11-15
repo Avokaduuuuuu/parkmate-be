@@ -17,6 +17,8 @@ public interface SubscriptionService {
     SubscriptionResponse fetchSubscriptionById(Long id);
 
     SubscriptionResponse addSubscription(SubscriptionCreateRequest request);
+
     SubscriptionResponse updateSubscription(SubscriptionUpdateRequest request, Long id);
+
     SubscriptionResponse deleteSubscription(Long id);
 }
