@@ -29,16 +29,33 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class PayOSServiceImpl implements PayOSService {
 
-    private final PayOS payOS;
+    private final PayOS payOS;              // For payments (top-up)
+    private final PayOS payOSPayout;        // For payouts (withdrawal)
     private final PayOSConfig payOSConfig;
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
     private final QRCodeGenerator qrCodeGenerator;
     private final UserServiceClient userServiceClient;
+
+    public PayOSServiceImpl(
+            PayOS payOS,
+            PayOS payOSPayout,
+            PayOSConfig payOSConfig,
+            WalletRepository walletRepository,
+            WalletTransactionRepository walletTransactionRepository,
+            QRCodeGenerator qrCodeGenerator,
+            UserServiceClient userServiceClient) {
+        this.payOS = payOS;
+        this.payOSPayout = payOSPayout;
+        this.payOSConfig = payOSConfig;
+        this.walletRepository = walletRepository;
+        this.walletTransactionRepository = walletTransactionRepository;
+        this.qrCodeGenerator = qrCodeGenerator;
+        this.userServiceClient = userServiceClient;
+    }
 
     private final String TOP_UP_DESCRIPTION = "TOP UP WALLET";
 
@@ -252,7 +269,8 @@ public class PayOSServiceImpl implements PayOSService {
             if (payoutRequests.getReferenceId().isEmpty()) {
                 payoutRequests.setReferenceId("payout_" + (System.currentTimeMillis() / 1000));
             }
-            return payOS.payouts().create(payoutRequests);
+            // Use payOSPayout bean for payout operations
+            return payOSPayout.payouts().create(payoutRequests);
         } catch (Exception e) {
             log.error("create payout failed", e);
             return null;
@@ -262,7 +280,8 @@ public class PayOSServiceImpl implements PayOSService {
     @Override
     public Payout getPayout(String payoutId) {
         try {
-            return payOS.payouts().get(payoutId);
+            // Use payOSPayout bean for payout operations
+            return payOSPayout.payouts().get(payoutId);
         } catch (Exception e) {
             log.error("Failed to get payout status for payoutId: {}", payoutId, e);
             throw new AppException(ErrorCode.PAYOUT_STATUS_CHECK_FAILED, payoutId);
@@ -344,7 +363,7 @@ public class PayOSServiceImpl implements PayOSService {
     @Transactional
     public void checkPendingPayouts() {
         List<WalletTransaction> pendingPayouts = walletTransactionRepository
-                .findByTransactionTypeAndStatus(TransactionType.WITHDRAW, TransactionStatus.PENDING);
+                .findByTransactionTypeAndStatus(TransactionType.CASH_OUT, TransactionStatus.PENDING);
 
         if (pendingPayouts.isEmpty()) {
             log.debug("No pending payouts to check");
@@ -370,17 +389,27 @@ public class PayOSServiceImpl implements PayOSService {
             String payoutId = transaction.getExternalTransactionId();
             Payout payout = getPayout(payoutId);
 
-            // PayOS Payout uses 'state' field instead of 'status'
-            String status = String.valueOf(payout.getApprovalState());
-            log.info("Payout status check - referenceId: {}, status: {}", payoutId, status);
+            // PayOS returns transactions array, get the first transaction state
+            String approvalState = String.valueOf(payout.getApprovalState());
+            String transactionState = null;
+
+            if (payout.getTransactions() != null && !payout.getTransactions().isEmpty()) {
+                transactionState = String.valueOf(payout.getTransactions().get(0).getState());
+            }
+
+            log.info("Payout status check - referenceId: {}, approvalState: {}, transactionState: {}",
+                     payoutId, approvalState, transactionState);
 
             transaction.setProcessedAt(LocalDateTime.now());
 
-            if ("SUCCESSFUL".equals(status) || "SUCCESS".equals(status)) {
+            // Check transaction state first (more accurate), fallback to approval state
+            String status = transactionState != null ? transactionState : approvalState;
+
+            if ("SUCCEEDED".equals(status) || "SUCCESSFUL".equals(status) || "SUCCESS".equals(status)) {
                 transaction.setStatus(TransactionStatus.COMPLETED);
                 log.info("✓ Payout completed via polling - referenceId: {}, amount: {}",
                         payoutId, transaction.getAmount());
-            } else if ("FAILED".equals(status) || "CANCELLED".equals(status)) {
+            } else if ("FAILED".equals(status) || "CANCELLED".equals(status) || "REJECTED".equals(status)) {
                 refundFailedPayout(transaction);
                 log.warn("✗ Payout failed via polling - referenceId: {}, status: {}, refunded to wallet",
                         payoutId, status);

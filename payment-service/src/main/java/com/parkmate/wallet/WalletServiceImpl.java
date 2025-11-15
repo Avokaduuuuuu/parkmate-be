@@ -78,12 +78,30 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public WalletResponse getByUserId(String userHeaderId) {
+    public WalletResponse getByUserId(String userHeaderId, String role) {
         Long userId = Long.parseLong(userHeaderId);
-        // X-User-Id header now contains userId directly
-        Wallet wallet = walletRepository.findByHolderId(userId)
+
+        // Determine wallet owner type based on role
+        WalletOwner walletOwner = determineWalletOwnerFromRole(role);
+
+        Wallet wallet = walletRepository.findByHolderIdAndWalletOwner(userId, walletOwner)
                 .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND, userId));
         return walletMapper.toResponse(wallet);
+    }
+
+    private WalletOwner determineWalletOwnerFromRole(String role) {
+        if (role == null) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "User role is required");
+        }
+
+        // Role from gateway is typically "ROLE_PARTNER" or "ROLE_MEMBER" or "ROLE_DRIVER"
+        if (role.contains("PARTNER")) {
+            return WalletOwner.PARTNER;
+        } else if (role.contains("MEMBER") || role.contains("DRIVER")) {
+            return WalletOwner.MEMBER;
+        } else {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "Invalid role: " + role);
+        }
     }
 
     @Override
@@ -213,10 +231,10 @@ public class WalletServiceImpl implements WalletService {
         walletRepository.save(wallet);
         log.info("Wallet balance deducted - userId: {}, balance: {} -> {}", userId, oldBalance, wallet.getBalance());
 
-        // 9. Create WITHDRAW transaction with PENDING status
+        // 9. Create CASH_OUT transaction with PENDING status
         WalletTransaction transaction = WalletTransaction.builder()
                 .walletId(wallet.getId())
-                .transactionType(TransactionType.WITHDRAW)
+                .transactionType(TransactionType.CASH_OUT)
                 .amount(amount)
                 .externalTransactionId(referenceId)
                 .status(TransactionStatus.PENDING)
