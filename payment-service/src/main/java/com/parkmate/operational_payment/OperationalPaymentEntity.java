@@ -1,18 +1,18 @@
 package com.parkmate.operational_payment;
 
-import com.parkmate.common.BaseEntity;
 import com.parkmate.operational_payment.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -20,7 +20,12 @@ import java.time.LocalDateTime;
 @Table(name = "lot_operational_payment")
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class OperationalPaymentEntity extends BaseEntity {
+public class OperationalPaymentEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
+
     @Column(name = "billing_start_date")
     LocalDate billingStartDate;
 
@@ -55,4 +60,12 @@ public class OperationalPaymentEntity extends BaseEntity {
 
     @Column(name = "notes")
     String notes;
+
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
+    LocalDateTime updatedAt;
 }

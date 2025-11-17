@@ -1,16 +1,16 @@
 package com.parkmate.operational_fee_config;
 
-import com.parkmate.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -18,7 +18,10 @@ import java.time.LocalDateTime;
 @Table(name = "lot_operational_fee_config")
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class OperationalFeeConfigEntity extends BaseEntity {
+public class OperationalFeeConfigEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
 
     @Column(name = "price_per_sqm")
     Double pricePerSqm;
@@ -38,4 +41,12 @@ public class OperationalFeeConfigEntity extends BaseEntity {
 
     @Column(name = "valid_until", columnDefinition = "This config will be invalid after this time")
     LocalDateTime validUntil;
+
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
+    LocalDateTime updatedAt;
 }
