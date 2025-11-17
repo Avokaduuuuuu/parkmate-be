@@ -1,6 +1,7 @@
 package com.parkmate.parking_lot;
 
 import com.parkmate.area.AreaRepository;
+import com.parkmate.client.PaymentClient;
 import com.parkmate.client.UserClient;
 import com.parkmate.common.enums.VehicleType;
 import com.parkmate.exception.AppException;
@@ -57,6 +58,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     private final SessionRepository sessionRepository;
     private final UserClient userClient;
     private final AreaRepository areaRepository;
+    private final PaymentClient paymentClient;
 
     @Override
     public Page<ParkingLotResponse> fetchAllParkingLots(
@@ -218,8 +220,11 @@ public class ParkingLotServiceImpl implements ParkingLotService {
             if ((request.status() == ParkingLotStatus.REJECTED || request.status() == ParkingLotStatus.MAP_DENIED) && request.reason() == null) {
                 throw new AppException(ErrorCode.REASON_REQUIRED, "Reason is required for REJECTED or MAP_DENIED parking lot");
             }
+
             parkingLotEntity.setReason(request.reason());
-            if (request.status() == ParkingLotStatus.PENDING_PAYMENT) {}
+            if (request.status() == ParkingLotStatus.PENDING_PAYMENT) {
+                createInitialOperationalFeePaymentRequest(parkingLotEntity);
+            }
         }
         if (request.is24Hour() != null) parkingLotEntity.setIs24Hour(request.is24Hour());
         if (request.horizonTime() != null) parkingLotEntity.setHorizonTime(request.horizonTime());
@@ -227,6 +232,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
 
         return ParkingLotMapper.INSTANCE.toResponse(parkingLotRepository.save(parkingLotEntity));
     }
+
 
     @Override
     public ParkingLotResponse deleteParkingLot(Long id) {
@@ -397,5 +403,69 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                         && capacity.getIsActive()
                         && capacity.getCapacity() != null
                         && capacity.getCapacity() > 0);
+    }
+
+    private void createInitialOperationalFeePaymentRequest(ParkingLotEntity parkingLot) {
+        log.info("Creating operational fee payment for parking lot: {}, partner: {}, area: {} sqm",
+                parkingLot.getId(), parkingLot.getPartnerId(), parkingLot.getLotSquare());
+
+        try {
+            com.parkmate.client.request.CreateOperationalPaymentRequest request =
+                    com.parkmate.client.request.CreateOperationalPaymentRequest.builder()
+                            .lotId(parkingLot.getId())
+                            .partnerId(parkingLot.getPartnerId())
+                            .lotAreaSqm(parkingLot.getLotSquare())
+                            .build();
+
+            var response = paymentClient.createOperationalPayment(request);
+
+            if (response != null && response.getBody() != null && response.getBody().isSuccess()) {
+                var paymentData = response.getBody().getData();
+                log.info("✓ Operational payment created successfully - paymentId: {}, link: {}, fee: {}",
+                        paymentData.id(), paymentData.paymentLink(), paymentData.totalFee());
+
+                // Payment information is NOT stored in database
+                // It will be fetched from payment-service when needed for the response
+
+            } else {
+                log.error("Failed to create operational payment - response: {}", response);
+                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION,
+                        "Failed to create operational payment for parking lot");
+            }
+
+        } catch (Exception e) {
+            log.error("Error creating operational payment for lot {}", parkingLot.getId(), e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION,
+                    "Failed to create operational payment: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Activates a parking lot after operational fee payment is confirmed
+     * This method is called from payment-service via internal API
+     *
+     * @param lotId The parking lot ID to activate
+     */
+    @Override
+    @Transactional
+    public void activateParkingLot(Long lotId) {
+        log.info("Activating parking lot: {}", lotId);
+
+        ParkingLotEntity parkingLot = parkingLotRepository.findById(lotId)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND));
+
+        // Validate current status
+        if (parkingLot.getStatus() != ParkingLotStatus.PENDING_PAYMENT) {
+            log.warn("Cannot activate parking lot {} - current status: {}",
+                    lotId, parkingLot.getStatus());
+            throw new AppException(ErrorCode.INVALID_PARKING_LOT_STATUS_TRANSITION,
+                    "Parking lot must be in PENDING_PAYMENT status to activate");
+        }
+
+        // Update status to ACTIVE
+        parkingLot.setStatus(ParkingLotStatus.ACTIVE);
+        parkingLotRepository.save(parkingLot);
+
+        log.info("✓ Parking lot {} activated successfully", lotId);
     }
 }

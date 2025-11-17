@@ -1,9 +1,12 @@
 package com.parkmate.payos;
 
-import com.parkmate.client.UserServiceClient;
+import com.parkmate.client.ParkingLotClient;
 import com.parkmate.common.QRCodeGenerator;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
+import com.parkmate.operationalPayment.OperationalPaymentEntity;
+import com.parkmate.operationalPayment.OperationalPaymentRepository;
+import com.parkmate.operationalPayment.enums.PaymentStatus;
 import com.parkmate.payos.dto.PaymentCancelResponse;
 import com.parkmate.payos.dto.PaymentStatusResponse;
 import com.parkmate.wallet.Wallet;
@@ -13,6 +16,7 @@ import com.parkmate.walletTransaction.TransactionStatus;
 import com.parkmate.walletTransaction.TransactionType;
 import com.parkmate.walletTransaction.WalletTransaction;
 import com.parkmate.walletTransaction.WalletTransactionRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,10 +30,12 @@ import vn.payos.model.webhooks.WebhookData;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PayOSServiceImpl implements PayOSService {
 
     private final PayOS payOS;              // For payments (top-up)
@@ -38,24 +44,9 @@ public class PayOSServiceImpl implements PayOSService {
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
     private final QRCodeGenerator qrCodeGenerator;
-    private final UserServiceClient userServiceClient;
+    private final OperationalPaymentRepository operationalPaymentRepository;
+    private final ParkingLotClient parkingLotClient;
 
-    public PayOSServiceImpl(
-            PayOS payOS,
-            PayOS payOSPayout,
-            PayOSConfig payOSConfig,
-            WalletRepository walletRepository,
-            WalletTransactionRepository walletTransactionRepository,
-            QRCodeGenerator qrCodeGenerator,
-            UserServiceClient userServiceClient) {
-        this.payOS = payOS;
-        this.payOSPayout = payOSPayout;
-        this.payOSConfig = payOSConfig;
-        this.walletRepository = walletRepository;
-        this.walletTransactionRepository = walletTransactionRepository;
-        this.qrCodeGenerator = qrCodeGenerator;
-        this.userServiceClient = userServiceClient;
-    }
 
     private final String TOP_UP_DESCRIPTION = "TOP UP WALLET";
 
@@ -75,21 +66,17 @@ public class PayOSServiceImpl implements PayOSService {
 
             Long userId = Long.parseLong(userHeadId);
 
-            // Find MEMBER wallet (TOP_UP is always for member wallet)
             Wallet wallet = walletRepository.findByHolderIdAndWalletOwner(userId, WalletOwner.MEMBER)
                     .orElseThrow(() -> new IllegalArgumentException("Member wallet not found for user: " + userId));
 
-            // Generate unique orderCode
             long orderCode = System.currentTimeMillis();
 
-            // Create item data (required by PayOS)
             PaymentLinkItem item = PaymentLinkItem.builder()
                     .name("Top up wallet")
                     .quantity(1)
                     .price(amount)
                     .build();
 
-            // Create payment link request
             CreatePaymentLinkRequest request = CreatePaymentLinkRequest.builder()
                     .orderCode(orderCode)
                     .amount(amount)
@@ -138,6 +125,72 @@ public class PayOSServiceImpl implements PayOSService {
 
     @Override
     @Transactional
+    public CreatePaymentLinkResponse createOperationalFeePayment(Long operationalPaymentId, Long lotId, Long amount) {
+        try {
+            log.info("Creating operational fee payment - paymentId: {}, lotId: {}, amount: {}",
+                    operationalPaymentId, lotId, amount);
+
+            // Validate
+            if (operationalPaymentId == null) {
+                throw new IllegalArgumentException("Invalid operational payment ID");
+            }
+            if (lotId == null) {
+                throw new IllegalArgumentException("Invalid lot ID");
+            }
+            if (amount == null || amount < 1000) {
+                throw new AppException(ErrorCode.PAYOS_INVALID_AMOUNT);
+            }
+
+            // Generate unique orderCode using timestamp and payment ID
+            long orderCode = System.currentTimeMillis();
+
+            // Create item data for PayOS
+            PaymentLinkItem item = PaymentLinkItem.builder()
+                    .name(String.format("Operational fee - Lot #%d", lotId))
+                    .quantity(1)
+                    .price(amount)
+                    .build();
+
+            // Create payment link request
+            CreatePaymentLinkRequest request = CreatePaymentLinkRequest.builder()
+                    .orderCode(orderCode)
+                    .amount(amount)
+                    .description(String.format("Operational fee payment for parking lot #%d", lotId))
+                    .items(List.of(item))
+                    .returnUrl(payOSConfig.getReturnUrl())
+                    .cancelUrl(payOSConfig.getCancelUrl())
+                    .build();
+
+            // Create payment link with PayOS
+            CreatePaymentLinkResponse response = payOS.paymentRequests().create(request);
+
+            log.info("Created PayOS operational payment - orderCode: {}, checkoutUrl: {}",
+                    orderCode, response.getCheckoutUrl());
+
+            // Generate QR code
+            String qrBase64;
+            try {
+                String vietQRString = response.getQrCode();
+                qrBase64 = qrCodeGenerator.generateQRCodeBase64(vietQRString);
+                log.info("QR code generated successfully for operational payment order: {}",
+                        response.getOrderCode());
+            } catch (Exception e) {
+                log.error("Failed to generate QR code for operational payment", e);
+                qrBase64 = response.getQrCode();
+            }
+            response.setQrCode(qrBase64);
+
+            return response;
+
+        } catch (Exception e) {
+            log.error("Error creating PayOS operational fee payment for lot: {}, amount: {}",
+                    lotId, amount, e);
+            throw new AppException(ErrorCode.PAYOS_PAYMENT_CREATION_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional
     public Boolean processWebhook(String webhookBody, String signature) {
         try {
             // Log raw webhook for debugging
@@ -150,18 +203,14 @@ public class PayOSServiceImpl implements PayOSService {
             log.info("PayOS webhook verified - orderCode: {}, code: {}, amount: {}",
                     webhookData.getOrderCode(), webhookData.getCode(), webhookData.getAmount());
 
-            // Find transaction by orderCode
+            // Find transaction by orderCode (wallet transaction)
             WalletTransaction transaction = walletTransactionRepository
                     .findByExternalTransactionId(String.valueOf(webhookData.getOrderCode()))
                     .orElse(null);
 
-            // Handle test webhooks or transactions not found
+            // If not a wallet transaction, check if it's an operational payment
             if (transaction == null) {
-                log.warn("Transaction not found for orderCode: {} - This might be a test webhook or invalid order",
-                        webhookData.getOrderCode());
-                // Return true to acknowledge test webhooks without throwing error
-                // PayOS expects 200 OK even for test webhooks
-                return true;
+                return processOperationalPaymentWebhook(webhookData, webhookBody);
             }
 
             if (transaction.getStatus() == TransactionStatus.COMPLETED) {
@@ -362,17 +411,27 @@ public class PayOSServiceImpl implements PayOSService {
     @Override
     @Transactional
     public void checkPendingPayouts() {
+        // Check both PENDING and PROCESSING payouts
         List<WalletTransaction> pendingPayouts = walletTransactionRepository
                 .findByTransactionTypeAndStatus(TransactionType.CASH_OUT, TransactionStatus.PENDING);
 
-        if (pendingPayouts.isEmpty()) {
+        List<WalletTransaction> processingPayouts = walletTransactionRepository
+                .findByTransactionTypeAndStatus(TransactionType.CASH_OUT, TransactionStatus.PROCESSING);
+
+        // Combine both lists
+        List<WalletTransaction> allPendingPayouts = new ArrayList<>();
+        allPendingPayouts.addAll(pendingPayouts);
+        allPendingPayouts.addAll(processingPayouts);
+
+        if (allPendingPayouts.isEmpty()) {
             log.debug("No pending payouts to check");
             return;
         }
 
-        log.info("Checking {} pending payout(s)", pendingPayouts.size());
+        log.info("Checking {} pending/processing payout(s) - PENDING: {}, PROCESSING: {}",
+                allPendingPayouts.size(), pendingPayouts.size(), processingPayouts.size());
 
-        for (WalletTransaction transaction : pendingPayouts) {
+        for (WalletTransaction transaction : allPendingPayouts) {
             try {
                 checkPayoutStatus(transaction);
             } catch (Exception e) {
@@ -386,14 +445,27 @@ public class PayOSServiceImpl implements PayOSService {
      */
     private void checkPayoutStatus(WalletTransaction transaction) {
         try {
-            String payoutId = transaction.getExternalTransactionId();
+            log.debug("Checking payout status - transactionId: {}, metadata: '{}'",
+                    transaction.getId(), transaction.getMetadata());
+
+            // Try to get PayOS batch ID from metadata first (for new transactions)
+            String payoutId = extractPayoutIdFromMetadata(transaction.getMetadata());
+
+            // If no payoutId in metadata, use referenceId (for old transactions)
+            if (payoutId == null) {
+                payoutId = transaction.getExternalTransactionId();
+                log.info("No batch ID in metadata - Using referenceId (mã chi) for status check: {}", payoutId);
+            } else {
+                log.info("Found batch ID in metadata - Using payoutId for status check: {}", payoutId);
+            }
+
             Payout payout = getPayout(payoutId);
 
             // PayOS returns transactions array, get the first transaction state
             String approvalState = String.valueOf(payout.getApprovalState());
             String transactionState = null;
 
-            if (payout.getTransactions() != null && !payout.getTransactions().isEmpty()) {
+            if (!payout.getTransactions().isEmpty()) {
                 transactionState = String.valueOf(payout.getTransactions().get(0).getState());
             }
 
@@ -420,8 +492,93 @@ public class PayOSServiceImpl implements PayOSService {
 
             walletTransactionRepository.save(transaction);
 
+        } catch (AppException e) {
+            // If payout not found (old transactions without batch ID), check if it's been too long
+            if (e.getErrorCode() == ErrorCode.PAYOUT_STATUS_CHECK_FAILED) {
+                handleOldTransactionWithoutBatchId(transaction);
+            } else {
+                log.error("Error checking payout status for transaction: {}", transaction.getId(), e);
+            }
+        } catch (vn.payos.exception.APIException e) {
+            // PayOS API error - likely payout not found (using referenceId instead of batch ID)
+            log.warn("PayOS API error: {} - Handling as old transaction", e.getMessage());
+            handleOldTransactionWithoutBatchId(transaction);
         } catch (Exception e) {
             log.error("Error checking payout status for transaction: {}", transaction.getId(), e);
+        }
+    }
+
+    /**
+     * Handle old transactions that don't have batch ID in metadata
+     * If transaction has been PROCESSING for more than 1 hour, assume it succeeded
+     */
+    private void handleOldTransactionWithoutBatchId(WalletTransaction transaction) {
+        log.warn("Cannot check payout status for old transaction without batch ID: {}, referenceId: {}",
+                transaction.getId(), transaction.getExternalTransactionId());
+
+        // If transaction has been processing for more than 1 hour, likely succeeded
+        if (transaction.getCreatedAt() != null) {
+            long minutesElapsed = java.time.Duration.between(transaction.getCreatedAt(), LocalDateTime.now()).toMinutes();
+
+            if (minutesElapsed >= 60) {
+                // Assume success after 1 hour
+                transaction.setStatus(TransactionStatus.COMPLETED);
+                transaction.setProcessedAt(LocalDateTime.now());
+
+                String note = String.format(
+                        "{\"note\":\"Auto-completed old transaction after %d minutes (no batch ID for status check)\"}",
+                        minutesElapsed
+                );
+                transaction.setMetadata(note);
+
+                walletTransactionRepository.save(transaction);
+
+                log.info("✓ Auto-completed old payout transaction - referenceId: {}, elapsed: {} minutes",
+                        transaction.getExternalTransactionId(), minutesElapsed);
+            } else {
+                log.info("Old transaction still within 1 hour window - referenceId: {}, elapsed: {} minutes",
+                        transaction.getExternalTransactionId(), minutesElapsed);
+            }
+        }
+    }
+
+    /**
+     * Helper method to extract PayOS batch ID from JSON metadata
+     */
+    private String extractPayoutIdFromMetadata(String metadata) {
+        if (metadata == null || metadata.isEmpty()) {
+            return null;
+        }
+
+        try {
+            // Simple JSON parsing - extract "payoutId" value
+            // Format: {"payoutId":"batch_xxx",...} or {"payoutId": "batch_xxx",...}
+            // Handle both with and without space after colon
+
+            int keyIndex = metadata.indexOf("\"payoutId\"");
+            if (keyIndex == -1) {
+                return null;
+            }
+
+            // Find the opening quote of the value
+            int startQuote = metadata.indexOf("\"", keyIndex + "\"payoutId\"".length());
+            if (startQuote == -1) {
+                return null;
+            }
+
+            // Find the closing quote
+            int endQuote = metadata.indexOf("\"", startQuote + 1);
+            if (endQuote == -1) {
+                return null;
+            }
+
+            String payoutId = metadata.substring(startQuote + 1, endQuote);
+            log.debug("Extracted batch ID from metadata: {}", payoutId);
+            return payoutId;
+
+        } catch (Exception e) {
+            log.error("Failed to extract payoutId from metadata: {}", metadata, e);
+            return null;
         }
     }
 
@@ -443,5 +600,66 @@ public class PayOSServiceImpl implements PayOSService {
 
         log.info("Refunded failed payout to wallet - walletId: {}, amount: {}, balance: {} -> {}",
                 wallet.getId(), transaction.getAmount(), oldBalance, wallet.getBalance());
+    }
+
+    /**
+     * Helper method to process operational payment webhook
+     */
+    private Boolean processOperationalPaymentWebhook(WebhookData webhookData, String webhookBody) {
+        log.info("Processing operational payment webhook - orderCode: {}", webhookData.getOrderCode());
+
+        // Find operational payment by payment transaction ID
+        OperationalPaymentEntity payment = operationalPaymentRepository
+                .findByPaymentTransactionId(String.valueOf(webhookData.getOrderCode()))
+                .orElse(null);
+
+        if (payment == null) {
+            log.warn("Operational payment not found for orderCode: {} - This might be a test webhook",
+                    webhookData.getOrderCode());
+            return true;
+        }
+
+        // Check if already processed
+        if (payment.getPaymentStatus() == PaymentStatus.PAID) {
+            log.info("Operational payment already marked as PAID - orderCode: {}, ignoring duplicate webhook",
+                    webhookData.getOrderCode());
+            return true;
+        }
+
+        // Check if payment is successful (PayOS code "00" = success)
+        if ("00".equals(webhookData.getCode())) {
+            log.info("✓ Operational payment webhook successful - lotId: {}, amount: {}",
+                    payment.getLotId(), payment.getTotalFee());
+
+            // Update payment status to PAID directly (avoid circular dependency)
+            payment.setPaymentStatus(PaymentStatus.PAID);
+            payment.setPaidAt(LocalDateTime.now());
+            payment.setNotes("Payment confirmed via PayOS webhook");
+            operationalPaymentRepository.save(payment);
+
+            log.info("Operational payment {} confirmed successfully for lot: {}",
+                    payment.getId(), payment.getLotId());
+
+            // Call parking-lot-service to activate the lot
+            try {
+                parkingLotClient.activateParkingLot(payment.getLotId());
+                log.info("Successfully activated parking lot: {}", payment.getLotId());
+            } catch (Exception e) {
+                log.error("Failed to activate parking lot {} after payment confirmation", payment.getLotId(), e);
+                // Payment is still marked as PAID, but lot activation failed
+                // This should trigger manual intervention or retry mechanism
+            }
+
+        } else {
+            log.warn("✗ Operational payment webhook failed - lotId: {}, code: {}, desc: {}",
+                    payment.getLotId(), webhookData.getCode(), webhookData.getDesc());
+
+            // Mark payment as cancelled directly
+            payment.setPaymentStatus(PaymentStatus.CANCELLED);
+            payment.setNotes("Payment failed via PayOS webhook: " + webhookData.getDesc());
+            operationalPaymentRepository.save(payment);
+        }
+
+        return true;
     }
 }

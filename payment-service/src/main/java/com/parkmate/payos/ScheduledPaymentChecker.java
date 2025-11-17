@@ -20,7 +20,7 @@ import java.util.List;
  *
  * Process:
  * 1. Every 5 minutes, check all PENDING TOP_UP transactions
- * 2. For transactions older than 15 minutes, mark as EXPIRED
+ * 2. For transactions older than 15 minutes, mark as FAILED (expired/timeout)
  * 3. Webhook should handle successful payments before expiration
  *
  * Note: We rely on webhook for successful payments. If webhook is missed and payment is actually PAID,
@@ -65,8 +65,8 @@ public class ScheduledPaymentChecker {
 
                     // Check transactions older than configured minutes (default 15)
                     if (minutesElapsed >= expirationMinutes) {
-                        // Mark as expired
-                        transaction.setStatus(TransactionStatus.EXPIRED);
+                        // Mark as FAILED (expired/timeout)
+                        transaction.setStatus(TransactionStatus.FAILED);
                         transaction.setProcessedAt(now);
 
                         // Add metadata about expiration

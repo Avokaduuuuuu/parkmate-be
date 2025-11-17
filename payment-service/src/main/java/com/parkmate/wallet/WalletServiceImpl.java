@@ -279,8 +279,13 @@ public class WalletServiceImpl implements WalletService {
 
             log.info("✓ PayOS payout created successfully - referenceId: {}, payoutId: {}", referenceId, payout.getId());
 
+            // Store PayOS batch ID in metadata for status checking
+            String metadata = String.format("{\"payoutId\":\"%s\",\"referenceId\":\"%s\"}",
+                    payout.getId(), referenceId);
+
             // Update transaction status to PROCESSING
             transaction.setStatus(TransactionStatus.PROCESSING);
+            transaction.setMetadata(metadata);
             walletTransactionRepository.save(transaction);
 
             return WithdrawalResponse.builder()

@@ -70,6 +70,9 @@ public class SecurityConfig {
             "/api/v1/payment-service/payos/return",
             "/api/v1/payment-service/payos/cancel",
 
+            // Internal service-to-service endpoints (bypassing gateway auth, authenticated at service level)
+            "/internal/**",
+
             // Sync API
             "/api/v1/parking-service/pricing-rules/{lotId}/sync",
             "/api/v1/parking-service/pricing-rules/sync",

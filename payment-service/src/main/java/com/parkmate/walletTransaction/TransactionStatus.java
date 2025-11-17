@@ -8,7 +8,7 @@ public enum TransactionStatus {
     PENDING,         // Đang chờ xử lý
     PROCESSING,      // Đang xử lý
     COMPLETED,       // Hoàn thành
-    FAILED,          // Thất bại
+    FAILED,          // Thất bại (includes expired/timeout cases)
     CANCELLED,       // Đã hủy
-    EXPIRED          // Hết hạn
+    REVERSED         // Hoàn trả
 }
