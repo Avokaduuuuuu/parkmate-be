@@ -13,5 +13,6 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SubscriptionStatisticResponse {
     BigDecimal totalRevenue;
+    Double totalRevenueGrowthRate;
     List<UserSubscriptionStatisticResponse> userSubscriptionStatistics;
 }

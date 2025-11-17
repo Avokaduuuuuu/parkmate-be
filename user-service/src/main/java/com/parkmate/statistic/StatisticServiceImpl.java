@@ -43,6 +43,7 @@ public class StatisticServiceImpl implements StatisticService {
                 .map(usp -> UserSubscriptionStatisticResponse.builder()
                         .subscriptionId(usp.getId())
                         .total(usp.getTotal())
+                        .totalAmount(usp.getTotalAmount())
                         .build())
                 .toList();
 
