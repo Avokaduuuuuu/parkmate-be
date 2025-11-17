@@ -82,8 +82,9 @@ public enum ErrorCode {
     WALLET_DEDUCTION_FAILED(3312, "Failed to deduct amount from wallet: {0}", HttpStatus.INTERNAL_SERVER_ERROR),
 
     INVALID_BANK_ACCOUNT(3313, "Invalid bank account information", HttpStatus.BAD_REQUEST),
-    ;
+    OPERATIONAL_FEE_CONFIG_NOT_FOUND(3901, "Operational fee config not found", HttpStatus.NOT_FOUND),;
 
+    ;
     private final int code;
     private final String message;
     private final HttpStatus httpStatus;
