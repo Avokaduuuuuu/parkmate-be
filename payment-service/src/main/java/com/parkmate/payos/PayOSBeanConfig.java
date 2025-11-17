@@ -24,17 +24,27 @@ public class PayOSBeanConfig {
     @Bean(name = "payOSPayout")
     public PayOS payOSPayout() {
         // For Payout (withdrawal) operations
+        String payoutClientId = payOSConfig.getPayoutClientId();
         String payoutApiKey = payOSConfig.getPayoutApiKey();
+        String payoutChecksumKey = payOSConfig.getPayoutChecksumKey();
 
-        // Fallback to payment API key if payout key not configured
+        // Fallback to payment config if payout config not provided
+        if (payoutClientId == null || payoutClientId.isEmpty()) {
+            payoutClientId = payOSConfig.getClientId();
+        }
+
         if (payoutApiKey == null || payoutApiKey.isEmpty() || "YOUR_PAYOUT_API_KEY_HERE".equals(payoutApiKey)) {
             payoutApiKey = payOSConfig.getApiKey();
         }
 
+        if (payoutChecksumKey == null || payoutChecksumKey.isEmpty()) {
+            payoutChecksumKey = payOSConfig.getChecksumKey();
+        }
+
         return new PayOS(
-                payOSConfig.getClientId(),
+                payoutClientId,
                 payoutApiKey,
-                payOSConfig.getChecksumKey()
+                payoutChecksumKey
         );
     }
 

@@ -1,11 +1,10 @@
 package com.parkmate.walletTransaction;
 
 public enum TransactionType {
-    TOP_UP,
+    TOP_UP,          // Nạp tiền vào ví
     CASH_OUT,        // Rút tiền (withdrawal)
-    DEDUCTION,       // Trừ tiền (đặt cọc, thanh toán)
+    DEDUCTION,       // Trừ tiền (đặt cọc, thanh toán, subscription)
     REFUND,          // Hoàn tiền
     REVERSAL,        // Đảo ngược giao dịch
-    PENALTY,
-    SUBSCRIPTION
+    PENALTY          // Phạt
 }

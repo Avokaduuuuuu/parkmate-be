@@ -13,7 +13,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "wallet")
+@Table(name = "wallet",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_wallet_holder_owner",
+        columnNames = {"holder_id", "wallet_owner"}
+    )
+)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
@@ -27,7 +32,7 @@ public class Wallet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @Column(name = "holder_id", nullable = false, unique = true)
+    @Column(name = "holder_id", nullable = false)
     Long holderId;
 
     @ColumnDefault("'MEMBER'")

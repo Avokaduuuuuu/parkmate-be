@@ -52,15 +52,21 @@ public class WalletServiceImpl implements WalletService {
         // Check if user exists in user-service
         validateUserId(createWalletRequest.getUserId());
 
-        // Check if wallet already exists for this user
-        if (walletRepository.existsByHolderId(createWalletRequest.getUserId())) {
-            throw new AppException(ErrorCode.WALLET_ALREADY_EXISTS, createWalletRequest.getUserId());
+        // Determine wallet owner type
+        WalletOwner walletOwner = createWalletRequest.getWalletOwnerType().equals("PARTNER")
+                ? WalletOwner.PARTNER
+                : WalletOwner.MEMBER;
+
+        // Check if wallet already exists for this user AND wallet type
+        if (walletRepository.findByHolderIdAndWalletOwner(createWalletRequest.getUserId(), walletOwner).isPresent()) {
+            throw new AppException(ErrorCode.WALLET_ALREADY_EXISTS,
+                    String.format("userId: %d, type: %s", createWalletRequest.getUserId(), walletOwner));
         }
 
         Wallet wallet = Wallet.builder()
                 .holderId(createWalletRequest.getUserId())
                 .balance(BigDecimal.valueOf(0))
-                .walletOwner(createWalletRequest.getWalletOwnerType().equals("PARTNER") ? WalletOwner.PARTNER : WalletOwner.MEMBER)
+                .walletOwner(walletOwner)
                 .currency("VND")
                 .isActive(true)
                 .build();
@@ -187,14 +193,22 @@ public class WalletServiceImpl implements WalletService {
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
 
-        // 2. Find wallet
-        Wallet wallet = walletRepository.findByHolderId(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND, userId));
+        // 2. Find PARTNER wallet (withdrawal is for partners only)
+        Wallet wallet = walletRepository.findByHolderIdAndWalletOwner(userId, WalletOwner.PARTNER)
+                .orElseThrow(() -> {
+                    log.error("PARTNER wallet not found for userId: {}. User may not be a partner or wallet not created.", userId);
+                    return new AppException(ErrorCode.WALLET_NOT_FOUND, userId);
+                });
 
         // 3. Validate wallet is active
         if (!wallet.isActive()) {
+            log.error("PARTNER wallet found but INACTIVE - userId: {}, walletId: {}, isActive: {}",
+                    userId, wallet.getId(), false);
             throw new AppException(ErrorCode.WALLET_IS_INACTIVE);
         }
+
+        log.debug("PARTNER wallet validated - userId: {}, walletId: {}, balance: {}, isActive: {}",
+                userId, wallet.getId(), wallet.getBalance(), true);
 
         BigDecimal amount = request.getAmount();
         BigDecimal oldBalance = wallet.getBalance();
