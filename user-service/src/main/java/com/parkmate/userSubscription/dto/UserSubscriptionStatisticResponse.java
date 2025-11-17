@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
+
 @Schema(description = "Statistic for user subscription")
 @Data
 @AllArgsConstructor
@@ -13,4 +15,5 @@ import lombok.experimental.FieldDefaults;
 public class UserSubscriptionStatisticResponse {
     Long subscriptionId;
     Long total;
+    BigDecimal totalAmount;
 }

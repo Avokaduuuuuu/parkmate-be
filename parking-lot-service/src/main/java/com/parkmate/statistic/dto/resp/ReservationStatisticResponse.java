@@ -17,4 +17,5 @@ public class ReservationStatisticResponse {
     Long cancelledCount;
     Long expiredCount;
     BigDecimal totalRevenue;
+    Double totalRevenueGrowthRage;
 }

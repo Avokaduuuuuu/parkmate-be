@@ -3,6 +3,8 @@ package com.parkmate.statistic.dto.resp;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -11,4 +13,5 @@ import lombok.experimental.FieldDefaults;
 public class UserSubscriptionStatisticResponse {
     String packageName;
     Long total;
+    BigDecimal totalAmount;
 }
