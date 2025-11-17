@@ -65,6 +65,7 @@ public class OperationalPaymentServiceImpl implements OperationalPaymentService 
         OperationalPaymentEntity paymentEntity = OperationalPaymentEntity.builder()
                 .lotId(request.lotId())
                 .partnerId(request.partnerId())
+                .feeConfigId(config.getId())
                 .lotAreaSqm(request.lotAreaSqm())
                 .feePerSqm(pricePerSqm)
                 .billingPeriodMonths(config.getBillingPeriodMonths())
@@ -192,6 +193,27 @@ public class OperationalPaymentServiceImpl implements OperationalPaymentService 
             throw new AppException(ErrorCode.INVALID_PAYMENT_DETAILS);
         }
 
+        // Cancel payment on PayOS if paymentTransactionId exists
+        if (payment.getPaymentTransactionId() != null && !payment.getPaymentTransactionId().isEmpty()) {
+            try {
+                Long orderCode = Long.parseLong(payment.getPaymentTransactionId());
+                payOSService.cancelPayment(orderCode);
+                log.info("Successfully cancelled PayOS payment with orderCode: {}", orderCode);
+            } catch (NumberFormatException e) {
+                log.error("Invalid payment transaction ID format: {}", payment.getPaymentTransactionId());
+                throw new AppException(ErrorCode.INVALID_PAYMENT_DETAILS,
+                    "Invalid payment transaction ID format");
+            } catch (Exception e) {
+                log.error("Failed to cancel PayOS payment: {}", e.getMessage(), e);
+                throw new AppException(ErrorCode.CANCEL_FAILED,
+                    "Failed to cancel payment with PayOS: " + e.getMessage());
+            }
+        } else {
+            log.warn("No payment transaction ID found for payment {}, skipping PayOS cancellation",
+                payment.getId());
+        }
+
+        // Update database status
         payment.setPaymentStatus(PaymentStatus.CANCELLED);
         payment.setNotes("Payment cancelled by user or system");
         operationalPaymentRepository.save(payment);

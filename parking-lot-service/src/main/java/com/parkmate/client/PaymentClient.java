@@ -29,10 +29,11 @@ public interface PaymentClient {
     /**
      * Creates an operational fee payment for parking lot activation
      * This is called when a partner configures their parking lot and triggers payment
+     * Uses internal endpoint to avoid requiring X-User-Id header
      *
      * @param request Contains lotId, partnerId, and lotAreaSqm
      * @return Payment response with payment link and QR code
      */
-    @PostMapping("/api/v1/payment-service/operational-payments")
+    @PostMapping("/api/v1/internal/operational-payments")
     ResponseEntity<ApiResponse<OperationalPaymentResponse>> createOperationalPayment(@RequestBody CreateOperationalPaymentRequest request);
 }
