@@ -23,9 +23,9 @@ public class StatisticController {
     @Operation(
             summary = "Get parking lot statistics",
             description = """
-                Retrieve the revenue, completed sessions, and active sessions 
-                for a specific parking lot within a given time range.
-                """,
+                    Retrieve the revenue, completed sessions, and active sessions 
+                    for a specific parking lot within a given time range.
+                    """,
             parameters = {
                     @Parameter(
                             name = "lotId",

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface PaymentClient {
 
     @PostMapping("/api/v1/payment-service/wallets")
-    ResponseEntity<ApiResponse<WalletResponse>> createPayment(@RequestBody CreateWalletRequest request);
+    ResponseEntity<ApiResponse<WalletResponse>> createWallet(@RequestBody CreateWalletRequest request);
 
 
     @GetMapping("/api/v1/payment-service/wallets")

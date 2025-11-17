@@ -31,6 +31,7 @@ public abstract class VehicleMapper {
     @Mapping(target = "vehiclePhotoUrl", source = "vehicleImage", qualifiedByName = "generatePresignedUrl")
     @Mapping(target = "inReservation", ignore = true)
     @Mapping(target = "hasSubscriptionInThisParkingLot", ignore = true)
+    @Mapping(target = "supported", ignore = true)
     public abstract VehicleResponse toDTO(Vehicle vehicle);
 
     @Named("generatePresignedUrl")

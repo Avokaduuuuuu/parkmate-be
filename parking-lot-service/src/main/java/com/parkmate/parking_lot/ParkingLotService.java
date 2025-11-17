@@ -39,4 +39,6 @@ public interface ParkingLotService {
 //    ParkingLotAvailableReservationSpotResponse countAvailableSpot(
 //            Long id, LocalDateTime reservedFrom, Integer assumedStayMinute, VehicleType vehicleType, Boolean isElectric
 //    );
+
+    boolean supportsVehicleType(Long parkingLotId, VehicleType vehicleType);
 }

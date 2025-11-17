@@ -6,7 +6,7 @@ import com.querydsl.core.types.Predicate;
 
 public class TransactionSpecification {
 
-    public static Predicate buildPredicate(TransactionSearchCriteria criteria, Long userId) {
+    public static Predicate buildPredicate(TransactionSearchCriteria criteria, Long walletId) {
         QWalletTransaction transaction = QWalletTransaction.walletTransaction;
         BooleanBuilder builder = new BooleanBuilder();
 
@@ -14,9 +14,9 @@ public class TransactionSpecification {
             return builder;
         }
 
-        // Filter by user ID from header (applies when ownedByMe is true)
-        if (userId != null && Boolean.TRUE.equals(criteria.getOwnedByMe())) {
-            builder.and(transaction.wallet.holderId.eq(userId));
+        // Filter by wallet ID from header (applies when ownedByMe is true)
+        if (walletId != null && Boolean.TRUE.equals(criteria.getOwnedByMe())) {
+            builder.and(transaction.walletId.eq(walletId));
         }
         // Filter by specific user ID (only when ownedByMe is explicitly false - for admin use)
         else if (criteria.getUserId() != null && Boolean.FALSE.equals(criteria.getOwnedByMe())) {
@@ -26,9 +26,9 @@ public class TransactionSpecification {
         else if (criteria.getUserId() != null && criteria.getOwnedByMe() == null) {
             builder.and(transaction.wallet.holderId.eq(criteria.getUserId()));
         }
-        // Default: when userId from header is present and ownedByMe is null, filter by header userId
-        else if (userId != null && criteria.getOwnedByMe() == null) {
-            builder.and(transaction.wallet.holderId.eq(userId));
+        // Default: when walletId from header is present and ownedByMe is null, filter by header walletId
+        else if (walletId != null && criteria.getOwnedByMe() == null) {
+            builder.and(transaction.walletId.eq(walletId));
         }
 
         // Filter by transaction ID
@@ -36,7 +36,7 @@ public class TransactionSpecification {
             builder.and(transaction.id.eq(criteria.getId()));
         }
 
-        // Filter by wallet ID
+        // Filter by wallet ID from criteria
         if (criteria.getWalletId() != null) {
             builder.and(transaction.walletId.eq(criteria.getWalletId()));
         }

@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -40,7 +39,7 @@ public class UserSubscriptionResponse {
     private UserSubscriptionStatus status;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Instant cancelledAt;
+    private LocalDateTime cancelledAt;
 
     private String cancellationReason;
     private BigDecimal refundAmount;
@@ -49,7 +48,7 @@ public class UserSubscriptionResponse {
     private LocalDateTime createdAt;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Instant updatedAt;
+    private LocalDateTime updatedAt;
 
     private String qrCode;
     private Long daysRemaining;

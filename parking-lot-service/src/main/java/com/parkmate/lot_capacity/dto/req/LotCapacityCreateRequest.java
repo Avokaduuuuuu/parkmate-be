@@ -22,7 +22,7 @@ public record LotCapacityCreateRequest(
         @Schema(
                 description = "Type of vehicle that can use these parking spots",
                 example = "CAR_UP_TO_9_SEATS",
-                allowableValues = {"BIKE", "MOTORBIKE","CAR_UP_TO_9_SEATS", "OTHER"},
+                allowableValues = {"BIKE", "MOTORBIKE", "CAR_UP_TO_9_SEATS", "OTHER"},
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         VehicleType vehicleType,

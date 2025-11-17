@@ -2,6 +2,8 @@ package com.parkmate.wallet;
 
 import com.parkmate.wallet.dto.CreateWalletRequest;
 import com.parkmate.wallet.dto.WalletResponse;
+import com.parkmate.wallet.dto.WithdrawalRequest;
+import com.parkmate.wallet.dto.WithdrawalResponse;
 import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
@@ -14,7 +16,7 @@ public interface WalletService {
 
     WalletResponse getById(Long id);
 
-    WalletResponse getByUserId(String userHeaderId);
+    WalletResponse getByUserId(String userHeaderId, String role);
 
     Page<WalletResponse> getAll(int page, int size, String sortBy, String sortOrder);
 
@@ -24,5 +26,6 @@ public interface WalletService {
 
     Map<Long, BigDecimal> getUserWallets(List<Long> userIds);
 
+    WithdrawalResponse requestWithdrawal(String userHeaderId, WithdrawalRequest request);
 
 }

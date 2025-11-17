@@ -24,6 +24,8 @@ public interface WalletRepository extends JpaRepository<Wallet, Long> {
     BigDecimal getBalanceByUserId(@NonNull Long userId);
 
     List<Wallet> findByHolderIdIn(@NonNull List<Long> userIds);
+
+    Optional<Wallet> findByHolderIdAndWalletOwner(Long holderId, WalletOwner walletOwner);
 }
 
 

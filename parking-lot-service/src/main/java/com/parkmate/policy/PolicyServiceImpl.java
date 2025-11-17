@@ -14,7 +14,7 @@ import java.util.List;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class PolicyServiceImpl implements PolicyService{
+public class PolicyServiceImpl implements PolicyService {
 
     private final PolicyRepository policyRepository;
 

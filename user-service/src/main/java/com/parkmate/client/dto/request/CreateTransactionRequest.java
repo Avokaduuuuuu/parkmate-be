@@ -16,6 +16,7 @@ public class CreateTransactionRequest {
 
     private Long userId;
     private BigDecimal amount;
+    private Long partnerId;
     private String action;           // "DEDUCT", "DEPOSIT", "REFUND" (String thay vì enum)
     private String transactionType;  // "DEBIT", "CREDIT"
     private LocalDateTime processedAt;
