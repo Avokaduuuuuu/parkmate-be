@@ -1,6 +1,6 @@
 package com.parkmate.client;
 
-import com.parkmate.client.dto.resp.UserServiceStatistic;
+import com.parkmate.client.response.UserServiceStatistic;
 import com.parkmate.common.ApiResponse;
 import com.parkmate.common.enums.VehicleType;
 import org.springframework.cloud.openfeign.FeignClient;

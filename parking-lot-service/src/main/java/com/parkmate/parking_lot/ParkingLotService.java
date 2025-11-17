@@ -41,4 +41,11 @@ public interface ParkingLotService {
 //    );
 
     boolean supportsVehicleType(Long parkingLotId, VehicleType vehicleType);
+
+    /**
+     * Activates a parking lot (called from payment-service after payment confirmation)
+     *
+     * @param lotId The parking lot ID to activate
+     */
+    void activateParkingLot(Long lotId);
 }

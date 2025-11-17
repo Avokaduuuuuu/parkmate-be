@@ -1,8 +1,8 @@
 package com.parkmate.statistic;
 
 import com.parkmate.client.UserClient;
-import com.parkmate.client.dto.resp.UserServiceStatistic;
-import com.parkmate.client.dto.resp.UserSubscriptionStatistic;
+import com.parkmate.client.response.UserServiceStatistic;
+import com.parkmate.client.response.UserSubscriptionStatistic;
 import com.parkmate.session.SessionRepository;
 import com.parkmate.statistic.dto.resp.*;
 import com.parkmate.subscription.SubscriptionEntity;

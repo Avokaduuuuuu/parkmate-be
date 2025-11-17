@@ -10,6 +10,8 @@ import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 public interface PayOSService {
     CreatePaymentLinkResponse createPayment(String userId, Long amount);
 
+    CreatePaymentLinkResponse createOperationalFeePayment(Long operationalPaymentId, Long lotId, Long amount);
+
     Boolean processWebhook(String webhookBody, String signature);
 
     Boolean processPayoutWebhook(String webhookBody, String signature);
