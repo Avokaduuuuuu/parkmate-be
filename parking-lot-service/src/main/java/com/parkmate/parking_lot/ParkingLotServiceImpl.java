@@ -219,6 +219,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                 throw new AppException(ErrorCode.REASON_REQUIRED, "Reason is required for REJECTED or MAP_DENIED parking lot");
             }
             parkingLotEntity.setReason(request.reason());
+            if (request.status() == ParkingLotStatus.PENDING_PAYMENT) {}
         }
         if (request.is24Hour() != null) parkingLotEntity.setIs24Hour(request.is24Hour());
         if (request.horizonTime() != null) parkingLotEntity.setHorizonTime(request.horizonTime());
