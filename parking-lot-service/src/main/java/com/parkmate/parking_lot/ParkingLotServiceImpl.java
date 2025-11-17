@@ -107,7 +107,6 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         Long partnerId = Long.parseLong(userHeaderId);
         ParkingLotEntity parkingLotEntity = ParkingLotMapper.INSTANCE.toEntity(request);
         parkingLotEntity.setLotSquare(request.lotSquare());
-        parkingLotEntity.setRegistrationCost(0.0);
         parkingLotEntity.setIs24Hour(request.is24Hour());
         parkingLotEntity.setHorizonTime(request.horizonTime());
         parkingLotEntity.setPartnerId(partnerId);
@@ -205,6 +204,8 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         ParkingLotEntity parkingLotEntity = parkingLotRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND));
 
+        com.parkmate.client.response.OperationalPaymentResponse paymentResponse = null;
+
         if (request.name() != null) parkingLotEntity.setName(request.name());
         if (request.city() != null) parkingLotEntity.setCity(request.city());
         if (request.streetAddress() != null) parkingLotEntity.setStreetAddress(request.streetAddress());
@@ -223,14 +224,26 @@ public class ParkingLotServiceImpl implements ParkingLotService {
 
             parkingLotEntity.setReason(request.reason());
             if (request.status() == ParkingLotStatus.PENDING_PAYMENT) {
-                createInitialOperationalFeePaymentRequest(parkingLotEntity);
+                paymentResponse = createInitialOperationalFeePaymentRequest(parkingLotEntity);
             }
         }
         if (request.is24Hour() != null) parkingLotEntity.setIs24Hour(request.is24Hour());
         if (request.horizonTime() != null) parkingLotEntity.setHorizonTime(request.horizonTime());
 
+        ParkingLotResponse response = ParkingLotMapper.INSTANCE.toResponse(parkingLotRepository.save(parkingLotEntity));
 
-        return ParkingLotMapper.INSTANCE.toResponse(parkingLotRepository.save(parkingLotEntity));
+        // Populate payment information if payment was created
+        if (paymentResponse != null) {
+            response.setPaymentUrl(paymentResponse.paymentLink());
+            response.setPaymentQrCode(paymentResponse.qrCode());
+            response.setOperationalPaymentId(paymentResponse.id());
+            response.setPaymentStatus(paymentResponse.paymentStatus());
+            response.setOperationalFee(paymentResponse.totalFee());
+            response.setPaymentDueDate(paymentResponse.dueDate());
+            response.setPaymentPaidAt(paymentResponse.paidAt());
+        }
+
+        return response;
     }
 
 
@@ -405,7 +418,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                         && capacity.getCapacity() > 0);
     }
 
-    private void createInitialOperationalFeePaymentRequest(ParkingLotEntity parkingLot) {
+    private com.parkmate.client.response.OperationalPaymentResponse createInitialOperationalFeePaymentRequest(ParkingLotEntity parkingLot) {
         log.info("Creating operational fee payment for parking lot: {}, partner: {}, area: {} sqm",
                 parkingLot.getId(), parkingLot.getPartnerId(), parkingLot.getLotSquare());
 
@@ -424,8 +437,8 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                 log.info("✓ Operational payment created successfully - paymentId: {}, link: {}, fee: {}",
                         paymentData.id(), paymentData.paymentLink(), paymentData.totalFee());
 
-                // Payment information is NOT stored in database
-                // It will be fetched from payment-service when needed for the response
+                // Return payment data to be included in the response
+                return paymentData;
 
             } else {
                 log.error("Failed to create operational payment - response: {}", response);

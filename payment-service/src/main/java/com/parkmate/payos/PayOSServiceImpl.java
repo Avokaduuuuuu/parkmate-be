@@ -155,7 +155,7 @@ public class PayOSServiceImpl implements PayOSService {
             CreatePaymentLinkRequest request = CreatePaymentLinkRequest.builder()
                     .orderCode(orderCode)
                     .amount(amount)
-                    .description(String.format("Operational fee payment for parking lot #%d", lotId))
+                    .description(String.format("Lot #%d fee", lotId))
                     .items(List.of(item))
                     .returnUrl(payOSConfig.getReturnUrl())
                     .cancelUrl(payOSConfig.getCancelUrl())

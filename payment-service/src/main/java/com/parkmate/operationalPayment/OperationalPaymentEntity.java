@@ -8,6 +8,7 @@ import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 @Table(name = "lot_operational_payment")
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@EntityListeners(AuditingEntityListener.class)
 public class OperationalPaymentEntity {
 
     @Id
@@ -31,6 +33,9 @@ public class OperationalPaymentEntity {
 
     @Column(name = "partner_id", nullable = false)
     Long partnerId;
+
+    @Column(name = "fee_config_id", nullable = false)
+    Long feeConfigId;
 
     @Column(name = "billing_start_date")
     LocalDate billingStartDate;

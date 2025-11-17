@@ -47,9 +47,6 @@ public class ParkingLotEntity extends BaseEntity {
     @Column(name = "lot_square")
     Double lotSquare;
 
-    @Column(name = "registration_cost")
-    Double registrationCost;
-
     @Column(name = "latitude")
     Double latitude;
 
