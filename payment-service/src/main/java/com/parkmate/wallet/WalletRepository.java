@@ -14,6 +14,11 @@ import java.util.Optional;
 @Repository
 public interface WalletRepository extends JpaRepository<Wallet, Long> {
 
+    /**
+     * @deprecated Use {@link #findByHolderIdAndWalletOwner(Long, WalletOwner)} instead.
+     * This method may return non-unique results if a user has both MEMBER and PARTNER wallets.
+     */
+    @Deprecated
     Optional<Wallet> findByHolderId(@NonNull Long Long);
 
     boolean existsByHolderId(@NonNull Long userId);

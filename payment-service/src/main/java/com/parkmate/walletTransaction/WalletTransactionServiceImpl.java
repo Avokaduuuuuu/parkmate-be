@@ -28,7 +28,6 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
     private final WalletTransactionRepository walletTransactionRepository;
     private final WalletRepository walletRepository;
     private final WalletTransactionMapper walletTransactionMapper;
-    private final UserServiceClient userClient;
 
     @Override
     @Transactional
@@ -36,22 +35,23 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
 
         log.info("Creating wallet transaction for user {}: type={}, amount={}, partnerId={}",
                 request.getUserId(), request.getTransactionType(), request.getAmount(), request.getPartnerId());
-        Wallet wallet = walletRepository.findByHolderId(request.getUserId())
-                .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND));
 
-        // Only fetch partner wallet if partnerId is provided
+        Wallet wallet = walletRepository.findByHolderIdAndWalletOwner(request.getUserId(), WalletOwner.MEMBER)
+                .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND,
+                        "Member wallet not found for user: " + request.getUserId()));
+
         Wallet partnerWallet = null;
         BigDecimal partnerCurrentBalance = null;
         if (request.getPartnerId() != null) {
-            partnerWallet = walletRepository.findByHolderId(request.getPartnerId())
-                    .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND));
+            partnerWallet = walletRepository.findByHolderIdAndWalletOwner(request.getPartnerId(), WalletOwner.PARTNER)
+                    .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND,
+                            "Partner wallet not found for partner: " + request.getPartnerId()));
             partnerCurrentBalance = partnerWallet.getBalance();
         }
 
         BigDecimal memberCurrentBalance = wallet.getBalance();
         BigDecimal amount = request.getAmount();
 
-        // 2. Parse transaction type
         TransactionType transactionType;
         try {
             transactionType = TransactionType.valueOf(request.getTransactionType());
@@ -61,17 +61,14 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
         BigDecimal newBalance;
         BigDecimal partnerNewBalance = null;
         switch (transactionType) {
-            case DEDUCTION, SUBSCRIPTION -> {
-                // Validate sufficient balance
+            case DEDUCTION -> {
                 if (memberCurrentBalance.compareTo(amount) < 0) {
                     log.warn("Insufficient balance for user {}. Current: {}, Required: {}",
                             request.getUserId(), memberCurrentBalance, amount);
                     throw new AppException(ErrorCode.INSUFFICIENT_WALLET_BALANCE);
                 }
-                // Deduct from member
                 newBalance = memberCurrentBalance.subtract(amount);
 
-                // Credit partner if partnerId is provided
                 if (partnerCurrentBalance != null) {
                     partnerNewBalance = partnerCurrentBalance.add(amount);
                     log.info("Crediting partner {}: {} + {} = {}",
@@ -88,11 +85,9 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
             default -> throw new AppException(ErrorCode.INVALID_TRANSACTION_TYPE);
         }
 
-        // Update member wallet
         wallet.setBalance(newBalance);
         walletRepository.save(wallet);
 
-        // Update partner wallet if applicable
         if (partnerNewBalance != null) {
             partnerWallet.setBalance(partnerNewBalance);
             walletRepository.save(partnerWallet);
@@ -103,7 +98,6 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
         log.debug("Wallet balance updated for user {}: {} -> {}",
                 request.getUserId(), memberCurrentBalance, newBalance);
 
-        // Create member transaction record
         WalletTransaction walletTransaction = WalletTransaction.builder()
                 .walletId(wallet.getId())
                 .amount(amount)

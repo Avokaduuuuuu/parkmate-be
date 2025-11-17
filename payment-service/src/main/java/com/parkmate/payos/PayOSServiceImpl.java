@@ -7,12 +7,12 @@ import com.parkmate.exception.ErrorCode;
 import com.parkmate.payos.dto.PaymentCancelResponse;
 import com.parkmate.payos.dto.PaymentStatusResponse;
 import com.parkmate.wallet.Wallet;
+import com.parkmate.wallet.WalletOwner;
 import com.parkmate.wallet.WalletRepository;
 import com.parkmate.walletTransaction.TransactionStatus;
 import com.parkmate.walletTransaction.TransactionType;
 import com.parkmate.walletTransaction.WalletTransaction;
 import com.parkmate.walletTransaction.WalletTransactionRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,9 +75,9 @@ public class PayOSServiceImpl implements PayOSService {
 
             Long userId = Long.parseLong(userHeadId);
 
-            // Find wallet
-            Wallet wallet = walletRepository.findByHolderId(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("Wallet not found for user: " + userId));
+            // Find MEMBER wallet (TOP_UP is always for member wallet)
+            Wallet wallet = walletRepository.findByHolderIdAndWalletOwner(userId, WalletOwner.MEMBER)
+                    .orElseThrow(() -> new IllegalArgumentException("Member wallet not found for user: " + userId));
 
             // Generate unique orderCode
             long orderCode = System.currentTimeMillis();
@@ -398,7 +398,7 @@ public class PayOSServiceImpl implements PayOSService {
             }
 
             log.info("Payout status check - referenceId: {}, approvalState: {}, transactionState: {}",
-                     payoutId, approvalState, transactionState);
+                    payoutId, approvalState, transactionState);
 
             transaction.setProcessedAt(LocalDateTime.now());
 
