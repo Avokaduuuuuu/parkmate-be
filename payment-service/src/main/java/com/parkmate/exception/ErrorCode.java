@@ -82,9 +82,19 @@ public enum ErrorCode {
     WALLET_DEDUCTION_FAILED(3312, "Failed to deduct amount from wallet: {0}", HttpStatus.INTERNAL_SERVER_ERROR),
 
     INVALID_BANK_ACCOUNT(3313, "Invalid bank account information", HttpStatus.BAD_REQUEST),
-    OPERATIONAL_FEE_CONFIG_NOT_FOUND(3901, "Operational fee config not found", HttpStatus.NOT_FOUND),;
+
+    OPERATIONAL_FEE_CONFIG_NOT_FOUND(3901, "Operational fee config not found", HttpStatus.NOT_FOUND),
+
+    SYSTEM_CONFIG_NOT_FOUND(3902, "System config not found for key: {0}", HttpStatus.NOT_FOUND),
+    INVALID_CONFIG_VALUE(3903, "Invalid config value for key: {0}", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    WITHDRAWAL_PERIOD_NOT_FOUND(3904, "Withdrawal period not found", HttpStatus.NOT_FOUND),
+    PERIOD_ALREADY_WITHDRAWN(3905, "Period has already been withdrawn", HttpStatus.BAD_REQUEST),
+    INVALID_PERIOD_OWNER(3906, "Period does not belong to this partner", HttpStatus.FORBIDDEN),
+    WITHDRAWAL_NOT_FOUND(3907, "Withdrawal not found", HttpStatus.NOT_FOUND),
 
     ;
+
     private final int code;
     private final String message;
     private final HttpStatus httpStatus;

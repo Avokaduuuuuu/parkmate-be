@@ -250,6 +250,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
                     paymentResponse.data() != null ? paymentResponse.data().getSessionId() : "N/A");
 
             userSubscription.setStatus(UserSubscriptionStatus.ACTIVE);
+            userSubscription.setPaidAt(LocalDateTime.now());
             userSubscriptionRepository.save(userSubscription);
 
         } catch (AppException e) {
@@ -413,6 +414,11 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         }
 
         return response.data();
+    }
+
+    @Override
+    public BigDecimal getTotalRevenue(Long lotId, LocalDateTime fromDate, LocalDateTime toDate) {
+        return userSubscriptionRepository.getTotalRevenue(lotId, fromDate, toDate);
     }
 
 

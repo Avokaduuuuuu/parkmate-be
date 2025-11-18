@@ -34,7 +34,7 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
     @Query("SELECT " +
             "SUM(us.paidAmount) " +
             "FROM UserSubscription us " +
-            "WHERE us.parkingLotId = :lotId AND us.startDate >= :from AND us.endDate <= :to"
+            "WHERE us.parkingLotId = :lotId AND us.paidAt >= :from AND us.paidAt <= :to AND us.paidAt IS NOT NULL"
     )
     BigDecimal getTotalRevenue(
             @Param("lotId") Long lotId,
@@ -47,7 +47,7 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
             "COUNT(us.subscriptionPackageId) AS total," +
             "SUM(us.paidAmount) AS totalAmount " +
             "FROM UserSubscription us " +
-            "WHERE us.parkingLotId = :lotId AND us.startDate >= :from AND us.endDate <= :to " +
+            "WHERE us.parkingLotId = :lotId AND us.paidAt >= :from AND us.paidAt <= :to " +
             "GROUP BY us.subscriptionPackageId"
     )
     List<UserSubscriptionProjection> getUserSubscriptionStatistic(

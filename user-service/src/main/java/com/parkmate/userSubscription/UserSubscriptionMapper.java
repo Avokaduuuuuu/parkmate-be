@@ -100,6 +100,7 @@ public abstract class UserSubscriptionMapper {
     @Mapping(target = "syncStatus", ignore = true)
     @Mapping(target = "autoRenew", ignore = true)
     @Mapping(target = "paidAmount", ignore = true)
+    @Mapping(target = "paidAt", ignore = true)
     public abstract UserSubscription toEntity(CreateUserSubscriptionRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -108,6 +109,7 @@ public abstract class UserSubscriptionMapper {
     @Mapping(target = "subscriptionPackageId", ignore = true)
     @Mapping(target = "parkingLotId", ignore = true)
     @Mapping(target = "paidAmount", ignore = true)
+    @Mapping(target = "paidAt", ignore = true)
     @Mapping(target = "paymentTransactionId", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)

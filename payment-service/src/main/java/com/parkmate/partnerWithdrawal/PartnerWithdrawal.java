@@ -1,9 +1,6 @@
 package com.parkmate.partnerWithdrawal;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -54,9 +51,12 @@ public class PartnerWithdrawal {
     @Column(name = "net_amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal netAmount;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
     @ColumnDefault("'PROCESSING'")
     @Column(name = "status", columnDefinition = "withdrawal_status not null")
-    private Object status;
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    private WithdrawalStatus status;
 
     @Column(name = "failure_reason", length = Integer.MAX_VALUE)
     private String failureReason;
@@ -84,5 +84,26 @@ public class PartnerWithdrawal {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
+    @ColumnDefault("0.00")
+    @Column(name = "total_amount_reservation", precision = 15, scale = 2)
+    private BigDecimal totalAmountReservation;
+
+    @ColumnDefault("0.00")
+    @Column(name = "total_amount_subscription", precision = 15, scale = 2)
+    private BigDecimal totalAmountSubscription;
+
+    @ColumnDefault("0.00")
+    @Column(name = "total_amount_walk_in", precision = 15, scale = 2)
+    private BigDecimal totalAmountWalkIn;
+
+    @Column(name = "requested_at")
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    private LocalDateTime requestedAt;
+
+    @Column(name = "processed_at")
+    private LocalDateTime processedAt;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
 
 }

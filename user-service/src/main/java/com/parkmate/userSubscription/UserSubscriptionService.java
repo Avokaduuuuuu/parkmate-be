@@ -3,6 +3,7 @@ package com.parkmate.userSubscription;
 import com.parkmate.userSubscription.dto.*;
 import org.springframework.data.domain.Page;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -33,4 +34,8 @@ public interface UserSubscriptionService {
     Boolean holdSpot(Long userId, Long spotId);
 
     Object releaseSpot(Long spotId, String userIdHeader);
+
+    BigDecimal getTotalRevenue(Long lotId,
+                               LocalDateTime fromDate,
+                               LocalDateTime toDate);
 }

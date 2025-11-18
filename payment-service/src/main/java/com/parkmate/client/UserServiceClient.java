@@ -5,6 +5,9 @@ import com.parkmate.common.ApiResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.math.BigDecimal;
 
 @FeignClient(name = "user-service")
 public interface UserServiceClient {
@@ -14,5 +17,29 @@ public interface UserServiceClient {
 
     @GetMapping("/api/v1/user-service/users/internal/account/{accountId}")
     Long getUserIdByAccountId(@PathVariable("accountId") Long accountId);
+
+    /**
+     * Get partner ID from account ID
+     *
+     * @param accountId The account ID
+     * @return Partner ID
+     */
+    @GetMapping("/internal/partners/account/{accountId}")
+    ApiResponse<Long> getPartnerIdByAccountId(@PathVariable("accountId") Long accountId);
+
+    /**
+     * Get total revenue from user subscriptions for a parking lot in a date range
+     *
+     * @param lotId  The parking lot ID
+     * @param from   Start date (ISO format: yyyy-MM-ddTHH:mm:ss)
+     * @param to     End date (ISO format: yyyy-MM-ddTHH:mm:ss)
+     * @return Total subscription revenue
+     */
+    @GetMapping("/internal/user-subscriptions/revenue")
+    ApiResponse<BigDecimal> getSubscriptionRevenue(
+            @RequestParam("lotId") Long lotId,
+            @RequestParam("from") String from,
+            @RequestParam("to") String to
+    );
 
 }

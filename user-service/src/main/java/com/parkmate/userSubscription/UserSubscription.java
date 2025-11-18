@@ -85,6 +85,9 @@ public class UserSubscription {
     @Column(name = "refund_amount", precision = 10, scale = 2)
     private BigDecimal refundAmount;
 
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
     @Column(name = "created_at")
     @UpdateTimestamp
     private LocalDateTime createdAt;
