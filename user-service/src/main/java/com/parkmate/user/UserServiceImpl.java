@@ -72,21 +72,17 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public UserResponse getCurrentUser(String userIdHeader) {
-        long accountId;
+        long userId;
 
-        // Try to get userId from header first (from gateway)
+        // Get userId directly from header (from gateway)
         if (userIdHeader != null && !userIdHeader.isEmpty()) {
-            accountId = Long.parseLong(userIdHeader);
+            userId = Long.parseLong(userIdHeader);
         } else {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
-        log.info("Fetching profile for user ID: {}", accountId);
-        ;
-        return getUserById(accountRepository.findById(accountId)
-                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND))
-                .getUser()
-                .getId());
+        log.info("Fetching profile for user ID: {}", userId);
+        return getUserById(userId);
     }
 
     @Override
@@ -121,11 +117,11 @@ public class UserServiceImpl implements UserService {
 
     private void createWalletIfNotExists(User user) {
         if (hasIdentityInfo(user)) {
-            // Call wallet service to create wallet
             CreateWalletRequest createWalletRequest = CreateWalletRequest.builder()
-                    .userId(user.getId())
+                    .holderId(user.getId())
+                    .walletType("MEMBER")
                     .build();
-            paymentClient.createPayment(createWalletRequest);
+            paymentClient.createWallet(createWalletRequest);
             log.info("Creating wallet for user ID: {}", user.getId());
         }
     }
@@ -134,7 +130,6 @@ public class UserServiceImpl implements UserService {
     public ImportUserResponse importUsersFromExcel(MultipartFile file) {
         ImportUserResponse response = new ImportUserResponse();
 
-        // Validate file
         String validationError = validateFile(file);
         if (validationError != null) {
             response.addError(new ImportError(0, validationError));

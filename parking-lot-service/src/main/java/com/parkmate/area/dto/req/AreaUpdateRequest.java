@@ -4,7 +4,6 @@ import com.parkmate.area.enums.AreaType;
 import com.parkmate.common.enums.VehicleType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 @Schema(description = "Request body for updating parking area")
@@ -21,7 +20,7 @@ public record AreaUpdateRequest(
         @Schema(
                 description = "Type of vehicle this pricing rule applies to",
                 example = "CAR_4_SEATS",
-                allowableValues = {"BIKE", "MOTORBIKE", "CAR_4_SEATS", "CAR_7_SEATS", "CAR_9_SEATS", "OTHER"},
+                allowableValues = {"BIKE", "MOTORBIKE", "CAR_UP_TO_9_SEATS", "OTHER"},
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         VehicleType vehicleType,
@@ -70,6 +69,12 @@ public record AreaUpdateRequest(
                 example = "RESERVED_ONLy",
                 allowableValues = {"RESERVED_ONLY", "WALK_IN_ONLY"}
         )
-        AreaType areaType
+        AreaType areaType,
+
+        @Schema(
+                description = "Status of this Area",
+                example = "true"
+        )
+        Boolean isActive
 ) {
 }

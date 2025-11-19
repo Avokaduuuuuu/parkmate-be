@@ -37,7 +37,6 @@ public record AreaCreateRequest(
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         @NotNull(message = "Area Top Left X must not be null")
-        @Positive(message = "Area Top Left X must be positive")
         Double areaTopLeftX,
 
         @Schema(
@@ -46,7 +45,6 @@ public record AreaCreateRequest(
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         @NotNull(message = "Area Top Left Y must not be null")
-        @Positive(message = "Area Top Left Y must be positive")
         Double areaTopLeftY,
 
         @Schema(

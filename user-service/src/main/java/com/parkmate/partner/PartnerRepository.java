@@ -14,6 +14,8 @@ public interface PartnerRepository extends JpaRepository<Partner, Long>, Queryds
     @Query("SELECT p.taxNumber FROM Partner p")
     List<String> findAllTaxNumbers();
 
+    @Query("SELECT p.id FROM Partner p JOIN p.accounts a WHERE a.id = :accountId")
+    Long findPartnerIdByAccountId(Long accountId);
 
 }
 

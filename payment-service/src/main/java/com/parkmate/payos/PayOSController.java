@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import vn.payos.model.v1.payouts.PayoutRequests;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 
 @RestController
@@ -28,14 +29,10 @@ public class PayOSController {
     @PostMapping("/payment")
     @Operation(summary = "Create PayOS payment link", description = "Creates a payment link for wallet top-up using PayOS")
     public ResponseEntity<ApiResponse<CreatePaymentLinkResponse>> createPayment(
-            @RequestParam @Parameter(description = "User ID", required = true) Long userId,
             @RequestParam @Parameter(description = "Amount in VND (minimum 1000)", required = true) Long amount,
-            @RequestParam(required = false) @Parameter(description = "Payment description") String description) {
-
-        log.info("Creating PayOS payment for userId: {}, amount: {}", userId, amount);
-
-        CreatePaymentLinkResponse response = payOSService.createPayment(userId, amount, description);
-
+            @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader) {
+        log.info("Creating PayOS payment for accountId: {}, amount: {}", userIdHeader, amount);
+        CreatePaymentLinkResponse response = payOSService.createPayment(userIdHeader, amount);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -50,10 +47,25 @@ public class PayOSController {
     public ResponseEntity<ApiResponse<Boolean>> handleWebhook(
             @RequestBody String webhookBody,
             @RequestHeader(value = "x-payos-signature", required = false) String signature) {
-
         log.info("Received PayOS webhook with signature: {}", signature);
-
         return ResponseEntity.ok(ApiResponse.success(payOSService.processWebhook(webhookBody, signature), "Webhook processed successfully"));
+    }
+
+    /**
+     * PayOS payout webhook callback endpoint
+     * This endpoint receives payout status updates from PayOS
+     */
+    @PostMapping("/payout-webhook")
+    @Hidden
+    @Operation(summary = "PayOS payout webhook callback", description = "Receives payout status notifications from PayOS")
+    public ResponseEntity<ApiResponse<Boolean>> handlePayoutWebhook(
+            @RequestBody String webhookBody,
+            @RequestHeader(value = "x-payos-signature", required = false) String signature) {
+        log.info("Received PayOS payout webhook with signature: {}", signature);
+        return ResponseEntity.ok(ApiResponse.success(
+                payOSService.processPayoutWebhook(webhookBody, signature),
+                "Payout webhook processed successfully"
+        ));
     }
 
     /**
@@ -104,15 +116,19 @@ public class PayOSController {
     @PostMapping("/cancel")
     @Operation(summary = "PayOS cancel URL", description = "Handles user cancellation of payment")
     public ResponseEntity<ApiResponse<PaymentCancelResponse>> cancelPayment(
-            @RequestParam @Parameter(description = "Order code") Long orderCode,
-            @RequestParam(required = false) @Parameter(description = "Cancel reason") String reason) {
+            @RequestParam @Parameter(description = "Order code") Long orderCode) {
 
-        log.info("PayOS payment cancelled - orderCode: {}, reason: {}", orderCode, reason);
-        return ResponseEntity.ok(ApiResponse.success(payOSService.cancelPayment(orderCode, reason)));
+        log.info("PayOS payment cancelled - orderCode: {}", orderCode);
+        return ResponseEntity.ok(ApiResponse.success(payOSService.cancelPayment(orderCode)));
     }
 
     @GetMapping("/status/{orderCode}")
     public ResponseEntity<ApiResponse<PaymentStatusResponse>> statusPayment(@PathVariable Long orderCode) {
         return ResponseEntity.ok(ApiResponse.success(payOSService.retrievePaymentStatus(orderCode)));
+    }
+
+    @PostMapping("/payouts")
+    public ResponseEntity<?> createPayouts(@RequestBody PayoutRequests body) {
+        return ResponseEntity.ok(ApiResponse.success(payOSService.retrievePayout(body)));
     }
 }

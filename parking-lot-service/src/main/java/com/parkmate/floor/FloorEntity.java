@@ -25,6 +25,18 @@ public class FloorEntity extends BaseEntity {
     @Column(name = "floor_name", length = 100)
     String floorName;
 
+    @Column(name = "floor_top_left_x")
+    Double floorTopLeftX;
+
+    @Column(name = "floor_top_left_y")
+    Double floorTopLeftY;
+
+    @Column(name = "floor_width")
+    Double floorWidth;
+
+    @Column(name = "floor_height")
+    Double floorHeight;
+
     @Column(name = "is_active")
     @Builder.Default
     Boolean isActive = true;
@@ -33,7 +45,7 @@ public class FloorEntity extends BaseEntity {
     @JoinColumn(name = "lot_id")
     ParkingLotEntity parkingLot;
 
-    @OneToMany(mappedBy = "parkingFloor")
+    @OneToMany(mappedBy = "parkingFloor", cascade = CascadeType.ALL)
     List<AreaEntity> areas;
 
     @OneToMany(mappedBy = "parkingFloor", cascade = CascadeType.ALL)

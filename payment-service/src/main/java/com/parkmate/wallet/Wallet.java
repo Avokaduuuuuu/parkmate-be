@@ -3,14 +3,22 @@ package com.parkmate.wallet;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "wallet")
+@Table(name = "wallet",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_wallet_holder_owner",
+        columnNames = {"holder_id", "wallet_owner"}
+    )
+)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
@@ -24,8 +32,13 @@ public class Wallet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @Column(name = "user_id", nullable = false, unique = true)
-    Long userId;
+    @Column(name = "holder_id", nullable = false)
+    Long holderId;
+
+    @ColumnDefault("'MEMBER'")
+    @Column(name = "wallet_owner", columnDefinition = "wallet_owner not null")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    private WalletOwner walletOwner;
 
     @Column(name = "balance", nullable = false)
     BigDecimal balance;

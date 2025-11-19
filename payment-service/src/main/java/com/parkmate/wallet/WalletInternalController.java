@@ -21,9 +21,9 @@ public class WalletInternalController {
     @GetMapping("/me")
     @Hidden
     public ResponseEntity<ApiResponse<WalletResponse>> getWalletByUserId(
-            @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader) {
+            @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader,
+            @RequestHeader(value = "X-User-Role", required = false) @Parameter(hidden = true) String userRoleHeader) {
         return ResponseEntity.ok(
-                ApiResponse.success(walletService.getByUserId(userIdHeader)));
+                ApiResponse.success(walletService.getByUserId(userIdHeader, userRoleHeader)));
     }
-
 }

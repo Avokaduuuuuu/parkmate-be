@@ -1,13 +1,18 @@
 package com.parkmate.vehicle;
 
-import com.parkmate.account.Account;
 import com.parkmate.account.AccountRepository;
+import com.parkmate.common.enums.ReservationStatus;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.common.util.PaginationUtil;
 import com.parkmate.partner.dto.ImportError;
+import com.parkmate.reservation.Reservation;
+import com.parkmate.reservation.ReservationRepository;
 import com.parkmate.user.User;
 import com.parkmate.user.UserRepository;
+import com.parkmate.userSubscription.UserSubscription;
+import com.parkmate.userSubscription.UserSubscriptionRepository;
+import com.parkmate.userSubscription.UserSubscriptionStatus;
 import com.parkmate.vehicle.dto.*;
 import com.querydsl.core.types.Predicate;
 import jakarta.validation.ConstraintViolation;
@@ -24,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +40,10 @@ public class VehicleServiceImpl implements VehicleService {
     private final VehicleMapper vehicleMapper;
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final ReservationRepository reservationRepository;
+    private final UserSubscriptionRepository userSubscriptionRepository;
     private final Validator validator;
+    private final com.parkmate.client.ParkingLotClient parkingLotClient;
 
     private static final List<String> ALLOWED_EXTENSIONS = List.of("xlsx", "xls");
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -59,9 +68,7 @@ public class VehicleServiceImpl implements VehicleService {
         }
 
         if (userId != null && !userId.isEmpty()) {
-            Account account = accountRepository.findById(Long.parseLong(userId))
-                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, userId));
-            request.setUserId(account.getUser().getId());
+            request.setUserId(Long.parseLong(userId));
         }
 
         User user = userRepository.findById(request.getUserId())
@@ -94,17 +101,13 @@ public class VehicleServiceImpl implements VehicleService {
                                          String sortBy,
                                          String sortOrder,
                                          VehicleSearchCriteria searchCriteria,
-                                         String accountIdHeader) {
+                                         String userIdHeader) {
         Long userId = null;
-        // X-User-Id header contains accountId, need to convert to userId
-        if (accountIdHeader != null && !accountIdHeader.isEmpty() && searchCriteria.isOwnedByMe()) {
-            Account account = accountRepository.findById(Long.parseLong(accountIdHeader))
-                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, accountIdHeader));
-            userId = account.getUser().getId();
+        if (userIdHeader != null && !userIdHeader.isEmpty() && searchCriteria.isOwnedByMe()) {
+            userId = Long.parseLong(userIdHeader);
         }
 
-        System.out.println("DEBUG - accountId header: " + accountIdHeader);
-        System.out.println("DEBUG - converted userId: " + userId);
+        System.out.println("DEBUG - userId header: " + userIdHeader);
         System.out.println("DEBUG - searchCriteria: " + searchCriteria);
 
         Predicate predicate = VehicleSpecification.buildPredicate(searchCriteria, userId);
@@ -114,8 +117,84 @@ public class VehicleServiceImpl implements VehicleService {
         Page<Vehicle> vehiclePage = vehicleRepository.findAll(predicate, pageable);
         System.out.println("DEBUG - total elements: " + vehiclePage.getTotalElements());
 
-        return vehiclePage.map(vehicleMapper::toDTO);
+
+        List<Long> vehicleIdsHasSubscription;
+        List<Long> vehicleIdsHasReservation;
+        Map<VehicleType, Boolean> vehicleTypeSupportMap = new HashMap<>();
+
+        if (searchCriteria.getParkingLotId() != null) {
+            vehicleIdsHasReservation = checkVehicleInReservation(vehiclePage.getContent());
+            vehicleIdsHasSubscription = checkVehicleInSubscription(searchCriteria.getParkingLotId(), vehiclePage.getContent());
+
+            // Pre-fetch vehicle type support for all unique vehicle types in the current page
+            Set<VehicleType> uniqueVehicleTypes = vehiclePage.getContent().stream()
+                    .map(Vehicle::getVehicleType)
+                    .collect(Collectors.toSet());
+
+            for (VehicleType vehicleType : uniqueVehicleTypes) {
+                try {
+                    Boolean isSupported = parkingLotClient.supportsVehicleType(
+                            searchCriteria.getParkingLotId(),
+                            vehicleType
+                    ).data();
+                    vehicleTypeSupportMap.put(vehicleType, isSupported != null && isSupported);
+                } catch (Exception e) {
+                    log.warn("Failed to check vehicle type {} support for parking lot {}: {}",
+                            vehicleType, searchCriteria.getParkingLotId(), e.getMessage());
+                    vehicleTypeSupportMap.put(vehicleType, false);
+                }
+            }
+        } else {
+            vehicleIdsHasSubscription = new ArrayList<>();
+            vehicleIdsHasReservation = new ArrayList<>();
+        }
+
+        return vehiclePage.map(vehicle -> {
+            VehicleResponse response = vehicleMapper.toDTO(vehicle);
+            response.setInReservation(vehicleIdsHasReservation.contains(vehicle.getId()));
+            response.setHasSubscriptionInThisParkingLot(vehicleIdsHasSubscription.contains(vehicle.getId()));
+            response.setSupported(vehicleTypeSupportMap.getOrDefault(vehicle.getVehicleType(), false));
+            return response;
+        });
     }
+
+    @Override
+    public List<VehicleSimpleResponse> getVehiclesByUserId(Long userId) {
+        userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, userId));
+        List<VehicleSimpleResponse> vehicleSimpleResponses = new ArrayList<>();
+        vehicleRepository.findAllByUserId(userId).forEach(vehicle ->
+                vehicleSimpleResponses.add(new VehicleSimpleResponse(
+                        userId,
+                        vehicle.getId(),
+                        vehicle.getLicensePlate(),
+                        vehicle.getVehicleType())
+
+                ));
+        return vehicleSimpleResponses;
+    }
+
+    private List<Long> checkVehicleInReservation(List<Vehicle> vehicles) {
+        List<ReservationStatus> reservationStatuses = new ArrayList<>();
+        reservationStatuses.add(ReservationStatus.ACTIVE);
+        reservationStatuses.add(ReservationStatus.PENDING);
+        List<Reservation> reservations = reservationRepository.findAllByVehicleIdInAndStatusIn(
+                vehicles.stream().map(Vehicle::getId).collect(Collectors.toList()),
+                reservationStatuses);
+        List<Long> vehiclesInReservation = new ArrayList<>();
+        reservations.forEach(reservation -> vehiclesInReservation.add(reservation.getVehicle().getId()));
+        return vehiclesInReservation;
+    }
+
+    private List<Long> checkVehicleInSubscription(Long parkingLotId, List<Vehicle> vehicles) {
+        List<UserSubscription> userSubscriptions = userSubscriptionRepository.findByVehicleIdInAndStatusAndParkingLotId(
+                vehicles.stream().map(Vehicle::getId).collect(Collectors.toList()),
+                UserSubscriptionStatus.ACTIVE,
+                parkingLotId);
+        List<Long> vehicleInSubscription = new ArrayList<>();
+        userSubscriptions.forEach(userSubscription -> vehicleInSubscription.add(userSubscription.getVehicle().getId()));
+        return vehicleInSubscription;
+    }
+
 
     @Override
     public void deleteVehicle(Long id) {
@@ -125,6 +204,7 @@ public class VehicleServiceImpl implements VehicleService {
         vehicle.setActive(false);
         vehicleRepository.save(vehicle);
     }
+
 
     @Override
     @Transactional
@@ -248,13 +328,11 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
-    public void exportVehiclesToExcel(VehicleSearchCriteria searchCriteria, String accountIdHeader, java.io.OutputStream outputStream) throws java.io.IOException {
+    public void exportVehiclesToExcel(VehicleSearchCriteria searchCriteria, String userIdHeader, java.io.OutputStream outputStream) throws java.io.IOException {
         Long userId = null;
-        // X-User-Id header contains accountId, need to convert to userId
-        if (accountIdHeader != null && !accountIdHeader.isEmpty() && searchCriteria != null && searchCriteria.isOwnedByMe()) {
-            Account account = accountRepository.findById(Long.parseLong(accountIdHeader))
-                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, accountIdHeader));
-            userId = account.getUser().getId();
+        // X-User-Id header now contains userId directly
+        if (userIdHeader != null && !userIdHeader.isEmpty() && searchCriteria != null && searchCriteria.isOwnedByMe()) {
+            userId = Long.parseLong(userIdHeader);
         }
 
         // Get vehicles based on search criteria

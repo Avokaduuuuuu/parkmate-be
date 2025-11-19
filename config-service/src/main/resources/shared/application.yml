@@ -1,3 +1,12 @@
+spring:
+  jackson:
+    time-zone: Asia/Ho_Chi_Minh
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
 eureka:
   client:
     service-url:
@@ -18,4 +27,8 @@ gateway:
 
 logging:
   pattern:
-    level: "%5p [${spring.application.name:},traceId=%X{traceId:-},spanId=%X{spanId:-}]"
+    level: "%5p [${spring.application.name}]"
+
+kafka:
+  bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
+  consumer-group-id: ${KAFKA_CONSUMER_GROUP_ID:parkmate-group}

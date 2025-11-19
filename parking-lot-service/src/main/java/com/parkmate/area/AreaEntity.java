@@ -3,9 +3,8 @@ package com.parkmate.area;
 import com.parkmate.area.enums.AreaType;
 import com.parkmate.common.BaseEntity;
 import com.parkmate.common.enums.VehicleType;
-import com.parkmate.spot.SpotEntity;
 import com.parkmate.floor.FloorEntity;
-import com.parkmate.pricing_rule.PricingRuleEntity;
+import com.parkmate.spot.SpotEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -66,7 +65,4 @@ public class AreaEntity extends BaseEntity {
     @OneToMany(mappedBy = "parkingArea", cascade = CascadeType.ALL)
     List<SpotEntity> spots;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pricing_rule_id")
-    PricingRuleEntity pricingRule;
 }

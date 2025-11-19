@@ -3,7 +3,6 @@ package com.parkmate.s3;
 import com.parkmate.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotEmpty;
@@ -114,50 +113,50 @@ public class S3Controller {
     @Operation(
             summary = "Delete parking lot images",
             description = """
-                Delete multiple images from AWS S3 storage and remove their records from the database.
-                This is a permanent operation and cannot be undone.
-                
-                **Request Body:**
-                - `imageIds` (required): List of image IDs to delete
-                
-                **Behavior:**
-                1. Validates that all image IDs exist
-                2. Removes images from AWS S3 storage
-                3. Deletes image records from the database
-                4. Updates parking lot image associations
-                5. Returns confirmation of deletion
-                
-                **Business Rules:**
-                - Only the parking lot owner or admin can delete images
-                - Cannot delete images if they are being used in active promotions
-                - At least one image should remain for the parking lot (optional rule)
-                - Deletion is permanent and cannot be reversed
-                
-                **Use Cases:**
-                - Removing outdated or incorrect images
-                - Cleaning up duplicate images
-                - Replacing poor quality photos
-                - Removing images that violate policies
-                - Managing parking lot gallery content
-                
-                **Important Notes:**
-                - Images are permanently deleted from S3 storage
-                - Thumbnail versions are also deleted
-                - Any cached CDN versions will eventually expire
-                - Image URLs will become invalid immediately
-                - Consider backing up important images before deletion
-                
-                **Error Scenarios:**
-                - 400: Invalid image IDs or empty list
-                - 403: Insufficient permissions to delete images
-                - 404: One or more image IDs not found
-                - 500: S3 deletion failure
-                
-                **Security:**
-                - Requires authentication
-                - Validates ownership of images
-                - Logs deletion actions for audit trail
-                """
+                    Delete multiple images from AWS S3 storage and remove their records from the database.
+                    This is a permanent operation and cannot be undone.
+                    
+                    **Request Body:**
+                    - `imageIds` (required): List of image IDs to delete
+                    
+                    **Behavior:**
+                    1. Validates that all image IDs exist
+                    2. Removes images from AWS S3 storage
+                    3. Deletes image records from the database
+                    4. Updates parking lot image associations
+                    5. Returns confirmation of deletion
+                    
+                    **Business Rules:**
+                    - Only the parking lot owner or admin can delete images
+                    - Cannot delete images if they are being used in active promotions
+                    - At least one image should remain for the parking lot (optional rule)
+                    - Deletion is permanent and cannot be reversed
+                    
+                    **Use Cases:**
+                    - Removing outdated or incorrect images
+                    - Cleaning up duplicate images
+                    - Replacing poor quality photos
+                    - Removing images that violate policies
+                    - Managing parking lot gallery content
+                    
+                    **Important Notes:**
+                    - Images are permanently deleted from S3 storage
+                    - Thumbnail versions are also deleted
+                    - Any cached CDN versions will eventually expire
+                    - Image URLs will become invalid immediately
+                    - Consider backing up important images before deletion
+                    
+                    **Error Scenarios:**
+                    - 400: Invalid image IDs or empty list
+                    - 403: Insufficient permissions to delete images
+                    - 404: One or more image IDs not found
+                    - 500: S3 deletion failure
+                    
+                    **Security:**
+                    - Requires authentication
+                    - Validates ownership of images
+                    - Logs deletion actions for audit trail
+                    """
     )
     public ResponseEntity<?> deleteImages(
             @Parameter(

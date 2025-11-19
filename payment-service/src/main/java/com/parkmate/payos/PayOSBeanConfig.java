@@ -8,15 +8,49 @@ import vn.payos.PayOS;
 @Configuration
 @RequiredArgsConstructor
 public class PayOSBeanConfig {
-    
+
     private final PayOSConfig payOSConfig;
-    
+
+    @Bean(name = "payOSPayment")
+    public PayOS payOSPayment() {
+        // For Payment (top-up) operations
+        return new PayOS(
+                payOSConfig.getClientId(),
+                payOSConfig.getApiKey(),
+                payOSConfig.getChecksumKey()
+        );
+    }
+
+    @Bean(name = "payOSPayout")
+    public PayOS payOSPayout() {
+        // For Payout (withdrawal) operations
+        String payoutClientId = payOSConfig.getPayoutClientId();
+        String payoutApiKey = payOSConfig.getPayoutApiKey();
+        String payoutChecksumKey = payOSConfig.getPayoutChecksumKey();
+
+        // Fallback to payment config if payout config not provided
+        if (payoutClientId == null || payoutClientId.isEmpty()) {
+            payoutClientId = payOSConfig.getClientId();
+        }
+
+        if (payoutApiKey == null || payoutApiKey.isEmpty() || "YOUR_PAYOUT_API_KEY_HERE".equals(payoutApiKey)) {
+            payoutApiKey = payOSConfig.getApiKey();
+        }
+
+        if (payoutChecksumKey == null || payoutChecksumKey.isEmpty()) {
+            payoutChecksumKey = payOSConfig.getChecksumKey();
+        }
+
+        return new PayOS(
+                payoutClientId,
+                payoutApiKey,
+                payoutChecksumKey
+        );
+    }
+
     @Bean
     public PayOS payOS() {
-        return new PayOS(
-            payOSConfig.getClientId(),
-            payOSConfig.getApiKey(),
-            payOSConfig.getChecksumKey()
-        );
+        // Default bean for backward compatibility
+        return payOSPayment();
     }
 }

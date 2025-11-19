@@ -1,6 +1,7 @@
 package com.parkmate.user;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.stereotype.Repository;
 
@@ -12,4 +13,7 @@ public interface UserRepository extends JpaRepository<User, Long>, QuerydslPredi
     boolean existsByPhone(String phone);
 
     Optional<User> findByAccountId(Long id);
+
+    @Query("SELECT u.id FROM User u WHERE u.account.id = :id")
+    Long getUserIdByAccountId(Long id);
 }

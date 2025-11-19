@@ -3,20 +3,20 @@ package com.parkmate.auth;
 import com.parkmate.account.Account;
 import com.parkmate.account.AccountRepository;
 import com.parkmate.account.dto.AccountBasicResponse;
+import com.parkmate.account.publisher.AccountEventPublisher;
 import com.parkmate.auth.dto.*;
 import com.parkmate.common.enums.AccountRole;
 import com.parkmate.common.enums.AccountStatus;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
-import com.parkmate.email.EmailService;
 import com.parkmate.partner.Partner;
 import com.parkmate.partner.PartnerMapper;
 import com.parkmate.partner.dto.PartnerResponse;
+import com.parkmate.partnerRegistration.PartnerRegistrationRepository;
 import com.parkmate.s3.S3Service;
 import com.parkmate.user.User;
 import com.parkmate.user.UserMapper;
 import com.parkmate.user.UserRepository;
-import com.parkmate.user.UserService;
 import com.parkmate.user.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,11 +45,12 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RedisTokenService redisTokenService;
-    private final EmailService emailService;
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final S3Service s3Service;
     private final PartnerMapper partnerMapper;
+    private final AccountEventPublisher accountEventPublisher;
+    private final PartnerRegistrationRepository partnerRegistrationRepository;
 
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -64,6 +65,10 @@ public class AuthServiceImpl implements AuthService {
 
         if (!passwordEncoder.matches(request.password(), account.getPassword())) {
             throw new AppException(ErrorCode.PASSWORD_MISMATCH, "Invalid password");
+        }
+
+        if (account.getStatus() == AccountStatus.PENDING_VERIFICATION) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED, "Account is not verified");
         }
 
         Map<String, Object> claims = buildClaims(account);
@@ -184,11 +189,8 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByPhone(request.getPhone())) {
             throw new AppException(ErrorCode.PHONE_ALREADY_EXISTS);
         }
-
-        // Create verification token
         String verificationToken = generateNumericVerificationToken();
 
-        // Create Account
         Account account = Account.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -200,7 +202,6 @@ public class AuthServiceImpl implements AuthService {
 
         Account savedAccount = accountRepository.save(account);
 
-        // Create User linked to Account
         User user = User.builder()
                 .account(savedAccount)
                 .phone(request.getPhone())
@@ -211,22 +212,10 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepository.save(user);
 
         // Send verification email
-        sendVerificationEmail(savedAccount.getEmail(), verificationToken, savedUser.getFullName());
-
-        // Generate tokens
-        Map<String, Object> claims = buildClaims(savedAccount);
-        String accessToken = jwtUtil.generateToken(claims);
-        String refreshToken = UUID.randomUUID().toString().replace("-", "");
-
-        redisTokenService.storeRefreshToken(refreshToken, claims, REFRESH_TOKEN_EXPIRATION);
+        String fullName = savedUser.getFirstName() + " " + savedUser.getLastName();
+        sendVerificationEmail(savedAccount.getEmail(), verificationToken, fullName);
 
         return RegisterResponse.builder()
-                .authResponse(AuthResponse.builder()
-                        .accessToken(accessToken)
-                        .refreshToken(refreshToken)
-                        .tokenType(TOKEN_TYPE)
-                        .expiresIn(ACCESS_TOKEN_EXPIRATION)
-                        .build())
                 .userResponse(responseWithPresignedURL(userMapper.toResponse(savedUser), savedUser))
                 .build();
     }
@@ -240,6 +229,8 @@ public class AuthServiceImpl implements AuthService {
         Map<String, Object> claims = new HashMap<>();
         if (account.getRole() == AccountRole.PARTNER_OWNER && account.getPartner() != null) {
             claims.put("userId", account.getPartner().getId());
+        } else if (account.getRole() == AccountRole.MEMBER && account.getUser() != null) {
+            claims.put("userId", account.getUser().getId());
         } else {
             claims.put("userId", account.getId());
         }
@@ -259,7 +250,7 @@ public class AuthServiceImpl implements AuthService {
         }
         account.setEmailVerified(true);
         account.setEmailVerificationToken(null);
-        updateStatusAfterVerification(account);
+        account.setStatus(AccountStatus.ACTIVE);
         accountRepository.save(account);
         log.info("Email verified successfully for: {}", account.getEmail());
         return EmailVerificationResponse.builder()
@@ -268,27 +259,6 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
-    private void updateStatusAfterVerification(Account account) {
-
-        switch (account.getRole()) {
-            case MEMBER:
-                account.setStatus(AccountStatus.ACTIVE);
-                log.info("Member account activated: {}", account.getEmail());
-                break;
-
-            case PARTNER_OWNER:
-                account.setStatus(AccountStatus.PENDING_APPROVAL);
-                log.info("Partner account pending approval: {}", account.getEmail());
-                break;
-
-            case ADMIN:
-                account.setStatus(AccountStatus.ACTIVE);
-                break;
-
-            default:
-                account.setStatus(AccountStatus.PENDING_APPROVAL);
-        }
-    }
 
     @Override
     public void resendVerificationEmail(String email) {
@@ -305,17 +275,23 @@ public class AuthServiceImpl implements AuthService {
         try {
 
             if (account.getRole() == AccountRole.PARTNER_OWNER) {
-                emailService.sendPartnerVerificationEmail(
+                String partnerName = partnerRegistrationRepository.findByContactPersonEmail(email)
+                        .orElseThrow(() -> new AppException(ErrorCode.PARTNER_REGISTRATION_NOT_FOUND))
+                        .getContactPersonName();
+                accountEventPublisher.publishPartnerVerificationEvent(
                         account.getEmail(),
+                        partnerName,
                         newToken
                 );
 
-            } else {
-                String fullName = account.getUser().getFirstName() + " " + account.getUser().getLastName();
-                emailService.sendMemberVerificationEmail(
+            } else if (account.getRole().equals(AccountRole.MEMBER)) {
+                User user = userRepository.findByAccountId(account.getId())
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
+                String fullName = user.getFirstName() + " " + user.getLastName();
+                accountEventPublisher.publishMemberVerificationEvent(
                         account.getEmail(),
-                        newToken,
-                        account.getRole().equals(AccountRole.MEMBER) ? fullName : account.getPartner().getCompanyName()
+                        fullName,
+                        newToken
                 );
             }
 
@@ -328,10 +304,10 @@ public class AuthServiceImpl implements AuthService {
 
     private void sendVerificationEmail(String toEmail, String token, String recipientName) {
         try {
-            emailService.sendMemberVerificationEmail(
+            accountEventPublisher.publishMemberVerificationEvent(
                     toEmail,
-                    token,
-                    recipientName
+                    recipientName,
+                    token
             );
         } catch (Exception e) {
             log.error("Failed to send verification email to: {}", toEmail, e);
@@ -374,7 +350,6 @@ public class AuthServiceImpl implements AuthService {
                 response.address(),
                 response.gender(),
                 response.nationality(),
-                response.profilePictureUrl(),
                 response.idNumber(),
                 response.issuePlace(),
                 response.issueDate(),
@@ -383,7 +358,8 @@ public class AuthServiceImpl implements AuthService {
                 backPhotoUrl,
                 profilePictureUrl,
                 response.createdAt(),
-                response.updatedAt()
+                response.updatedAt(),
+                response.qrCode()
         );
     }
 }

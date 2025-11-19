@@ -3,14 +3,26 @@ package com.parkmate.payos;
 
 import com.parkmate.payos.dto.PaymentCancelResponse;
 import com.parkmate.payos.dto.PaymentStatusResponse;
+import vn.payos.model.v1.payouts.Payout;
+import vn.payos.model.v1.payouts.PayoutRequests;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 
 public interface PayOSService {
-    CreatePaymentLinkResponse createPayment(Long userId, Long amount, String description);
+    CreatePaymentLinkResponse createPayment(String userId, Long amount);
+
+    CreatePaymentLinkResponse createOperationalFeePayment(Long operationalPaymentId, Long lotId, Long amount);
 
     Boolean processWebhook(String webhookBody, String signature);
 
-    PaymentCancelResponse cancelPayment(Long orderCode, String reason);
+    Boolean processPayoutWebhook(String webhookBody, String signature);
+
+    PaymentCancelResponse cancelPayment(Long orderCode);
 
     PaymentStatusResponse retrievePaymentStatus(Long orderCode);
+
+    Payout retrievePayout(PayoutRequests payoutId);
+
+    Payout getPayout(String payoutId);
+
+    void checkPendingPayouts();
 }

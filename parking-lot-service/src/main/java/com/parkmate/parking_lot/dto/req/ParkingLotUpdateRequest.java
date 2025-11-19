@@ -1,9 +1,10 @@
 package com.parkmate.parking_lot.dto.req;
 
-import com.parkmate.common.enums.VehicleType;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 
 import java.time.LocalTime;
 
@@ -59,6 +60,7 @@ public record ParkingLotUpdateRequest(
         @DecimalMax(value = "180.0", message = "Longitude must be between -180 and 180")
         Double longitude,
 
+
         @Schema(
                 description = "Total number of floors in the parking lot",
                 example = "3",
@@ -91,22 +93,29 @@ public record ParkingLotUpdateRequest(
                 type = "boolean"
         )
         Boolean is24Hour,
+
+        @Schema(
+                description = "Horizon time to predict how long a user will park",
+                example = "100",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        Double horizonTime,
         @Schema(
                 description = """
-                Status of the parking lot. Each status represents a specific stage in the parking lot lifecycle:
-                
-                • UNDER_SURVEY - Initial stage when parking lot is being surveyed and evaluated
-                • PREPARING - Parking lot is being prepared for operation (infrastructure setup)
-                • REJECTED - Parking lot application/survey has been rejected by administrators
-                • PARTNER_CONFIGURATION - Partner is configuring pricing, spots, and other settings
-                • ACTIVE_PENDING - Configuration complete, waiting for admin approval to go live
-                • ACTIVE - Parking lot is operational and accepting customers
-                • INACTIVE - Parking lot is temporarily closed (e.g., off-season, renovation)
-                • UNDER_MAINTENANCE - Parking lot is undergoing maintenance or repairs
-                • MAP_DENIED - Parking lot location denied on the map system
-                
-                Note: Not all status transitions are allowed. Check business rules before updating.
-                """,
+                        Status of the parking lot. Each status represents a specific stage in the parking lot lifecycle:
+                        
+                        • UNDER_SURVEY - Initial stage when parking lot is being surveyed and evaluated
+                        • PREPARING - Parking lot is being prepared for operation (infrastructure setup)
+                        • REJECTED - Parking lot application/survey has been rejected by administrators
+                        • PARTNER_CONFIGURATION - Partner is configuring pricing, spots, and other settings
+                        • ACTIVE_PENDING - Configuration complete, waiting for admin approval to go live
+                        • ACTIVE - Parking lot is operational and accepting customers
+                        • INACTIVE - Parking lot is temporarily closed (e.g., off-season, renovation)
+                        • UNDER_MAINTENANCE - Parking lot is undergoing maintenance or repairs
+                        • MAP_DENIED - Parking lot location denied on the map system
+                        
+                        Note: Not all status transitions are allowed. Check business rules before updating.
+                        """,
                 example = "ACTIVE",
                 allowableValues = {"UNDER_SURVEY", "PREPARING", "REJECTED", "PARTNER_CONFIGURATION",
                         "ACTIVE_PENDING", "ACTIVE", "INACTIVE", "UNDER_MAINTENANCE", "MAP_DENIED"}

@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import org.hibernate.validator.constraints.Length;
 
 import java.util.List;
@@ -37,6 +38,41 @@ public record FloorCreateRequest(
         @Length(max = 100, message = "Floor name must not over 100 characters")
         @NotEmpty(message = "Floor name must not be empty")
         String floorName,
+
+        @Schema(
+                description = "Top left X coordinate",
+                example = "100.1",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        @NotNull(message = "Top left X must not be null")
+        Double floorTopLeftX,
+
+        @Schema(
+                description = "Top left Y coordinate",
+                example = "100.1",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        @NotNull(message = "Top left Y must not be null")
+        Double floorTopLeftY,
+
+        @Schema(
+                description = "Floor width",
+                example = "100.2",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        @NotNull(message = "Floor Width must not be null")
+        @Positive(message = "Floor Width must be positive")
+        Double floorWidth,
+
+        @Schema(
+                description = "Floor height",
+                example = "100.12",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        @NotNull(message = "Floor Height must not be null")
+        @Positive(message = "Floor Height must be positive")
+        Double floorHeight,
+
         @Schema(
                 description = "List of capacity configurations for different vehicle types on this floor",
                 example = "[{\"capacity\": 50, \"vehicleType\": \"CAR_4_SEATS\", \"supportElectricVehicle\": true}, {\"capacity\": 100, \"vehicleType\": \"MOTORBIKE\", \"supportElectricVehicle\": false}]",

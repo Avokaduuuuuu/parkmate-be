@@ -1,16 +1,16 @@
 package com.parkmate.pricing_rule;
 
+import com.parkmate.common.ApiResponse;
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import com.parkmate.pricing_rule.dto.req.PricingRuleUpdateRequest;
-import com.parkmate.common.ApiResponse;
+import com.parkmate.pricing_rule.dto.req.SyncedPricingRulesUpdateRequest;
+import com.parkmate.session.enums.SyncStatus;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/parking-service/pricing-rules")
@@ -30,7 +30,7 @@ public class PricingRuleController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(
                         ApiResponse.success(
-                            "Fetch Pricing Rules successfully",
+                                "Fetch Pricing Rules successfully",
                                 pricingRuleService.findAllPricingRules(page, size, sortBy, sortOrder)
                         )
                 );
@@ -53,7 +53,7 @@ public class PricingRuleController {
     public ResponseEntity<?> addPricingRule(
             @PathVariable("parkingLotId") Long parkingLotId,
             @RequestBody @Valid PricingRuleCreateRequest request
-    ){
+    ) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(
                         ApiResponse.success(
@@ -90,4 +90,30 @@ public class PricingRuleController {
                 );
     }
 
+    @GetMapping("/{lotId}/sync")
+    public ResponseEntity<?> syncPricingRules(
+            @PathVariable("lotId") Long lotId,
+            @RequestParam("status") SyncStatus status
+    ) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(
+                        ApiResponse.success(
+                                "Fetch pricing rules of a parking lot",
+                                pricingRuleService.findAllSyncPricingRules(lotId, status)
+                        )
+                );
+    }
+
+    @PutMapping("/sync")
+    public ResponseEntity<?> syncPricingRules(
+            @RequestBody SyncedPricingRulesUpdateRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(
+                        ApiResponse.success(
+                                "Update Synced Pricing Rules",
+                                pricingRuleService.updateSyncedPricingRules(request)
+                        )
+                );
+    }
 }

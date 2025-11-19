@@ -1,12 +1,11 @@
 package com.parkmate.pricing_rule;
 
 
-import com.github.f4b6a3.uuid.UuidCreator;
-import com.parkmate.area.AreaEntity;
 import com.parkmate.common.enums.VehicleType;
 import com.parkmate.override_pricing_rule.OverridePricingRuleEntity;
 import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.session.SessionEntity;
+import com.parkmate.session.enums.SyncStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -19,7 +18,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -55,8 +53,7 @@ public class PricingRuleEntity {
     Integer initialDurationMinute;
 
     @Column(name = "is_active")
-    @Builder.Default
-    Boolean isActive = true;
+    Boolean isActive;
 
     @Column(name = "valid_from", nullable = false, columnDefinition = "This price rule will be able after this time")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -64,6 +61,11 @@ public class PricingRuleEntity {
 
     @Column(name = "valid_until", columnDefinition = "This price rule will be disable after this time")
     LocalDateTime validUntil;
+
+    @Column(name = "sync_status")
+    @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    SyncStatus syncStatus;
 
     @Column(name = "created_at")
     @CreatedDate
@@ -79,8 +81,6 @@ public class PricingRuleEntity {
     @JoinColumn(name = "lot_id")
     ParkingLotEntity parkingLot;
 
-    @OneToMany(mappedBy = "pricingRule")
-    List<AreaEntity> areas;
 
     @OneToMany(mappedBy = "pricingRule")
     List<SessionEntity> sessions;

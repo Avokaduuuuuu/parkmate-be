@@ -24,11 +24,12 @@ public class WalletTransactionController {
             @RequestParam(required = false, defaultValue = "id") String sortBy,
             @RequestParam(required = false, defaultValue = "asc") String sortOrder,
             @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader,
+            @RequestHeader(value = "X-User-Role", required = false) @Parameter(hidden = true) String role,
             @ModelAttribute TransactionSearchCriteria criteria
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(walletTransactionService.getTransactions(
-                        page, size, sortBy, sortOrder, criteria, userIdHeader
+                        page, size, sortBy, sortOrder, criteria, userIdHeader, role
                 ))
         );
     }

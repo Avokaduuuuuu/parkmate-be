@@ -1,6 +1,7 @@
 package com.parkmate.parking_lot.dto.req;
 
 import com.parkmate.lot_capacity.dto.req.LotCapacityCreateRequest;
+import com.parkmate.policy.dto.req.PolicyCreateRequest;
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -53,6 +54,14 @@ public record ParkingLotCreateRequest(
         @NotNull(message = "Parking Lot City must not be null")
         @NotEmpty(message = "Parking Lot City must not be empty")
         String city,
+
+        @Schema(
+                description = "Total usable parking area across all floors",
+                example = "1000.50",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        @NotNull(message = "Lot Square must not be null")
+        Double lotSquare,
 
         @Schema(
                 description = "Latitude coordinate of the parking lot location",
@@ -119,18 +128,65 @@ public record ParkingLotCreateRequest(
         @NotNull
         Boolean is24Hour,
 
+
+        @Schema(
+                description = "Horizon time to predict how long a user will park",
+                example = "100",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        @NotNull
+        Double horizonTime,
+
         @Valid
+        @NotNull(message = "Lot capacity list must not be null")
+        @NotEmpty(message = "Lot capacity list must not be empty")
         List<LotCapacityCreateRequest> lotCapacityRequests,
 
         @Valid
-        List<PricingRuleCreateRequest> pricingRuleCreateRequests
+        @NotNull(message = "Pricing rule list must not be null")
+        @NotEmpty(message = "Pricing rule list must not be empty")
+        List<PricingRuleCreateRequest> pricingRuleCreateRequests,
+
+        @Schema(
+                description = """
+                        List of policies for the parking lot. Must include all 4 required policy types:
+                        1. EARLY_CHECK_IN_BUFFER - Grace period for early check-in (e.g., 10 minutes)
+                        2. LATE_CHECK_OUT_BUFFER - Grace period for late check-out (e.g., 15 minutes)
+                        3. LATE_CHECK_IN_CANCEL_AFTER - Time limit before auto-cancellation (e.g., 30 minutes)
+                        4. EARLY_CANCEL_REFUND_BEFORE - Time before check-in to get refund (e.g., 60 minutes)
+                        """,
+                requiredMode = Schema.RequiredMode.REQUIRED,
+                example = """
+                        [
+                          {
+                            "policyType": "EARLY_CHECK_IN_BUFFER",
+                            "value": 10
+                          },
+                          {
+                            "policyType": "LATE_CHECK_OUT_BUFFER",
+                            "value": 15
+                          },
+                          {
+                            "policyType": "LATE_CHECK_IN_CANCEL_AFTER",
+                            "value": 30
+                          },
+                          {
+                            "policyType": "EARLY_CANCEL_REFUND_BEFORE",
+                            "value": 60
+                          }
+                        ]
+                        """
+        )
+        @Valid
+        @NotNull(message = "Policy list must not be null")
+        @NotEmpty(message = "Policy list must not be empty")
+        List<PolicyCreateRequest> policyCreateRequests
 ) {
 
-        @Schema(hidden = true)
-        public boolean isValid() {
-                return operatingHoursStart != null &&
-                        operatingHoursEnd != null &&
-                        !operatingHoursStart.equals(operatingHoursEnd);
-        }
+    @Schema(hidden = true)
+    public boolean isValid() {
+        return operatingHoursStart != null &&
+                operatingHoursEnd != null &&
+                !operatingHoursStart.equals(operatingHoursEnd);
+    }
 }
-

@@ -70,6 +70,29 @@ public enum ErrorCode {
     PAYOS_ORDER_NOT_FOUND(3306, "PayOS order not found", HttpStatus.NOT_FOUND),
 
     CANCEL_FAILED(3307, "Failed to cancel with PayOS", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    PAYOUT_STATUS_CHECK_FAILED(3308, "Failed to check payout status for ID '{0}'", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    WITHDRAWAL_AMOUNT_TOO_LOW(3309, "Minimum withdrawal amount is 10,000 VND", HttpStatus.BAD_REQUEST),
+
+    WITHDRAWAL_AMOUNT_TOO_HIGH(3310, "Maximum withdrawal amount is {0} VND", HttpStatus.BAD_REQUEST),
+
+    PAYOUT_CREATION_FAILED(3311, "Failed to create payout request: {0}", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    WALLET_DEDUCTION_FAILED(3312, "Failed to deduct amount from wallet: {0}", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    INVALID_BANK_ACCOUNT(3313, "Invalid bank account information", HttpStatus.BAD_REQUEST),
+
+    OPERATIONAL_FEE_CONFIG_NOT_FOUND(3901, "Operational fee config not found", HttpStatus.NOT_FOUND),
+
+    SYSTEM_CONFIG_NOT_FOUND(3902, "System config not found for key: {0}", HttpStatus.NOT_FOUND),
+    INVALID_CONFIG_VALUE(3903, "Invalid config value for key: {0}", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    WITHDRAWAL_PERIOD_NOT_FOUND(3904, "Withdrawal period not found", HttpStatus.NOT_FOUND),
+    PERIOD_ALREADY_WITHDRAWN(3905, "Period has already been withdrawn", HttpStatus.BAD_REQUEST),
+    INVALID_PERIOD_OWNER(3906, "Period does not belong to this partner", HttpStatus.FORBIDDEN),
+    WITHDRAWAL_NOT_FOUND(3907, "Withdrawal not found", HttpStatus.NOT_FOUND),
+
     ;
 
     private final int code;

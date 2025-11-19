@@ -21,14 +21,17 @@ public abstract class VehicleMapper {
             @Mapping(target = "isActive", ignore = true),
             @Mapping(target = "createdAt", ignore = true),
             @Mapping(target = "updatedAt", ignore = true),
-            @Mapping(target = "isElectric", source = "electric")
-
+            @Mapping(target = "isElectric", source = "electric"),
+            @Mapping(target = "reservations", ignore = true)
     })
     public abstract Vehicle toEntity(CreateVehicleRequest vehicleDTO);
 
     @Mapping(target = "userId", source = "user.id")
-    @Mapping(target = "isElectric", source = "electric")
+    @Mapping(target = "electric", source = "electric")
     @Mapping(target = "vehiclePhotoUrl", source = "vehicleImage", qualifiedByName = "generatePresignedUrl")
+    @Mapping(target = "inReservation", ignore = true)
+    @Mapping(target = "hasSubscriptionInThisParkingLot", ignore = true)
+    @Mapping(target = "supported", ignore = true)
     public abstract VehicleResponse toDTO(Vehicle vehicle);
 
     @Named("generatePresignedUrl")
@@ -47,8 +50,9 @@ public abstract class VehicleMapper {
             @Mapping(target = "updatedAt", ignore = true),
             @Mapping(target = "licensePlate", ignore = true),
             @Mapping(target = "active", ignore = true), //test
-            @Mapping(target = "electric", source = "isElectric"),
-            @Mapping(target = "vehicleImage", ignore = true) // Handled separately
+            @Mapping(target = "electric", source = "electric"),
+            @Mapping(target = "vehicleImage", ignore = true), // Handled separately
+            @Mapping(target = "reservations", ignore = true)
     })
     public abstract void updateEntityFromDTO(UpdateVehicleRequest vehicleDTO, @MappingTarget Vehicle vehicle);
 

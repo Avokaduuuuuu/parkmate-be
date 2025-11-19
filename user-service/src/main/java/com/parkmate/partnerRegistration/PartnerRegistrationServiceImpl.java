@@ -2,13 +2,13 @@ package com.parkmate.partnerRegistration;
 
 import com.parkmate.account.Account;
 import com.parkmate.account.AccountRepository;
+import com.parkmate.account.publisher.AccountEventPublisher;
 import com.parkmate.common.enums.AccountRole;
 import com.parkmate.common.enums.AccountStatus;
 import com.parkmate.common.enums.RequestStatus;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.common.util.PaginationUtil;
-import com.parkmate.email.EmailService;
 import com.parkmate.partner.Partner;
 import com.parkmate.partner.PartnerRepository;
 import com.parkmate.partner.PartnerStatus;
@@ -16,6 +16,7 @@ import com.parkmate.partnerRegistration.dto.CreatePartnerRegistrationRequest;
 import com.parkmate.partnerRegistration.dto.PartnerRegistrationResponse;
 import com.parkmate.partnerRegistration.dto.PartnerRegistrationSearchRequest;
 import com.parkmate.partnerRegistration.dto.UpdatePartnerRegistrationRequest;
+import com.parkmate.s3.S3Service;
 import com.querydsl.core.types.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +38,8 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
     private final PartnerRegistrationMapper mapper;
     private final PartnerRepository partnerRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
+    private final AccountEventPublisher accountEventPublisher;
+    private final S3Service s3Service;
 
     @Override
     public PartnerRegistrationResponse registerPartner(CreatePartnerRegistrationRequest request) {
@@ -65,8 +67,9 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         PartnerRegistration savedEntity = partnerRegistrationRepository.save(partnerRegistration);
 
         try {
-            emailService.sendPartnerVerificationEmail(
+            accountEventPublisher.publishPartnerVerificationEvent(
                     savedAccount.getEmail(),
+                    partnerRegistration.getCompanyName(),
                     verificationToken
             );
         } catch (Exception e) {
@@ -75,11 +78,12 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         return mapper.toDto(savedEntity);
     }
 
+
     @Override
     public PartnerRegistrationResponse getPartnerRegistrationById(Long id) {
         PartnerRegistration partnerRegistration = partnerRegistrationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARTNER_REGISTRATION_NOT_FOUND));
-        return mapper.toDto(partnerRegistration);
+        return convertToResponseWithPresignedUrl(partnerRegistration);
     }
 
     @Override
@@ -91,14 +95,28 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         PartnerRegistration partnerRegistration = partnerRegistrationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PARTNER_REGISTRATION_NOT_FOUND));
 
-        if (!accountRepository.existsById(request.getReviewerId())) {
-            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        if (request.getReviewerId() != null || request.getStatus() != null) {
+            Long reviewerId = request.getReviewerId();
+            if (reviewerId != null && !accountRepository.existsById(reviewerId)) {
+                throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+            }
         }
 
-        switch (request.getStatus()) {
-            case APPROVED -> approvePartnerRegistration(partnerRegistration, request);
-            case REJECTED -> rejectPartnerRegistration(partnerRegistration, request);
-            default -> mapper.updateEntityFromDto(request, partnerRegistration);
+        mapper.updateEntityFromDto(request, partnerRegistration);
+
+        if (request.getStatus() != null) {
+            switch (request.getStatus()) {
+                case APPROVED -> approvePartnerRegistration(partnerRegistration, request);
+                case REJECTED -> rejectPartnerRegistration(partnerRegistration, request);
+                case PENDING -> {
+                    // Allow setting status back to PENDING for re-review
+                    partnerRegistration.setStatus(RequestStatus.PENDING);
+                    partnerRegistration.setReviewedBy(null);
+                    partnerRegistration.setReviewedAt(null);
+                    partnerRegistration.setApprovalNotes(null);
+                    partnerRegistration.setRejectionReason(null);
+                }
+            }
         }
 
         PartnerRegistration savedPartnerRegistration = partnerRegistrationRepository.save(partnerRegistration);
@@ -109,7 +127,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
     public Page<PartnerRegistrationResponse> getPartnerRegistrations(PartnerRegistrationSearchRequest request, Pageable pageable) {
         Predicate predicate = PartnerRegistrationSpecification.buildPredicate(request.toCriteria());
         Page<PartnerRegistration> page = partnerRegistrationRepository.findAll(predicate, pageable);
-        return page.map(mapper::toDto);
+        return page.map(this::convertToResponseWithPresignedUrl);
     }
 
     @Override
@@ -117,7 +135,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         Predicate predicate = PartnerRegistrationSpecification.buildPredicate(request.toCriteria());
         Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
         Page<PartnerRegistration> registrationPage = partnerRegistrationRepository.findAll(predicate, pageable);
-        return registrationPage.map(mapper::toDto);
+        return registrationPage.map(this::convertToResponseWithPresignedUrl);
     }
 
     @Override
@@ -181,5 +199,16 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         Random random = new Random();
         return String.valueOf(100000 + random.nextInt(900000));
 
+    }
+
+    private PartnerRegistrationResponse convertToResponseWithPresignedUrl(PartnerRegistration partnerRegistration) {
+        PartnerRegistrationResponse response = mapper.toDto(partnerRegistration);
+
+        if (response.getBusinessLicenseFileUrl() != null && !response.getBusinessLicenseFileUrl().isEmpty()) {
+            String presignedUrl = s3Service.generatePresignedUrl(response.getBusinessLicenseFileUrl());
+            response.setBusinessLicenseFileUrl(presignedUrl);
+        }
+
+        return response;
     }
 }

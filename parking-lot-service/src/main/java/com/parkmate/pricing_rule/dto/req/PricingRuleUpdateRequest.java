@@ -3,7 +3,9 @@ package com.parkmate.pricing_rule.dto.req;
 
 import com.parkmate.common.enums.VehicleType;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 
@@ -12,17 +14,16 @@ public record PricingRuleUpdateRequest(
                 description = "Name of the pricing rule for identification",
                 example = "Standard Weekday Pricing",
                 maxLength = 100,
-                requiredMode = Schema.RequiredMode.REQUIRED
+                requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
-        @NotEmpty(message = "Rule name must not be empty")
         @Size(min = 1, max = 100, message = "Rule name must not over 100 characters")
         String ruleName,
 
         @Schema(
                 description = "Type of vehicle this pricing rule applies to",
                 example = "CAR_4_SEATS",
-                allowableValues = {"BIKE", "MOTORBIKE", "CAR_4_SEATS", "CAR_7_SEATS", "CAR_9_SEATS", "OTHER"},
-                requiredMode = Schema.RequiredMode.REQUIRED
+                allowableValues = {"BIKE", "MOTORBIKE", "CAR_UP_TO_9_SEATS", "OTHER"},
+                requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
         VehicleType vehicleType,
 
@@ -88,11 +89,12 @@ public record PricingRuleUpdateRequest(
         )
         LocalDateTime validTo,
 
+
         @Schema(
-                description = "Id to apply rule for a specific area (null for lot-wide rule)",
-                example = "1",
+                description = "Status of a pricing rule",
+                example = "true",
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
-        Long areaId
+        Boolean isActive
 ) {
 }

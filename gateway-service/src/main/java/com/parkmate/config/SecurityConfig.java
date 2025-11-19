@@ -61,11 +61,35 @@ public class SecurityConfig {
             "/api/v1/parking-service/spots/{id}",
             "/api/v1/payment-service/momo/**",
             "/api/v1/parking-service/sessions/**",
+            "/api/v1/parking-service/subscriptions/**",
+            "/api/v1/parking-service/lots/*/vehicle-type/*",
+            "/api/v1/parking-service/floors/*/vehicle-type/*",
 
             // PayOS webhook endpoints (must be public for PayOS callbacks)
             "/api/v1/payment-service/payos/payos_transfer_handler",
             "/api/v1/payment-service/payos/return",
-            "/api/v1/payment-service/payos/cancel"
+            "/api/v1/payment-service/payos/cancel",
+
+            // Internal service-to-service endpoints (bypassing gateway auth, authenticated at service level)
+            "/internal/**",
+
+            // Sync API
+            "/api/v1/parking-service/pricing-rules/{lotId}/sync",
+            "/api/v1/parking-service/pricing-rules/sync",
+            "/api/v1/user-service/reservations/{lotId}/sync",
+            "/api/v1/user-service/reservations/{id}/sync",
+            "api/v1/user-service/vehicle/users/{userId}",
+            "/api/v1/parking-service/sessions/{lotId}/sync",
+            "/api/v1/parking-service/policies/{lotId}/sync",
+            "/api/v1/parking-service/policies/sync",
+            "/api/v1/user-service/user-subscriptions/{id}/sync",
+            "/api/v1/user-service/user-subscriptions/{lotId}/sync",
+
+            // Test
+            "/api/v1/fcm/test",
+            "/api/v1/payment-service/wallets/sync",
+
+
     };
 
 
@@ -73,6 +97,11 @@ public class SecurityConfig {
     public static final String[] PARTNER_ENDPOINTS = {
             "/api/v1/user-service/partners/**",
             "/api/v1/parking-service/**",
+    };
+
+    public static final String[] MEMBER_PARKING_ENDPOINTS = {
+            "/api/v1/parking-service/spots/*/session",
+            "/api/v1/parking-service/lots/*/available-spots"
     };
 
     // Member endpoints (regular users)
@@ -96,8 +125,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Changed this line
                 .authorizeExchange(ex -> ex
                         .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .pathMatchers(MEMBER_PARKING_ENDPOINTS).hasAnyRole("MEMBER", "ADMIN")
                         .pathMatchers(PARTNER_ENDPOINTS).hasAnyRole("PARTNER_OWNER", "PARTNER_STAFF", "ADMIN")
-                        .pathMatchers(MEMBER_ENDPOINTS).hasAnyRole("MEMBER", "ADMIN")
+                        .pathMatchers(MEMBER_ENDPOINTS).hasAnyRole("MEMBER", "ADMIN", "PARTNER_OWNER", "PARTNER_STAFF")
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

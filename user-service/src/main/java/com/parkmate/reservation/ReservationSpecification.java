@@ -16,19 +16,19 @@ public class ReservationSpecification {
 
         // Filter by user ID from header (applies when ownedByMe is true)
         if (userId != null && Boolean.TRUE.equals(criteria.getOwnedByMe())) {
-            builder.and(reservation.userId.eq(userId));
+            builder.and(reservation.user.id.eq(userId));
         }
         // Filter by specific user ID (only when ownedByMe is explicitly false - for admin/partner use)
         else if (criteria.getUserId() != null && Boolean.FALSE.equals(criteria.getOwnedByMe())) {
-            builder.and(reservation.userId.eq(criteria.getUserId()));
+            builder.and(reservation.user.id.eq(criteria.getUserId()));
         }
         // Filter by user ID when ownedByMe is null
         else if (criteria.getUserId() != null && criteria.getOwnedByMe() == null) {
-            builder.and(reservation.userId.eq(criteria.getUserId()));
+            builder.and(reservation.user.id.eq(criteria.getUserId()));
         }
         // Default: when userId from header is present and ownedByMe is null, filter by header userId
-        else if (userId != null && criteria.getOwnedByMe() == null && criteria.getUserId() == null) {
-            builder.and(reservation.userId.eq(userId));
+        else if (userId != null && criteria.getOwnedByMe() == null) {
+            builder.and(reservation.user.id.eq(userId));
         }
 
         // Filter by reservation ID
@@ -38,17 +38,12 @@ public class ReservationSpecification {
 
         // Filter by vehicle ID
         if (criteria.getVehicleId() != null) {
-            builder.and(reservation.vehicleId.eq(criteria.getVehicleId()));
+            builder.and(reservation.vehicle.id.eq(criteria.getVehicleId()));
         }
 
         // Filter by parking lot ID
         if (criteria.getParkingLotId() != null) {
             builder.and(reservation.parkingLotId.eq(criteria.getParkingLotId()));
-        }
-
-        // Filter by spot ID
-        if (criteria.getSpotId() != null) {
-            builder.and(reservation.spotId.eq(criteria.getSpotId()));
         }
 
         // Filter by status
@@ -82,7 +77,7 @@ public class ReservationSpecification {
      */
     public static Predicate forUser(Long userId) {
         QReservation reservation = QReservation.reservation;
-        return reservation.userId.eq(userId);
+        return reservation.user.id.eq(userId);
     }
 
     /**

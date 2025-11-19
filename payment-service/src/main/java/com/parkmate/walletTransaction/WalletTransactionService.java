@@ -16,6 +16,7 @@ public interface WalletTransactionService {
                                                     String sortBy,
                                                     String sortOrder,
                                                     TransactionSearchCriteria criteria,
-                                                    String userHeaderId);
+                                                    String userHeaderId,
+                                                    String role);
 
 }

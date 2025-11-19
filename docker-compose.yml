@@ -1,7 +1,7 @@
 version: '3.8'
 
 x-common-env: &common-env
-  DATABASE_HOST : ${DATABASE_HOST}
+  DATABASE_HOST: ${DATABASE_HOST}
   DATABASE_USERNAME: ${DATABASE_USERNAME}
   DATABASE_PASSWORD: ${DATABASE_PASSWORD}
   CONFIG_HOST: ${CONFIG_HOST}
@@ -9,6 +9,9 @@ x-common-env: &common-env
   EUREKA_PORT: ${EUREKA_PORT}
   EUREKA_HOST: ${EUREKA_HOST}
   REDIS_HOST: ${REDIS_HOST}
+  KAFKA_HOST: ${KAFKA_HOST}
+  KAFKA_PORT: ${KAFKA_PORT}
+  KAFKA_CONSUMER_GROUP_ID: ${KAFKA_CONSUMER_GROUP_ID}
 
 services:
   postgres:
@@ -129,4 +132,20 @@ services:
       PARKING_DATABASE: ${PAYMENT_DATABASE}
       PARKING_LOT_PORT: ${PAYMENT_PORT}
       <<: *common-env
+    restart: unless-stopped
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    depends_on:
+      config-service:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+    ports:
+      - "8084:8080"
+
+    environment:
+      <<: *common-env
+
     restart: unless-stopped

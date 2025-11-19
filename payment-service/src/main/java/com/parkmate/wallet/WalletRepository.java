@@ -8,19 +8,29 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface WalletRepository extends JpaRepository<Wallet, Long> {
 
-    Optional<Wallet> findByUserId(@NonNull Long Long);
+    /**
+     * @deprecated Use {@link #findByHolderIdAndWalletOwner(Long, WalletOwner)} instead.
+     * This method may return non-unique results if a user has both MEMBER and PARTNER wallets.
+     */
+    @Deprecated
+    Optional<Wallet> findByHolderId(@NonNull Long Long);
 
-    boolean existsByUserId(@NonNull Long userId);
+    boolean existsByHolderId(@NonNull Long userId);
 
-    Page<Wallet> findAllByUserId(@NonNull Long userId, Pageable pageable);
+    Page<Wallet> findAllByHolderId(@NonNull Long userId, Pageable pageable);
 
-    @Query("SELECT w.balance FROM Wallet w WHERE w.userId = :userId")
+    @Query("SELECT w.balance FROM Wallet w WHERE w.holderId = :userId")
     BigDecimal getBalanceByUserId(@NonNull Long userId);
+
+    List<Wallet> findByHolderIdIn(@NonNull List<Long> userIds);
+
+    Optional<Wallet> findByHolderIdAndWalletOwner(Long holderId, WalletOwner walletOwner);
 }
 
 

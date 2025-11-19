@@ -19,11 +19,24 @@ momo:
   timeout: 30000
 
 payos:
+  # Payment configuration (for top-up)
   client-id: ${PAYOS_CLIENT_ID:paste-client-id-here}
   api-key: ${PAYOS_API_KEY:paste-api-key-here}
   checksum-key: ${PAYOS_CHECKSUM_KEY:paste-checksum-key-here}
+
+  # Payout configuration (for withdrawals)
+  # If not provided, will fallback to payment config
+  payout-client-id: ${PAYOS_PAYOUT_CLIENT_ID:${PAYOS_CLIENT_ID}}
+  payout-api-key: ${PAYOS_PAYOUT_API_KEY:${PAYOS_API_KEY}}
+  payout-checksum-key: ${PAYOS_PAYOUT_CHECKSUM_KEY:${PAYOS_CHECKSUM_KEY}}
+
+  # URLs
   return-url: ${PAYOS_RETURN_URL:http://localhost:8080/api/v1/payment-service/payos/return}
   cancel-url: ${PAYOS_CANCEL_URL:http://localhost:8080/api/v1/payment-service/payos/cancel}
+
+payment:
+  expiration:
+    minutes: ${PAYMENT_EXPIRATION_MINUTES:15}
 
 springdoc:
   api-docs:
@@ -32,13 +45,10 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
-    # Disable auto-generated server URL
     disable-swagger-default-url: true
-    # Set default server to Gateway
     URLs:
       - name: Payment Service via Gateway
         url: /v3/api-docs
-  # Disable server generation from context
   use-management-port: false
   show-actuator: false
 
@@ -46,19 +56,20 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics
+
   metrics:
     distribution:
       percentiles-histogram:
         http:
           server:
             requests: true
-  observations:
-    key-values:
-      application: user-service
-  tracing:
-    sampling:
-      probability: 1.0
-  zipkin:
-    tracing:
-      endpoint: http://${ZIPKIN_URL:http://localhost:9411}/api/v2/spans
+    tags:
+      application: payment-service
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name}]"
+  level:
+    root: INFO
+    com.parkmate: DEBUG

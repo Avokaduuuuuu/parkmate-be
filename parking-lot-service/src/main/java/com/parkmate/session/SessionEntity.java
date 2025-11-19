@@ -1,14 +1,10 @@
 package com.parkmate.session;
 
 import com.github.f4b6a3.uuid.UuidCreator;
-import com.github.f4b6a3.uuid.util.UuidUtil;
+import com.parkmate.common.enums.VehicleType;
 import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.pricing_rule.PricingRuleEntity;
-import com.parkmate.session.enums.AuthMethod;
-import com.parkmate.session.enums.SessionStatus;
-import com.parkmate.session.enums.SessionType;
-import com.parkmate.session.enums.SyncStatus;
-import com.parkmate.spot.SpotEntity;
+import com.parkmate.session.enums.*;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -39,8 +35,13 @@ public class SessionEntity {
     @Column(name = "user_id")
     Long userId;
 
-    @Column(name = "vehicle_id")
-    Long vehicleId;
+    @Column(name = "reference_id")
+    Long referenceId;
+
+    @Column(name = "reference_type")
+    @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    ReferenceType referenceType;
 
     @Column(name = "license_plate")
     String licensePlate;
@@ -54,6 +55,11 @@ public class SessionEntity {
     @Enumerated(EnumType.STRING)
     @JdbcType(PostgreSQLEnumJdbcType.class)
     AuthMethod authMethod;
+
+    @Column(name = "vehicle_type")
+    @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    VehicleType vehicleType;
 
     @Column(name = "entry_time")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -89,6 +95,18 @@ public class SessionEntity {
     @Column(name = "card_uuid")
     String cardUUID;
 
+    @Column(name = "entry_image")
+    String entryImage;
+
+    @Column(name = "entry_plate_image")
+    String entryPlateImage;
+
+    @Column(name = "exit_image")
+    String exitImage;
+
+    @Column(name = "exit_plate_image")
+    String exitPlateImage;
+
     @Column(name = "created_at")
     @CreatedDate
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -103,9 +121,6 @@ public class SessionEntity {
     @JoinColumn(name = "lot_id")
     ParkingLotEntity parkingLot;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "spot_id")
-    SpotEntity spot;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pricing_rule_id")

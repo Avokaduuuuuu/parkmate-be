@@ -3,8 +3,6 @@ package com.parkmate.spot.dto.req;
 import com.parkmate.spot.enums.SpotStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 
 public record SpotUpdateRequest(
         @Schema(

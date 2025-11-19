@@ -3,6 +3,7 @@ package com.parkmate.area;
 import com.parkmate.area.dto.req.AreaCreateRequest;
 import com.parkmate.area.dto.req.AreaUpdateRequest;
 import com.parkmate.common.ApiResponse;
+import com.parkmate.common.enums.VehicleType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/parking-service/areas")
@@ -53,15 +56,35 @@ public class AreaController {
 
     @Operation(
             summary = "Get parking area by ID",
-            description = "Retrieve detailed information about a specific parking area by its unique identifier, including all associated parking spots"
+            description = "Retrieve detailed information about a specific parking area by its unique identifier, including all associated parking spots. Optionally filter by date range."
     )
     @GetMapping("/{id}")
     public ResponseEntity<?> findById(
             @PathVariable("id")
             @Parameter(description = "Unique identifier of the parking area", required = true, example = "1")
             @Positive(message = "Area ID must be positive")
-            Long id
+            Long id,
+
+            @RequestParam(required = false)
+            @Parameter(description = "Check-in time for availability filtering", example = "2025-10-29T14:00:00")
+            LocalDateTime checkIn,
+
+            @RequestParam(required = false)
+            @Parameter(description = "Check-out time for availability filtering", example = "2025-10-29T16:00:00")
+            LocalDateTime checkOut
     ) {
+        // If both dates provided, use date-filtered service method
+        if (checkIn != null && checkOut != null) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(
+                            ApiResponse.success(
+                                    "Fetch Area by Id with availability successfully",
+                                    areaService.findAreaDetailByIdAndTime(id, checkIn, checkOut)
+                            )
+                    );
+        }
+
+        // Otherwise, use regular method
         return ResponseEntity.status(HttpStatus.OK)
                 .body(
                         ApiResponse.success(
@@ -132,11 +155,42 @@ public class AreaController {
             @Positive(message = "Area ID must be positive")
             Long id
     ) {
+        areaService.deleteArea(id);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(
                         ApiResponse.success(
-                                "Area deleted successfully",
-                                areaService.deleteArea(id)
+                                "Area deleted successfully"
+                        )
+                );
+    }
+
+    @Operation(
+            summary = "Get area subscription availability (Internal API)",
+            description = "Retrieve subscription availability for areas in a floor. Returns areas with SUBSCRIPTION_ONLY type and their available spot counts for the given time period ."
+    )
+    @GetMapping("/internal/subscription-availability")
+    public ResponseEntity<?> getSubscriptionAvailability(
+            @RequestParam
+            @Parameter(description = "Floor ID to get areas from", required = true, example = "1")
+            Long floorId,
+
+            @RequestParam
+            @Parameter(description = "Vehicle type to filter areas", required = true, example = "CAR_UP_TO_9_SEATS")
+            VehicleType vehicleType,
+
+            @RequestParam
+            @Parameter(description = "Subscription start date", required = true, example = "2025-01-15T00:00:00")
+            LocalDateTime startDate,
+
+            @RequestParam
+            @Parameter(description = "Subscription end date", required = true, example = "2025-02-15T00:00:00")
+            LocalDateTime endDate
+    ) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(
+                        ApiResponse.success(
+                                "Fetch area subscription availability successfully",
+                                areaService.getSubscriptionAvailability(floorId, vehicleType, startDate, endDate)
                         )
                 );
     }
@@ -151,4 +205,6 @@ public class AreaController {
                         )
                 );
     }
+
+
 }

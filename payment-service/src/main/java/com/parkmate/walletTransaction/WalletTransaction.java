@@ -35,9 +35,6 @@ public class WalletTransaction {
         }
     }
 
-    @Column(name = "user_id", nullable = false)
-    Long userId;
-
     @Column(name = "wallet_id", nullable = false)
     Long walletId;
 
@@ -46,9 +43,6 @@ public class WalletTransaction {
             foreignKey = @ForeignKey(name = "fk_wallet_transaction_wallet"))
     Wallet wallet;
 
-    @Column(name = "session_id", nullable = false)
-    UUID sessionId;
-
     @Column(name = "transaction_type", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
@@ -56,12 +50,6 @@ public class WalletTransaction {
 
     @Column(name = "amount", nullable = false)
     BigDecimal amount;
-
-    @Column(name = "fee", nullable = false)
-    BigDecimal fee;
-
-    @Column(name = "net_amount")
-    BigDecimal netAmount;
 
     @Column(name = "external_transaction_id", nullable = false, length = 3)
     String externalTransactionId;
@@ -79,13 +67,14 @@ public class WalletTransaction {
     @LastModifiedDate
     LocalDateTime processedAt;
 
-    @Column(name = "description", length = 255)
+    @Column(name = "description")
     String description;
 
     @Column(name = "metadata")
     @JdbcTypeCode(SqlTypes.JSON)
     String metadata;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp
     LocalDateTime createdAt;
 }

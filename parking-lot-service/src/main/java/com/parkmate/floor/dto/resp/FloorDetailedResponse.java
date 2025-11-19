@@ -15,6 +15,10 @@ import java.util.List;
 public class FloorDetailedResponse {
     Long id;
     Integer floorNumber;
+    Double floorTopLeftX;
+    Double floorTopLeftY;
+    Double floorWidth;
+    Double floorHeight;
     String floorName;
     Boolean isActive;
     List<FloorCapacityResponse> parkingFloorCapacity;

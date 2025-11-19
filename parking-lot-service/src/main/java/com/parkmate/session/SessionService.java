@@ -1,25 +1,34 @@
 package com.parkmate.session;
 
 import com.parkmate.session.dto.req.SessionCreateRequest;
+import com.parkmate.session.dto.req.SessionSyncRequest;
 import com.parkmate.session.dto.req.SessionUpdateRequest;
+import com.parkmate.session.dto.resp.SessionDetailedResponse;
 import com.parkmate.session.dto.resp.SessionResponse;
 import org.springframework.data.domain.Page;
 
-import java.util.UUID;
+import java.util.List;
 
 public interface SessionService {
-    SessionResponse createSession(Long lotId,SessionCreateRequest request);
+    SessionResponse createSession(Long lotId, SessionCreateRequest request);
 
     Page<SessionResponse> getSessions(
+            String userIdHeader,
             int page,
             int size,
             String sortBy,
-            String sortOrder
+            String sortOrder,
+            SessionFilterParams filterParams
     );
 
-    SessionResponse getSession(String cardUUID);
+    SessionDetailedResponse getSession(String id);
+
     SessionResponse updateSession(String cardUUID, SessionUpdateRequest request);
+
     Long count();
-    SessionResponse deleteSession(String cardUUID);
+
+    void deleteSession(String cardUUID);
+
+    Integer syncSessions(Long lotId, List<SessionSyncRequest> requests);
 }
 

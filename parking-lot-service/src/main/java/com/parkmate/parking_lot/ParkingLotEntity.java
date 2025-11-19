@@ -2,13 +2,14 @@ package com.parkmate.parking_lot;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.common.BaseEntity;
-
 import com.parkmate.floor.FloorEntity;
 import com.parkmate.image.ImageEntity;
 import com.parkmate.lot_capacity.LotCapacityEntity;
-import com.parkmate.pricing_rule.PricingRuleEntity;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
+import com.parkmate.policy.PolicyEntity;
+import com.parkmate.pricing_rule.PricingRuleEntity;
 import com.parkmate.session.SessionEntity;
+import com.parkmate.subscription.SubscriptionEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -26,7 +27,7 @@ import java.util.List;
 @Entity
 @Table(name = "parking_lot")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class    ParkingLotEntity extends BaseEntity {
+public class ParkingLotEntity extends BaseEntity {
 
     @Column(name = "partner_id")
     Long partnerId;
@@ -42,6 +43,9 @@ public class    ParkingLotEntity extends BaseEntity {
 
     @Column(name = "city", length = 100)
     String city;
+
+    @Column(name = "lot_square")
+    Double lotSquare;
 
     @Column(name = "latitude")
     Double latitude;
@@ -63,17 +67,9 @@ public class    ParkingLotEntity extends BaseEntity {
     @Column(name = "is_24_hour")
     Boolean is24Hour;
 
-    @Column(name = "boundary_top_left_x")
-    Double boundaryTopLeftX;
 
-    @Column(name = "boundary_top_left_y")
-    Double boundaryTopLeftY;
-
-    @Column(name = "boundary_width")
-    Double boundaryWidth;
-
-    @Column(name = "boundary_height")
-    Double boundaryHeight;
+    @Column(name = "horizon_time")
+    Double horizonTime;
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
@@ -82,7 +78,6 @@ public class    ParkingLotEntity extends BaseEntity {
 
     @Column(name = "reason")
     String reason;
-
 
     @OneToMany(mappedBy = "parkingLot")
     List<FloorEntity> parkingFloors;
@@ -100,4 +95,9 @@ public class    ParkingLotEntity extends BaseEntity {
     @OneToMany(mappedBy = "parkingLot", cascade = CascadeType.ALL)
     List<ImageEntity> images;
 
+    @OneToMany(mappedBy = "parkingLot")
+    List<SubscriptionEntity> subscriptions;
+
+    @OneToMany(mappedBy = "parkingLot", cascade = CascadeType.ALL)
+    List<PolicyEntity> policies;
 }

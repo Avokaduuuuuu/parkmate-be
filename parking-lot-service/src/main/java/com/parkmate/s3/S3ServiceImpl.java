@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class S3ServiceImpl implements S3Service{
+public class S3ServiceImpl implements S3Service {
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
     private final ParkingLotRepository parkingLotRepository;
@@ -48,7 +48,7 @@ public class S3ServiceImpl implements S3Service{
         String folderName = "lots";
         String prefix = parkingLotEntity.getId() + "_" + parkingLotEntity.getName();
         for (MultipartFile file : files) {
-            String fileName = folderName + "/" +  prefix + "/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            String fileName = folderName + "/" + prefix + "/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
             try {
                 s3Client.putObject(
                         PutObjectRequest.builder()
@@ -81,7 +81,7 @@ public class S3ServiceImpl implements S3Service{
         String folderName = "lots";
         String prefix = parkingLotEntity.getId() + "_" + parkingLotEntity.getName();
         for (MultipartFile file : files) {
-            String fileName = folderName + "/" +  prefix + "/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            String fileName = folderName + "/" + prefix + "/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
             try {
                 s3Client.putObject(
                         PutObjectRequest.builder()
