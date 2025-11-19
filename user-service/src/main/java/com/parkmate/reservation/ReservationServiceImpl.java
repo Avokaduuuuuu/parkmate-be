@@ -213,8 +213,141 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public void cancelReservation(Long id) {
+    @Transactional
+    public void cancelReservation(Long id, String userIdHeader) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.RESERVATION_NOT_FOUND, "Reservation not found: " + id));
 
+        // Check if reservation belongs to the user
+        if (userIdHeader != null) {
+            Long userId = Long.parseLong(userIdHeader);
+            if (!reservation.getUser().getId().equals(userId)) {
+                throw new AppException(ErrorCode.RESERVATION_NOT_BELONG_TO_USER);
+            }
+        }
+
+        // Check if reservation is already cancelled
+        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+            throw new AppException(ErrorCode.RESERVATION_ALREADY_CANCELLED);
+        }
+
+        // Check if reservation can be cancelled (only PENDING or ACTIVE can be cancelled)
+        if (reservation.getStatus() != ReservationStatus.PENDING && reservation.getStatus() != ReservationStatus.ACTIVE) {
+            throw new AppException(ErrorCode.RESERVATION_CANNOT_BE_CANCELLED);
+        }
+
+        // Check refund policy
+        boolean shouldRefund = checkRefundEligibility(reservation);
+
+        // Update reservation status
+        reservation.setStatus(ReservationStatus.CANCELLED);
+        reservationRepository.save(reservation);
+
+        if (shouldRefund) {
+            processRefund(reservation);
+        } else {
+            log.info("Reservation {} cancelled without refund (outside refund window)", reservation.getId());
+        }
+
+        // Send notification
+        sendNotificationForStatus(reservation.getId(), ReservationStatus.CANCELLED);
+    }
+
+    /**
+     * Check if reservation is eligible for refund based on cancellation policy
+     * Returns true if cancelled before the refund deadline
+     */
+    private boolean checkRefundEligibility(Reservation reservation) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // Get cancellation refund policy from parking lot
+        Integer refundWindowMinutes = null;
+        try {
+            ApiResponse<ParkingLotClient.PolicyDto> policyResponse =
+                    parkingLotClient.getPolicyByLotIdAndType(reservation.getParkingLotId(), "EARLY_CANCEL_REFUND_BEFORE");
+
+            if (policyResponse != null && policyResponse.data() != null) {
+                refundWindowMinutes = policyResponse.data().value();
+                log.info("Got refund policy for lot {}: {} minutes before reservation",
+                        reservation.getParkingLotId(), refundWindowMinutes);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to get refund policy for parking lot {}. Using default.",
+                    reservation.getParkingLotId(), e);
+        }
+
+        if (refundWindowMinutes == null) {
+            refundWindowMinutes = 30;
+            log.info("Using default refund window: 30 minutes");
+        }
+
+        // Calculate refund deadline (reservedFrom - refundWindowMinutes)
+        LocalDateTime refundDeadline = reservation.getReservedFrom().minusMinutes(refundWindowMinutes);
+
+        boolean isEligible = now.isBefore(refundDeadline);
+        log.info("Refund eligibility check for reservation {}: now={}, refundDeadline={}, eligible={}",
+                reservation.getId(), now, refundDeadline, isEligible);
+
+        return isEligible;
+    }
+
+    /**
+     * Process refund for cancelled reservation
+     */
+    private void processRefund(Reservation reservation) {
+        if (reservation.getInitialFee() == null || reservation.getInitialFee().compareTo(BigDecimal.ZERO) <= 0) {
+            log.info("No refund needed for reservation {} (initial fee is zero or null)", reservation.getId());
+            return;
+        }
+
+        // Get partner ID for the parking lot
+        Long partnerId = null;
+        try {
+            ApiResponse<ParkingLotClient.PartnerIdDto> partnerResponse =
+                    parkingLotClient.getPartnerIdByParkingLotId(reservation.getParkingLotId());
+            if (partnerResponse != null && partnerResponse.data() != null) {
+                partnerId = partnerResponse.data().partnerId();
+                log.info("Retrieved partner ID {} for refund", partnerId);
+            }
+        } catch (Exception e) {
+            log.error("Failed to get partner ID for parking lot {}. Proceeding without partner debit.",
+                    reservation.getParkingLotId(), e);
+        }
+
+        try {
+            ResponseEntity<ApiResponse<WalletTransactionResponse>> refundResult = paymentClient.refundWallet(
+                    CreateTransactionRequest.builder()
+                            .userId(reservation.getUser().getId())
+                            .partnerId(partnerId)
+                            .amount(reservation.getInitialFee())
+                            .transactionType(TransactionConstants.TYPE_REFUND)
+                            .processedAt(LocalDateTime.now())
+                            .description("Hoàn tiền hủy đặt chỗ: " + reservation.getId())
+                            .build()
+            );
+
+            if (!refundResult.hasBody() || refundResult.getBody() == null) {
+                log.error("Payment service returned empty response for refund of reservation ID: {}", reservation.getId());
+                throw new AppException(ErrorCode.WALLET_TRANSACTION_NOT_FOUND, "Refund service is unavailable");
+            }
+
+            ApiResponse<WalletTransactionResponse> refundResponse = refundResult.getBody();
+
+            if (!refundResponse.success()) {
+                log.error("Refund failed for reservation ID: {}. Reason: {}",
+                        reservation.getId(), refundResponse.message());
+                throw new AppException(ErrorCode.WALLET_TRANSACTION_NOT_FOUND, refundResponse.message());
+            }
+
+            log.info("Refund successful for reservation ID: {}, amount: {} VND",
+                    reservation.getId(), reservation.getInitialFee());
+
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error during refund for reservation ID: {}", reservation.getId(), e);
+            throw new AppException(ErrorCode.WALLET_TRANSACTION_NOT_FOUND, "Refund processing failed: " + e.getMessage());
+        }
     }
 
     @Override
@@ -412,16 +545,22 @@ public class ReservationServiceImpl implements ReservationService {
         sendReservationNotificationWithContent(
                 reservationId,
                 NotificationEventType.RESERVATION_CANCELLED,
-                "Reservation Cancelled",
+                "ĐẶT CHỖ ĐÃ BỊ HỦY",
                 reservation -> {
-                    String refundAmount = (reservation.getInitialFee() != null) ? reservation.getInitialFee().toString() : "0";
+                    String refundInfo;
+                    if (reservation.getInitialFee() != null && reservation.getInitialFee().compareTo(BigDecimal.ZERO) > 0) {
+                        String refundAmount = String.format("%,.0f", reservation.getInitialFee());
+                        refundInfo = String.format("Số tiền %s VND đã được hoàn lại vào ví của bạn.", refundAmount);
+                    } else {
+                        refundInfo = "Không có khoản tiền nào được hoàn lại.";
+                    }
 
                     long totalTime = System.currentTimeMillis() - startTime;
                     log.info("CANCELLED notification completed for reservation: {} in {}ms", reservationId, totalTime);
 
                     return String.format(
-                            "Your reservation has been cancelled. Refund of %s VND will be processed to your wallet.",
-                            refundAmount
+                            "Đặt chỗ của bạn đã bị hủy. %s",
+                            refundInfo
                     );
                 }
         );

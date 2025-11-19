@@ -82,12 +82,15 @@ public enum ErrorCode {
     RESERVATION_ALREADY_USED(2912, "This reservation has already been used", HttpStatus.BAD_REQUEST),
     RESERVATION_EXPIRED(2913, "Reservation has expired", HttpStatus.BAD_REQUEST),
     INVALID_RESERVATION_DATA(2914, "Invalid reservation", HttpStatus.BAD_REQUEST),
+    RESERVATION_ALREADY_CANCELLED(2915, "Reservation has already been cancelled", HttpStatus.BAD_REQUEST),
+    RESERVATION_CANNOT_BE_CANCELLED(2916, "Reservation cannot be cancelled in its current status", HttpStatus.BAD_REQUEST),
+    RESERVATION_NOT_BELONG_TO_USER(2917, "Reservation does not belong to the user", HttpStatus.FORBIDDEN),
 
     INVALID_USER_SUBSCRIPTION_TIME(21000, "Invalid _USER SUBSCRIPTION time", HttpStatus.BAD_REQUEST),
     USER_SUBSCRIPTION_NOT_FOUND(21001, "_USER SUBSCRIPTION not found", HttpStatus.NOT_FOUND),
-    USER_SUBSCRIPTION_ALREADY_USED(21002, "This _USER SUBSCRIPTION has already been used", HttpStatus.BAD_REQUEST),
-    USER_SUBSCRIPTION_EXPIRED(21003, "_USER SUBSCRIPTION has expired", HttpStatus.BAD_REQUEST),
-    INVALID_USER_SUBSCRIPTION_DATA(21004, "Invalid _USER  SUBSCRIPTION", HttpStatus.BAD_REQUEST),
+    USER_SUBSCRIPTION_ALREADY_USED(21002, "This USER SUBSCRIPTION has already been used", HttpStatus.BAD_REQUEST),
+    USER_SUBSCRIPTION_EXPIRED(21003, "USER SUBSCRIPTION has expired", HttpStatus.BAD_REQUEST),
+    INVALID_USER_SUBSCRIPTION_DATA(21004, "Invalid USER SUBSCRIPTION", HttpStatus.BAD_REQUEST),
     ;
 
 

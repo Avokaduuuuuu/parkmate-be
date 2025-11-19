@@ -71,6 +71,12 @@ public interface ParkingLotClient {
             @RequestParam VehicleType vehicleType
     );
 
+    @GetMapping("/internal/parking-service/policies")
+    ApiResponse<PolicyDto> getPolicyByLotIdAndType(
+            @RequestParam Long lotId,
+            @RequestParam String policyType
+    );
+
 
     record ParkingLotSimpleDto(Long id, String name, Integer horizonTime) {
     }
@@ -140,6 +146,16 @@ public interface ParkingLotClient {
             String status,
             String blockReason,
             Boolean hasSession
+    ) {
+    }
+
+    record PolicyDto(
+            Long id,
+            Long lotId,
+            String policyType,
+            Integer value,
+            Double rate,
+            Boolean isActive
     ) {
     }
 }

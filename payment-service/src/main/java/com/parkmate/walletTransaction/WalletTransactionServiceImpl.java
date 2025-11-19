@@ -32,8 +32,8 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
     @Transactional
     public WalletTransactionResponse createWalletTransaction(CreateTransactionRequest request) {
 
-        log.info("Creating wallet transaction for user {}: type={}, amount={}",
-                request.getUserId(), request.getTransactionType(), request.getAmount());
+        log.info("Creating wallet transaction for user {}: type={}, amount={}, partnerId={}",
+                request.getUserId(), request.getTransactionType(), request.getAmount(), request.getPartnerId());
 
         Wallet wallet = walletRepository.findByHolderIdAndWalletOwner(request.getUserId(), WalletOwner.MEMBER)
                 .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND,
