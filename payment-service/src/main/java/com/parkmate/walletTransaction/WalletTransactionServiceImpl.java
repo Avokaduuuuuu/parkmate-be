@@ -50,7 +50,7 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
         }
         BigDecimal newBalance;
         switch (transactionType) {
-            case DEDUCTION -> {
+            case DEDUCTION, SUBSCRIPTION_PAYMENT, RESERVATION_PAYMENT -> {
                 if (memberCurrentBalance.compareTo(amount) < 0) {
                     log.warn("Insufficient balance for user {}. Current: {}, Required: {}",
                             request.getUserId(), memberCurrentBalance, amount);

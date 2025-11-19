@@ -79,4 +79,30 @@ public interface SessionRepository extends JpaRepository<SessionEntity, UUID>, J
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to
     );
+
+    /**
+     * Get session count for sessions by session type and reference type
+     * Used for calculating partner withdrawal periods
+     *
+     * @param lotId The parking lot ID
+     * @param sessionType The session type (MEMBER or OCCASIONAL)
+     * @param referenceType The reference type (WALK_IN, RESERVATION, or SUBSCRIPTION)
+     * @param from Start date/time
+     * @param to End date/time
+     * @return Total session count
+     */
+    @Query("SELECT COUNT(s) FROM SessionEntity s " +
+           "WHERE s.parkingLot.id = :lotId " +
+           "AND s.sessionType = :sessionType " +
+           "AND s.referenceType = :referenceType " +
+           "AND s.status IN ('COMPLETED', 'MANUAL_COMPLETED') " +
+           "AND s.entryTime >= :from " +
+           "AND (s.exitTime <= :to OR s.exitTime IS NULL)")
+    Long getCountByTypeAndReference(
+            @Param("lotId") Long lotId,
+            @Param("sessionType") SessionType sessionType,
+            @Param("referenceType") ReferenceType referenceType,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
 }

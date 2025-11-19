@@ -130,7 +130,7 @@ public class ReservationServiceImpl implements ReservationService {
                             .userId(reservation.getUser().getId())
                             .partnerId(partnerId)
                             .amount(reservation.getInitialFee())
-                            .transactionType(TransactionConstants.TYPE_DEDUCTION)
+                            .transactionType(TransactionConstants.TYPE_RESERVATION)
                             .processedAt(LocalDateTime.now())
                             .description("Cọc đặt chỗ: " + reservation.getId())
                             .build()
@@ -562,7 +562,7 @@ public class ReservationServiceImpl implements ReservationService {
                                 .userId(reservation.getUser().getId())
                                 .partnerId(partnerId)
                                 .amount(deductionAmount)
-                                .transactionType(TransactionConstants.TYPE_DEDUCTION)
+                                .transactionType(TransactionConstants.TYPE_RESERVATION)
                                 .description(String.format("Additional charge for reservation %d (Total: %s VND - Prepaid: %s VND)",
                                         reservation.getId(), reservation.getTotalFee(), reservation.getInitialFee()))
                                 .build()

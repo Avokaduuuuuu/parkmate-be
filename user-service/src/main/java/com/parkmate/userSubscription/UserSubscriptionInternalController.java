@@ -1,6 +1,7 @@
 package com.parkmate.userSubscription;
 
 import com.parkmate.common.dto.ApiResponse;
+import com.parkmate.userSubscription.dto.RevenueWithCount;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,7 +32,7 @@ public class UserSubscriptionInternalController {
     }
 
     @GetMapping("/revenue")
-    public ApiResponse<BigDecimal> getSubscriptionRevenue(
+    public ApiResponse<RevenueWithCount> getSubscriptionRevenue(
             @RequestParam Long lotId,
             @RequestParam String from,
             @RequestParam String to
@@ -39,13 +40,15 @@ public class UserSubscriptionInternalController {
         LocalDateTime fromDate = LocalDateTime.parse(from);
         LocalDateTime toDate = LocalDateTime.parse(to);
 
-        // Sử dụng query có sẵn trong UserSubscriptionRepository
-        BigDecimal revenue = userSubscriptionService.getTotalRevenue(
-                lotId,
-                fromDate,
-                toDate
-        );
+        // Get both revenue and count from repository
+        BigDecimal revenue = userSubscriptionService.getTotalRevenue(lotId, fromDate, toDate);
+        Long count = userSubscriptionService.getTotalCount(lotId, fromDate, toDate);
 
-        return ApiResponse.success(revenue != null ? revenue : BigDecimal.ZERO);
+        RevenueWithCount result = RevenueWithCount.builder()
+                .revenue(revenue != null ? revenue : BigDecimal.ZERO)
+                .count(count != null ? count : 0L)
+                .build();
+
+        return ApiResponse.success(result);
     }
 }

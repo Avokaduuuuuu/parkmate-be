@@ -1,6 +1,7 @@
 package com.parkmate.client;
 
 import com.parkmate.client.dto.ParkingLotBasicInfo;
+import com.parkmate.client.dto.RevenueWithCount;
 import com.parkmate.common.ApiResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,7 +9,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @FeignClient(name = "parking-lot-service")
@@ -25,30 +25,30 @@ public interface ParkingLotClient {
     ApiResponse<Void> activateParkingLot(@PathVariable("lotId") Long lotId);
 
     /**
-     * Get total revenue from MEMBER+RESERVATION sessions for a parking lot in a date range
+     * Get total revenue and session count from MEMBER+RESERVATION sessions for a parking lot in a date range
      *
      * @param lotId  The parking lot ID
      * @param from   Start date (ISO format: yyyy-MM-ddTHH:mm:ss)
      * @param to     End date (ISO format: yyyy-MM-ddTHH:mm:ss)
-     * @return Total revenue amount
+     * @return Revenue and count data
      */
     @GetMapping("/internal/sessions/revenue/member-reservation")
-    ApiResponse<BigDecimal> getMemberReservationRevenue(
+    ApiResponse<RevenueWithCount> getMemberReservationRevenue(
             @RequestParam("lotId") Long lotId,
             @RequestParam("from") String from,
             @RequestParam("to") String to
     );
 
     /**
-     * Get total revenue from MEMBER+WALK_IN sessions for a parking lot in a date range
+     * Get total revenue and session count from MEMBER+WALK_IN sessions for a parking lot in a date range
      *
      * @param lotId  The parking lot ID
      * @param from   Start date (ISO format: yyyy-MM-ddTHH:mm:ss)
      * @param to     End date (ISO format: yyyy-MM-ddTHH:mm:ss)
-     * @return Total revenue amount
+     * @return Revenue and count data
      */
     @GetMapping("/internal/sessions/revenue/member-walkin")
-    ApiResponse<BigDecimal> getMemberWalkInRevenue(
+    ApiResponse<RevenueWithCount> getMemberWalkInRevenue(
             @RequestParam("lotId") Long lotId,
             @RequestParam("from") String from,
             @RequestParam("to") String to

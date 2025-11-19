@@ -1,6 +1,7 @@
 package com.parkmate.session;
 
 import com.parkmate.common.ApiResponse;
+import com.parkmate.session.dto.RevenueWithCount;
 import com.parkmate.session.enums.ReferenceType;
 import com.parkmate.session.enums.SessionType;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -29,12 +30,12 @@ public class SessionInternalController {
     private final SessionRepository sessionRepository;
 
     @GetMapping("/revenue/member-reservation")
-    public ApiResponse<BigDecimal> getMemberReservationRevenue(
+    public ApiResponse<RevenueWithCount> getMemberReservationRevenue(
             @RequestParam Long lotId,
             @RequestParam String from,
             @RequestParam String to
     ) {
-        log.info("Getting MEMBER+RESERVATION revenue for lot {} from {} to {}", lotId, from, to);
+        log.info("Getting MEMBER+RESERVATION revenue and count for lot {} from {} to {}", lotId, from, to);
 
         try {
             LocalDateTime fromDate = LocalDateTime.parse(from, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
@@ -48,22 +49,38 @@ public class SessionInternalController {
                     toDate
             );
 
-            log.debug("MEMBER+RESERVATION revenue for lot {}: {}", lotId, revenue);
-            return ApiResponse.success(revenue);
+            Long count = sessionRepository.getCountByTypeAndReference(
+                    lotId,
+                    SessionType.MEMBER,
+                    ReferenceType.RESERVATION,
+                    fromDate,
+                    toDate
+            );
+
+            RevenueWithCount result = RevenueWithCount.builder()
+                    .revenue(revenue)
+                    .count(count)
+                    .build();
+
+            log.debug("MEMBER+RESERVATION for lot {}: revenue={}, count={}", lotId, revenue, count);
+            return ApiResponse.success(result);
 
         } catch (Exception e) {
-            log.error("Error getting MEMBER+RESERVATION revenue for lot {}", lotId, e);
-            return ApiResponse.success(BigDecimal.ZERO);
+            log.error("Error getting MEMBER+RESERVATION data for lot {}", lotId, e);
+            return ApiResponse.success(RevenueWithCount.builder()
+                    .revenue(BigDecimal.ZERO)
+                    .count(0L)
+                    .build());
         }
     }
 
     @GetMapping("/revenue/member-walkin")
-    public ApiResponse<BigDecimal> getMemberWalkInRevenue(
+    public ApiResponse<RevenueWithCount> getMemberWalkInRevenue(
             @RequestParam Long lotId,
             @RequestParam String from,
             @RequestParam String to
     ) {
-        log.info("Getting MEMBER+WALK_IN revenue for lot {} from {} to {}", lotId, from, to);
+        log.info("Getting MEMBER+WALK_IN revenue and count for lot {} from {} to {}", lotId, from, to);
 
         try {
             LocalDateTime fromDate = LocalDateTime.parse(from, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
@@ -77,12 +94,28 @@ public class SessionInternalController {
                     toDate
             );
 
-            log.debug("MEMBER+WALK_IN revenue for lot {}: {}", lotId, revenue);
-            return ApiResponse.success(revenue);
+            Long count = sessionRepository.getCountByTypeAndReference(
+                    lotId,
+                    SessionType.MEMBER,
+                    ReferenceType.WALK_IN,
+                    fromDate,
+                    toDate
+            );
+
+            RevenueWithCount result = RevenueWithCount.builder()
+                    .revenue(revenue)
+                    .count(count)
+                    .build();
+
+            log.debug("MEMBER+WALK_IN for lot {}: revenue={}, count={}", lotId, revenue, count);
+            return ApiResponse.success(result);
 
         } catch (Exception e) {
-            log.error("Error getting MEMBER+WALK_IN revenue for lot {}", lotId, e);
-            return ApiResponse.success(BigDecimal.ZERO);
+            log.error("Error getting MEMBER+WALK_IN data for lot {}", lotId, e);
+            return ApiResponse.success(RevenueWithCount.builder()
+                    .revenue(BigDecimal.ZERO)
+                    .count(0L)
+                    .build());
         }
     }
 }

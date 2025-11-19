@@ -43,6 +43,17 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
     );
 
     @Query("SELECT " +
+            "COUNT(us) " +
+            "FROM UserSubscription us " +
+            "WHERE us.parkingLotId = :lotId AND us.paidAt >= :from AND us.paidAt <= :to AND us.paidAt IS NOT NULL"
+    )
+    Long getTotalCount(
+            @Param("lotId") Long lotId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
+
+    @Query("SELECT " +
             "us.subscriptionPackageId as id, " +
             "COUNT(us.subscriptionPackageId) AS total," +
             "SUM(us.paidAmount) AS totalAmount " +

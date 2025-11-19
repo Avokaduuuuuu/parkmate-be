@@ -3,6 +3,7 @@ package com.parkmate.partnerWithdrawalPeriod;
 import com.parkmate.client.ParkingLotClient;
 import com.parkmate.client.UserServiceClient;
 import com.parkmate.client.dto.ParkingLotBasicInfo;
+import com.parkmate.client.dto.RevenueWithCount;
 import com.parkmate.common.ApiResponse;
 import com.parkmate.common.PaginationUtil;
 import com.parkmate.exception.AppException;
@@ -20,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,22 +41,32 @@ public class PartnerWithdrawalPeriodServiceImpl implements PartnerWithdrawalPeri
     public List<PartnerWithdrawalPeriodResponse> createMonthlyWithdrawalPeriods() {
         log.info("=== Starting monthly withdrawal period creation ===");
 
-        // Calculate previous month date range
+        Integer cutoffDay = systemConfigService.getWithdrawalCutoffDay();
+        log.info("Using withdrawal cutoff day: {}", cutoffDay);
+
         LocalDate now = LocalDate.now();
-        YearMonth lastMonth = YearMonth.from(now).minusMonths(1);
-        LocalDate periodStartDate = lastMonth.atDay(1);
-        LocalDate periodEndDate = lastMonth.atEndOfMonth();
+
+        int currentMonthLength = now.lengthOfMonth();
+        int actualCutoffDay = Math.min(cutoffDay, currentMonthLength);
+        LocalDate currentMonthCutoff = now.withDayOfMonth(actualCutoffDay);
+
+        LocalDate periodEndDate;
+        if (now.getDayOfMonth() < actualCutoffDay) {
+            periodEndDate = currentMonthCutoff.minusMonths(1);
+        } else {
+            periodEndDate = currentMonthCutoff;
+        }
+
+        LocalDate periodStartDate = periodEndDate.minusMonths(1);
 
         log.info("Creating withdrawal periods for: {} to {}", periodStartDate, periodEndDate);
 
-        // Convert to LocalDateTime for queries (start of day and end of day)
         LocalDateTime fromDateTime = periodStartDate.atStartOfDay();
         LocalDateTime toDateTime = periodEndDate.atTime(23, 59, 59);
 
         String fromStr = fromDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         String toStr = toDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 
-        // Get all parking lots (across all partners)
         List<ParkingLotBasicInfo> allParkingLots = getAllParkingLots();
         log.info("Found {} parking lots to process", allParkingLots.size());
 
@@ -72,7 +82,6 @@ public class PartnerWithdrawalPeriodServiceImpl implements PartnerWithdrawalPeri
                 }
             } catch (Exception e) {
                 log.error("Failed to create withdrawal period for lot {}", lot.getId(), e);
-                // Continue with other lots
             }
         }
 
@@ -102,47 +111,70 @@ public class PartnerWithdrawalPeriodServiceImpl implements PartnerWithdrawalPeri
             return partnerWithdrawalPeriodMapper.toResponse(existing.get());
         }
 
-        // Calculate revenues for this parking lot
+        // Calculate revenues and counts for this parking lot
         BigDecimal totalReservation = BigDecimal.ZERO;
         BigDecimal totalSubscription = BigDecimal.ZERO;
         BigDecimal totalWalkIn = BigDecimal.ZERO;
 
+        Long reservationCount = 0L;
+        Long subscriptionCount = 0L;
+        Long walkInCount = 0L;
+
         try {
-            // Get MEMBER + RESERVATION revenue
-            ApiResponse<BigDecimal> reservationRevenue =
+            // Get MEMBER + RESERVATION revenue and count (from sessions)
+            ApiResponse<RevenueWithCount> reservationData =
                     parkingLotClient.getMemberReservationRevenue(lotId, fromStr, toStr);
-            if (reservationRevenue.data() != null) {
-                totalReservation = reservationRevenue.data();
+            if (reservationData.data() != null) {
+                totalReservation = reservationData.data().getRevenue();
+                reservationCount = reservationData.data().getCount();
             }
 
-            // Get MEMBER + WALK_IN revenue
-            ApiResponse<BigDecimal> walkInRevenue =
+            // Get penalty revenue from cancelled/expired reservations (no sessions created)
+            // Add this to reservation revenue
+            ApiResponse<RevenueWithCount> penaltyData =
+                    userServiceClient.getReservationPenaltyRevenue(lotId, fromStr, toStr);
+            if (penaltyData.data() != null) {
+                totalReservation = totalReservation.add(penaltyData.data().getRevenue());
+                reservationCount = reservationCount + penaltyData.data().getCount();
+            }
+
+            // Get MEMBER + WALK_IN revenue and count (from sessions)
+            ApiResponse<RevenueWithCount> walkInData =
                     parkingLotClient.getMemberWalkInRevenue(lotId, fromStr, toStr);
-            if (walkInRevenue.data() != null) {
-                totalWalkIn = walkInRevenue.data();
+            if (walkInData.data() != null) {
+                totalWalkIn = walkInData.data().getRevenue();
+                walkInCount = walkInData.data().getCount();
             }
 
-            // Get subscription revenue
-            ApiResponse<BigDecimal> subscriptionRevenue =
+            // Get subscription revenue and count
+            ApiResponse<RevenueWithCount> subscriptionData =
                     userServiceClient.getSubscriptionRevenue(lotId, fromStr, toStr);
-            if (subscriptionRevenue.data() != null) {
-                totalSubscription = subscriptionRevenue.data();
+            if (subscriptionData.data() != null) {
+                totalSubscription = subscriptionData.data().getRevenue();
+                subscriptionCount = subscriptionData.data().getCount();
             }
 
-            log.debug("Lot {} - Reservation: {}, WalkIn: {}, Subscription: {}",
-                    lotId, totalReservation, totalWalkIn, totalSubscription);
+            log.debug("Lot {} - Reservation: {} ({}), WalkIn: {} ({}), Subscription: {} ({})",
+                    lotId, totalReservation, reservationCount, totalWalkIn, walkInCount,
+                    totalSubscription, subscriptionCount);
 
         } catch (Exception e) {
-            log.error("Failed to fetch revenue for lot {}", lotId, e);
+            log.error("Failed to fetch revenue and counts for lot {}", lotId, e);
             // Continue with zero values or throw based on requirement
         }
 
-        String periodLabel = periodStartDate.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        // Create period label showing the date range (e.g., "2024-01-18 to 2024-02-18")
+        String periodLabel = String.format("%s to %s",
+                periodStartDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                periodEndDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
 
+        // Calculate gross revenue (penalty revenue already added to totalReservation)
         BigDecimal grossRevenue = totalReservation.add(totalSubscription).add(totalWalkIn);
         BigDecimal platformFeePercentage = systemConfigService.getPlatformFeePercentage();
         BigDecimal platformFee = grossRevenue.multiply(platformFeePercentage);
         BigDecimal netRevenue = grossRevenue.subtract(platformFee);
+
+        Integer totalSessions = Math.toIntExact(reservationCount + subscriptionCount + walkInCount);
 
         PartnerWithdrawalPeriod period = new PartnerWithdrawalPeriod();
         period.setLotId(lotId);
@@ -157,13 +189,18 @@ public class PartnerWithdrawalPeriodServiceImpl implements PartnerWithdrawalPeri
         period.setGrossRevenue(grossRevenue);
         period.setPlatformFee(platformFee);
         period.setNetRevenue(netRevenue);
+        period.setTotalSessions(totalSessions);
+        period.setReservationSessions(Math.toIntExact(reservationCount));
+        period.setSubscriptionSessions(Math.toIntExact(subscriptionCount));
+        period.setWalkInSessions(Math.toIntExact(walkInCount));
         period.setCreatedAt(LocalDateTime.now());
         period.setUpdatedAt(LocalDateTime.now());
 
         PartnerWithdrawalPeriod saved = partnerWithdrawalPeriodRepository.save(period);
 
-        log.info("Created withdrawal period for lot {} - Reservation: {}, WalkIn: {}, Subscription: {}",
-                lotId, totalReservation, totalWalkIn, totalSubscription);
+        log.info("Created withdrawal period for lot {} - Reservation: {} ({}), WalkIn: {} ({}), Subscription: {} ({}), Total: {} ({})",
+                lotId, totalReservation, reservationCount, totalWalkIn, walkInCount,
+                totalSubscription, subscriptionCount, grossRevenue, totalSessions);
 
         return partnerWithdrawalPeriodMapper.toResponse(saved);
     }

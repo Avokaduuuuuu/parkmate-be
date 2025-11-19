@@ -38,4 +38,8 @@ public interface UserSubscriptionService {
     BigDecimal getTotalRevenue(Long lotId,
                                LocalDateTime fromDate,
                                LocalDateTime toDate);
+
+    Long getTotalCount(Long lotId,
+                      LocalDateTime fromDate,
+                      LocalDateTime toDate);
 }

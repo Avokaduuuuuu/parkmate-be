@@ -18,7 +18,7 @@ public class UserSubscriptionResponse {
     private Long id;
     private Long userId;
     private Long vehicleId;
-    private Long vehicleType;
+    private String vehicleType;
     private String vehicleLicensePlate;
     private Long subscriptionPackageId;
     private String subscriptionPackageName;

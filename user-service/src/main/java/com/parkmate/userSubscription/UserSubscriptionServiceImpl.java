@@ -427,6 +427,10 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         return userSubscriptionRepository.getTotalRevenue(lotId, fromDate, toDate);
     }
 
+    @Override
+    public Long getTotalCount(Long lotId, LocalDateTime fromDate, LocalDateTime toDate) {
+        return userSubscriptionRepository.getTotalCount(lotId, fromDate, toDate);
+    }
 
     private void releaseSpotAfterSubscription(Long spotId, String userId) {
         try {
