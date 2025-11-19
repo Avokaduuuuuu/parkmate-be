@@ -23,4 +23,7 @@ public interface PaymentClient {
 
     @PostMapping("/api/v1/internal/wallet-transactions")
     ResponseEntity<ApiResponse<WalletTransactionResponse>> deductWallet(@RequestBody CreateTransactionRequest walletTransaction);
+
+    @PostMapping("/api/v1/internal/wallet-transactions/refund")
+    ResponseEntity<ApiResponse<WalletTransactionResponse>> refundWallet(@RequestBody CreateTransactionRequest walletTransaction);
 }

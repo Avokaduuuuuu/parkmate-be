@@ -14,7 +14,7 @@ public interface ReservationService {
 
     ReservationResponse getReservationById(Long id);
 
-    void cancelReservation(Long id);
+    void cancelReservation(Long id, String userIdHeader);
 
     Page<ReservationResponse> getReservations(int page, int size, String sortBy, String sortOrder, ReservationSearchCriteria criteria, String userIdHeader);
 
