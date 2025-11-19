@@ -140,6 +140,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     public UserSubscriptionResponse update(Long id, UpdateUserSubscriptionRequest request) {
         UserSubscription userSubscription = userSubscriptionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_SUBSCRIPTION_NOT_FOUND, id));
+        userSubscription.setSyncStatus(SyncStatus.PENDING);
         userSubscriptionMapper.updateEntityFromDto(request, userSubscription);
         return getUserSubscriptionResponse(userSubscriptionRepository.save(userSubscription));
     }
@@ -165,6 +166,11 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     public void syncUserSubscription(Long id) {
         UserSubscription userSubscription = userSubscriptionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_SUBSCRIPTION_NOT_FOUND, id));
+
+        if (userSubscription.getSyncStatus() == SyncStatus.PENDING) {
+            userSubscription.setSyncStatus(SyncStatus.SYNCED);
+        }
+
         if (userSubscription.getStatus() == UserSubscriptionStatus.ACTIVE) {
             userSubscription.setStatus(UserSubscriptionStatus.INACTIVE);
         } else if (userSubscription.getStatus() == UserSubscriptionStatus.INACTIVE) {
