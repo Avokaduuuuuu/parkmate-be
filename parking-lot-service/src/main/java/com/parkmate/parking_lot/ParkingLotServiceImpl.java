@@ -18,6 +18,7 @@ import com.parkmate.lot_capacity.dto.resp.LotCapacityResponse;
 import com.parkmate.parking_lot.dto.req.ParkingLotCreateRequest;
 import com.parkmate.parking_lot.dto.req.ParkingLotUpdateRequest;
 import com.parkmate.parking_lot.dto.resp.ParkingLotAvailableReservationSpotResponse;
+import com.parkmate.parking_lot.dto.resp.ParkingLotBasicInfo;
 import com.parkmate.parking_lot.dto.resp.ParkingLotDetailedResponse;
 import com.parkmate.parking_lot.dto.resp.ParkingLotResponse;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
@@ -480,5 +481,35 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         parkingLotRepository.save(parkingLot);
 
         log.info("✓ Parking lot {} activated successfully", lotId);
+    }
+
+    @Override
+    public List<ParkingLotBasicInfo> getAllParkingLotsBasicInfo() {
+        log.debug("Getting all parking lots basic info");
+
+        List<ParkingLotEntity> parkingLots = parkingLotRepository.findAll();
+
+        return parkingLots.stream()
+                .map(lot -> ParkingLotBasicInfo.builder()
+                        .id(lot.getId())
+                        .name(lot.getName())
+                        .partnerId(lot.getPartnerId())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ParkingLotBasicInfo> getParkingLotsByPartner(Long partnerId) {
+        log.debug("Getting parking lots for partner: {}", partnerId);
+
+        List<ParkingLotEntity> parkingLots = parkingLotRepository.findByPartnerId(partnerId);
+
+        return parkingLots.stream()
+                .map(lot -> ParkingLotBasicInfo.builder()
+                        .id(lot.getId())
+                        .name(lot.getName())
+                        .partnerId(lot.getPartnerId())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

@@ -6,7 +6,6 @@ import com.parkmate.parking_lot.ParkingLotEntity;
 import com.parkmate.parking_lot.ParkingLotRepository;
 import com.parkmate.pricing_rule.PricingRuleEntity;
 import com.parkmate.pricing_rule.PricingRuleRepository;
-import com.parkmate.pricing_rule.PricingRuleService;
 import com.parkmate.s3.S3Service;
 import com.parkmate.session.dto.req.SessionCreateRequest;
 import com.parkmate.session.dto.req.SessionSyncRequest;

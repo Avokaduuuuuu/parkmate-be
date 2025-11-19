@@ -1,6 +1,5 @@
 package com.parkmate.walletTransaction;
 
-import com.parkmate.client.UserServiceClient;
 import com.parkmate.common.PaginationUtil;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
@@ -33,21 +32,12 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
     @Transactional
     public WalletTransactionResponse createWalletTransaction(CreateTransactionRequest request) {
 
-        log.info("Creating wallet transaction for user {}: type={}, amount={}, partnerId={}",
-                request.getUserId(), request.getTransactionType(), request.getAmount(), request.getPartnerId());
+        log.info("Creating wallet transaction for user {}: type={}, amount={}",
+                request.getUserId(), request.getTransactionType(), request.getAmount());
 
         Wallet wallet = walletRepository.findByHolderIdAndWalletOwner(request.getUserId(), WalletOwner.MEMBER)
                 .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND,
                         "Member wallet not found for user: " + request.getUserId()));
-
-        Wallet partnerWallet = null;
-        BigDecimal partnerCurrentBalance = null;
-        if (request.getPartnerId() != null) {
-            partnerWallet = walletRepository.findByHolderIdAndWalletOwner(request.getPartnerId(), WalletOwner.PARTNER)
-                    .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND,
-                            "Partner wallet not found for partner: " + request.getPartnerId()));
-            partnerCurrentBalance = partnerWallet.getBalance();
-        }
 
         BigDecimal memberCurrentBalance = wallet.getBalance();
         BigDecimal amount = request.getAmount();
@@ -59,24 +49,14 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
             throw new AppException(ErrorCode.INVALID_TRANSACTION_TYPE);
         }
         BigDecimal newBalance;
-        BigDecimal partnerNewBalance = null;
         switch (transactionType) {
-            case DEDUCTION -> {
+            case DEDUCTION, SUBSCRIPTION_PAYMENT, RESERVATION_PAYMENT -> {
                 if (memberCurrentBalance.compareTo(amount) < 0) {
                     log.warn("Insufficient balance for user {}. Current: {}, Required: {}",
                             request.getUserId(), memberCurrentBalance, amount);
                     throw new AppException(ErrorCode.INSUFFICIENT_WALLET_BALANCE);
                 }
                 newBalance = memberCurrentBalance.subtract(amount);
-
-                if (partnerCurrentBalance != null) {
-                    partnerNewBalance = partnerCurrentBalance.add(amount);
-                    log.info("Crediting partner {}: {} + {} = {}",
-                            request.getPartnerId(), partnerCurrentBalance, amount, partnerNewBalance);
-                } else {
-                    log.warn("No partnerId provided for {} transaction. Partner will not be credited.",
-                            transactionType);
-                }
             }
             case TOP_UP, REFUND, REVERSAL -> {
                 newBalance = memberCurrentBalance.add(amount);
@@ -87,13 +67,6 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
 
         wallet.setBalance(newBalance);
         walletRepository.save(wallet);
-
-        if (partnerNewBalance != null) {
-            partnerWallet.setBalance(partnerNewBalance);
-            walletRepository.save(partnerWallet);
-            log.info("Partner wallet updated for partner {}: {} -> {}",
-                    request.getPartnerId(), partnerCurrentBalance, partnerNewBalance);
-        }
 
         log.debug("Wallet balance updated for user {}: {} -> {}",
                 request.getUserId(), memberCurrentBalance, newBalance);
@@ -107,21 +80,6 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
                 .build();
 
         walletTransaction = walletTransactionRepository.save(walletTransaction);
-
-        // Create partner transaction record only if partner wallet was credited
-        if (partnerNewBalance != null) {
-            WalletTransaction partnerWalletTransaction = WalletTransaction.builder()
-                    .walletId(partnerWallet.getId())
-                    .amount(amount)
-                    .transactionType(TransactionType.TOP_UP)  // Partner receives money (credit)
-                    .status(TransactionStatus.COMPLETED)
-                    .description("Received from reservation/subscription: " +
-                            (request.getDescription() != null ? request.getDescription() : ""))
-                    .build();
-
-            walletTransactionRepository.save(partnerWalletTransaction);
-            log.info("Partner transaction record created for partner {}", request.getPartnerId());
-        }
 
         WalletTransactionResponse response = walletTransactionMapper.toResponse(walletTransaction);
 

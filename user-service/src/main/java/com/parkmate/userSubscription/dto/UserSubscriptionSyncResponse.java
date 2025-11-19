@@ -17,7 +17,7 @@ public class UserSubscriptionSyncResponse {
     private Long userId;
     private String fullName;
     private Long vehicleId;
-    private Long vehicleType;
+    private String vehicleType;
     private String vehicleLicensePlate;
     private Long subscriptionPackageId;
     private Long parkingLotId;

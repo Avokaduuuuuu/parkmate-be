@@ -53,9 +53,50 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             "COUNT(CASE WHEN r.status = 'PENDING' THEN 1 END) AS pendingCount, " +
             "COUNT(CASE WHEN r.status = 'CANCELLED' THEN 1 END) AS cancelledCount, " +
             "COUNT(CASE WHEN r.status = 'EXPIRED' THEN 1 END) AS expiredCount, " +
-            "SUM(CASE WHEN r.status = 'COMPLETED' THEN r.totalFee END) AS totalRevenue " +
+            "COALESCE(SUM(CASE WHEN r.status IN ('COMPLETED', 'CANCELLED', 'EXPIRED') THEN r.totalFee ELSE 0 END), 0) AS totalRevenue " +
             "FROM Reservation r " +
             "WHERE r.parkingLotId = :lotId AND r.reservedFrom >= :from AND (r.reservedUntil <= :to OR r.reservedUntil IS NULL)"
     )
     ReservationProjection getStatistic(@Param("lotId") Long lotId, @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    /**
+     * Get total revenue from reservations that were cancelled or expired (penalty/deposit revenue)
+     * This includes reservations that didn't create sessions but kept the deposit
+     *
+     * @param lotId The parking lot ID
+     * @param from Start date/time
+     * @param to End date/time
+     * @return Total revenue from cancelled/expired reservations
+     */
+    @Query("SELECT COALESCE(SUM(r.totalFee), 0) " +
+            "FROM Reservation r " +
+            "WHERE r.parkingLotId = :lotId " +
+            "AND r.status IN ('CANCELLED', 'EXPIRED') " +
+            "AND r.createdAt >= :from " +
+            "AND r.createdAt <= :to")
+    java.math.BigDecimal getTotalPenaltyRevenue(
+            @Param("lotId") Long lotId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
+
+    /**
+     * Get count of reservations that were cancelled or expired
+     *
+     * @param lotId The parking lot ID
+     * @param from Start date/time
+     * @param to End date/time
+     * @return Count of cancelled/expired reservations
+     */
+    @Query("SELECT COUNT(r) " +
+            "FROM Reservation r " +
+            "WHERE r.parkingLotId = :lotId " +
+            "AND r.status IN ('CANCELLED', 'EXPIRED') " +
+            "AND r.createdAt >= :from " +
+            "AND r.createdAt <= :to")
+    Long getTotalPenaltyCount(
+            @Param("lotId") Long lotId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
 }

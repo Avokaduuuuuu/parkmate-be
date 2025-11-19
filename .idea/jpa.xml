@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="JpaBuddyIdeaProjectConfig">
-    <option name="reLastEntityCreationPackage" value="user-service/src/main/java/com/parkmate" />
-    <option name="reverseEngineeringLastDbConnectionId" value="ba3f8bb0-4172-4c9e-bdc6-5c89dfce904d" />
+    <option name="reLastEntityCreationPackage" value="payment-service/src/main/java/com/parkmate/userSubscription" />
+    <option name="reverseEngineeringLastDbConnectionId" value="4ba2c36c-b24e-40d6-93d1-ec9d1d2d7c32" />
   </component>
 </project>

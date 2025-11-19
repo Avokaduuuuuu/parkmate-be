@@ -12,7 +12,8 @@ public class TransactionConstants {
     public static final String TYPE_REFUND = "REFUND";
     public static final String TYPE_REVERSAL = "REVERSAL";
     public static final String TYPE_PENALTY = "PENALTY";
-    public static final String TYPE_SUBSCRIPTION = "SUBSCRIPTION";
+    public static final String TYPE_SUBSCRIPTION = "SUBSCRIPTION_PAYMENT";
+    public static final String TYPE_RESERVATION = "RESERVATION_PAYMENT";
 
     // Transaction Status
     public static final String STATUS_PENDING = "PENDING";

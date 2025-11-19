@@ -3,8 +3,6 @@ package com.parkmate.partnerRegistration;
 import com.parkmate.account.Account;
 import com.parkmate.account.AccountRepository;
 import com.parkmate.account.publisher.AccountEventPublisher;
-import com.parkmate.client.PaymentClient;
-import com.parkmate.client.dto.request.CreateWalletRequest;
 import com.parkmate.common.enums.AccountRole;
 import com.parkmate.common.enums.AccountStatus;
 import com.parkmate.common.enums.RequestStatus;
@@ -42,7 +40,6 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
     private final PasswordEncoder passwordEncoder;
     private final AccountEventPublisher accountEventPublisher;
     private final S3Service s3Service;
-    private final PaymentClient paymentClient;
 
     @Override
     public PartnerRegistrationResponse registerPartner(CreatePartnerRegistrationRequest request) {
@@ -171,15 +168,6 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
         account.setPartner(createPartner(savedRegistration));
         log.info("Partner created with ID: {} for registration ID: {}", account.getPartner().getId(), savedRegistration.getId());
         accountRepository.save(account);
-        createWallet(account.getPartner().getId());
-    }
-
-    private void createWallet(Long partnerId) {
-        try {
-            paymentClient.createWallet(new CreateWalletRequest(partnerId, "PARTNER"));
-        } catch (Exception e) {
-            log.error("Failed to create wallet for partner ID: {}", partnerId, e);
-        }
     }
 
     private void rejectPartnerRegistration(PartnerRegistration partnerRegistration, UpdatePartnerRegistrationRequest request) {

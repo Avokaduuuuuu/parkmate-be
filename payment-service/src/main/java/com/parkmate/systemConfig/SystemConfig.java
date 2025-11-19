@@ -5,11 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Getter
@@ -22,8 +22,11 @@ public class SystemConfig {
     @Column(name = "id", nullable = false)
     private Long id;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "config_key", columnDefinition = "config_key not null")
-    private Object configKey;
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    private ConfigKey configKey;
 
     @NotNull
     @Column(name = "config_value", nullable = false, length = Integer.MAX_VALUE)
