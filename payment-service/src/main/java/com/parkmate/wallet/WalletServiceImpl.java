@@ -49,22 +49,19 @@ public class WalletServiceImpl implements WalletService {
     @Transactional
     public WalletResponse createWallet(CreateWalletRequest createWalletRequest) {
 
-        // Check if user exists in user-service
-        validateUserId(createWalletRequest.getUserId());
+        validateUserId(createWalletRequest.getHolderId());
 
-        // Determine wallet owner type
         WalletOwner walletOwner = createWalletRequest.getWalletOwnerType().equals("PARTNER")
                 ? WalletOwner.PARTNER
                 : WalletOwner.MEMBER;
 
-        // Check if wallet already exists for this user AND wallet type
-        if (walletRepository.findByHolderIdAndWalletOwner(createWalletRequest.getUserId(), walletOwner).isPresent()) {
+        if (walletRepository.findByHolderIdAndWalletOwner(createWalletRequest.getHolderId(), walletOwner).isPresent()) {
             throw new AppException(ErrorCode.WALLET_ALREADY_EXISTS,
-                    String.format("userId: %d, type: %s", createWalletRequest.getUserId(), walletOwner));
+                    String.format("userId: %d, type: %s", createWalletRequest.getHolderId(), walletOwner));
         }
 
         Wallet wallet = Wallet.builder()
-                .holderId(createWalletRequest.getUserId())
+                .holderId(createWalletRequest.getHolderId())
                 .balance(BigDecimal.valueOf(0))
                 .walletOwner(walletOwner)
                 .currency("VND")
@@ -161,18 +158,6 @@ public class WalletServiceImpl implements WalletService {
         } catch (FeignException.NotFound e) {
             log.error("User not found with ID: {}", userId);
             throw new AppException(ErrorCode.USER_NOT_FOUND, userId);
-        } catch (FeignException e) {
-            log.error("Error calling user-service: {}", e.getMessage());
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
-    }
-
-    Long getUserIdFromAccountId(Long accountId) {
-        try {
-            return userServiceClient.getUserIdByAccountId(accountId);
-        } catch (FeignException.NotFound e) {
-            log.error("User not found for account ID: {}", accountId);
-            throw new AppException(ErrorCode.USER_NOT_FOUND, accountId);
         } catch (FeignException e) {
             log.error("Error calling user-service: {}", e.getMessage());
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
