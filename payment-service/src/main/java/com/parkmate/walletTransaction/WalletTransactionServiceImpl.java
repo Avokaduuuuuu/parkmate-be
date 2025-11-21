@@ -7,6 +7,7 @@ import com.parkmate.wallet.Wallet;
 import com.parkmate.wallet.WalletOwner;
 import com.parkmate.wallet.WalletRepository;
 import com.parkmate.walletTransaction.dto.CreateTransactionRequest;
+import com.parkmate.walletTransaction.dto.SessionPaymentCreateRequest;
 import com.parkmate.walletTransaction.dto.TransactionSearchCriteria;
 import com.parkmate.walletTransaction.dto.WalletTransactionResponse;
 import com.querydsl.core.types.Predicate;
@@ -124,6 +125,30 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
 
         // Map to response
         return transactions.map(walletTransactionMapper::toResponse);
+    }
+
+    @Override
+    @Transactional
+    public void createSessionCharge(SessionPaymentCreateRequest sessionPaymentCreateRequest) {
+        Wallet wallet = walletRepository.findById(sessionPaymentCreateRequest.getWalletId())
+                .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND, sessionPaymentCreateRequest.getWalletId()));
+
+        if (wallet.getBalance().compareTo(sessionPaymentCreateRequest.getTotalFee()) < 0) {
+            throw new AppException(ErrorCode.INSUFFICIENT_WALLET_BALANCE);
+        }
+
+        BigDecimal oldBalance = wallet.getBalance();
+        BigDecimal newBalance = wallet.getBalance().subtract(sessionPaymentCreateRequest.getTotalFee());
+        wallet.setBalance(newBalance);
+        walletRepository.save(wallet);
+        log.info("Updated wallet balance for user {}: {} -> {}", wallet.getHolderId(), oldBalance, newBalance);
+        walletTransactionRepository.save(WalletTransaction.builder()
+                .walletId(wallet.getId())
+                .amount(sessionPaymentCreateRequest.getTotalFee())
+                .transactionType(TransactionType.DEDUCTION)
+                .status(TransactionStatus.COMPLETED)
+                .description("Session charge")
+                .build());
     }
 
     private WalletOwner determineWalletOwnerFromRole(String role) {
