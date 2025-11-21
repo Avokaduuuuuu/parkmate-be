@@ -130,8 +130,8 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
     @Override
     @Transactional
     public void createSessionCharge(SessionPaymentCreateRequest sessionPaymentCreateRequest) {
-        Wallet wallet = walletRepository.findById(sessionPaymentCreateRequest.getWalletId())
-                .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND, sessionPaymentCreateRequest.getWalletId()));
+        Wallet wallet = walletRepository.findByHolderIdAndWalletOwner(sessionPaymentCreateRequest.getUserId(), WalletOwner.MEMBER)
+                .orElseThrow(() -> new AppException(ErrorCode.WALLET_NOT_FOUND, sessionPaymentCreateRequest.getUserId()));
 
         if (wallet.getBalance().compareTo(sessionPaymentCreateRequest.getTotalFee()) < 0) {
             throw new AppException(ErrorCode.INSUFFICIENT_WALLET_BALANCE);

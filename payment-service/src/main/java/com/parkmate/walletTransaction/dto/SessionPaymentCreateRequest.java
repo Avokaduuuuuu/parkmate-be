@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -13,7 +14,8 @@ import java.math.BigDecimal;
 @Builder
 public class SessionPaymentCreateRequest {
 
-    Long walletId;
+    UUID sessionId;
+    Long userId;
     BigDecimal totalFee;
 
 }
