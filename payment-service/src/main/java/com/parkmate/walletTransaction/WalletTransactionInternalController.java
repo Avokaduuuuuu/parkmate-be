@@ -2,7 +2,6 @@ package com.parkmate.walletTransaction;
 
 import com.parkmate.common.ApiResponse;
 import com.parkmate.walletTransaction.dto.CreateTransactionRequest;
-import com.parkmate.walletTransaction.dto.SessionPaymentCreateRequest;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,11 +29,5 @@ public class WalletTransactionInternalController {
         return ResponseEntity.ok(ApiResponse.success(walletTransactionService.createWalletTransaction(walletTransaction)));
     }
 
-    @PostMapping("/session-payment")
-    @Hidden
-    public ResponseEntity<ApiResponse<?>> deductWalletAtGate(@RequestBody SessionPaymentCreateRequest sessionPaymentCreateRequest) {
-        walletTransactionService.createSessionCharge(sessionPaymentCreateRequest);
-        return ResponseEntity.ok(ApiResponse.success("Payment successful"));
-    }
 
 }

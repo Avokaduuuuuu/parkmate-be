@@ -1,6 +1,7 @@
 package com.parkmate.walletTransaction;
 
 import com.parkmate.common.ApiResponse;
+import com.parkmate.walletTransaction.dto.SessionPaymentCreateRequest;
 import com.parkmate.walletTransaction.dto.TransactionSearchCriteria;
 import com.parkmate.walletTransaction.dto.WalletTransactionResponse;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,6 +33,12 @@ public class WalletTransactionController {
                         page, size, sortBy, sortOrder, criteria, userIdHeader, role
                 ))
         );
+    }
+
+    @PostMapping("/session-payment")
+    public ResponseEntity<ApiResponse<?>> deductWalletAtGate(@RequestBody SessionPaymentCreateRequest sessionPaymentCreateRequest) {
+        walletTransactionService.createSessionCharge(sessionPaymentCreateRequest);
+        return ResponseEntity.ok(ApiResponse.success("Payment successful"));
     }
 
 }
