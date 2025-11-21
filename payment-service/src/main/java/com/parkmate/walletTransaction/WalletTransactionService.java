@@ -1,6 +1,7 @@
 package com.parkmate.walletTransaction;
 
 import com.parkmate.walletTransaction.dto.CreateTransactionRequest;
+import com.parkmate.walletTransaction.dto.SessionPaymentCreateRequest;
 import com.parkmate.walletTransaction.dto.TransactionSearchCriteria;
 import com.parkmate.walletTransaction.dto.WalletTransactionResponse;
 import org.springframework.data.domain.Page;
@@ -18,5 +19,7 @@ public interface WalletTransactionService {
                                                     TransactionSearchCriteria criteria,
                                                     String userHeaderId,
                                                     String role);
+
+    void createSessionCharge(SessionPaymentCreateRequest sessionPaymentCreateRequest);
 
 }

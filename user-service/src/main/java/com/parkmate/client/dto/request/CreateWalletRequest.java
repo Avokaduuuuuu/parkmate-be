@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CreateWalletRequest {
     Long holderId;
-    String walletType;
+    String walletOwnerType;
 }

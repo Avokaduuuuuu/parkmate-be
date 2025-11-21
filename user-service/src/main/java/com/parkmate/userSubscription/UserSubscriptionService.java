@@ -42,4 +42,6 @@ public interface UserSubscriptionService {
     Long getTotalCount(Long lotId,
                       LocalDateTime fromDate,
                       LocalDateTime toDate);
+
+    UserSubscriptionResponse setRenewalDecision(Long subscriptionId, Boolean continueRenewal);
 }

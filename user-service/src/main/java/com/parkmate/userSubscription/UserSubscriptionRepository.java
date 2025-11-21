@@ -66,4 +66,32 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to
     );
+
+    /**
+     * Find subscriptions by status list within an endDate range (for expiration reminders)
+     *
+     * @param statuses List of statuses to filter by (e.g., ACTIVE, INACTIVE)
+     * @param start Start of the time range for endDate
+     * @param end End of the time range for endDate
+     * @return List of subscriptions matching the criteria
+     */
+    List<UserSubscription> findByStatusInAndEndDateBetween(
+            List<UserSubscriptionStatus> statuses,
+            LocalDateTime start,
+            LocalDateTime end
+    );
+
+    /**
+     * Find subscriptions by status list, autoRenew flag, and endDate before a certain time (for auto-renewal processing)
+     *
+     * @param statuses List of statuses to filter by (e.g., ACTIVE, INACTIVE)
+     * @param autoRenew The autoRenew flag value
+     * @param endDate Find subscriptions with endDate before or equal to this time
+     * @return List of subscriptions matching the criteria
+     */
+    List<UserSubscription> findByStatusInAndAutoRenewAndEndDateBefore(
+            List<UserSubscriptionStatus> statuses,
+            Boolean autoRenew,
+            LocalDateTime endDate
+    );
 }
