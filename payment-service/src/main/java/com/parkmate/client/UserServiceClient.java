@@ -20,7 +20,7 @@ public interface UserServiceClient {
     @GetMapping("/internal/partners/account/{accountId}")
     ApiResponse<Long> getPartnerIdByAccountId(@PathVariable("accountId") Long accountId);
 
-    @GetMapping("/internal/user-subscriptions/revenue")
+    @GetMapping("/internal/user-service/user-subscriptions/revenue")
     ApiResponse<RevenueWithCount> getSubscriptionRevenue(
             @RequestParam("lotId") Long lotId,
             @RequestParam("from") String from,

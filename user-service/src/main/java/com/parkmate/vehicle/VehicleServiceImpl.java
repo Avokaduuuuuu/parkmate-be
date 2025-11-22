@@ -1,6 +1,5 @@
 package com.parkmate.vehicle;
 
-import com.parkmate.account.AccountRepository;
 import com.parkmate.common.enums.ReservationStatus;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
@@ -38,7 +37,6 @@ public class VehicleServiceImpl implements VehicleService {
 
     private final VehicleRepository vehicleRepository;
     private final VehicleMapper vehicleMapper;
-    private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
@@ -162,7 +160,7 @@ public class VehicleServiceImpl implements VehicleService {
     public List<VehicleSimpleResponse> getVehiclesByUserId(Long userId) {
         userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, userId));
         List<VehicleSimpleResponse> vehicleSimpleResponses = new ArrayList<>();
-        vehicleRepository.findAllByUserId(userId).forEach(vehicle ->
+        vehicleRepository.findAllByUserIdAndIsActiveIsTrue(userId).forEach(vehicle ->
                 vehicleSimpleResponses.add(new VehicleSimpleResponse(
                         userId,
                         vehicle.getId(),

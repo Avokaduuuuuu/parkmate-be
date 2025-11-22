@@ -22,7 +22,7 @@ public interface PaymentClient {
     @GetMapping("/api/v1/payment-service/wallets")
     ResponseEntity<ApiResponse<WalletResponse>> getPayment();
 
-    @GetMapping("/api/v1/payment-service/wallets/{userId}")
+    @GetMapping("/api/v1/internal/wallets/{userId}")
     ResponseEntity<ApiResponse<WalletResponse>> getWallet(@PathVariable Long userId);
 
     @PostMapping("/api/v1/internal/wallet-transactions")

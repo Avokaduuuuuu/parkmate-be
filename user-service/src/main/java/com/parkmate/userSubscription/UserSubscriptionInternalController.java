@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/internal/user-subscriptions")
+@RequestMapping("/internal/user-service/user-subscriptions")
 @RequiredArgsConstructor
 @Tag(name = "User Subscription Internal", description = "Internal APIs for user parking subscriptions")
 public class UserSubscriptionInternalController {
