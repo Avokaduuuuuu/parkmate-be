@@ -17,6 +17,7 @@ import com.parkmate.session.enums.SessionType;
 import com.parkmate.session.enums.SyncStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class SessionServiceImpl implements SessionService {
     private final SessionRepository sessionRepository;
     private final ParkingLotRepository parkingLotRepository;
@@ -100,16 +102,20 @@ public class SessionServiceImpl implements SessionService {
         PricingRuleEntity pricingRuleEntity = sessionEntity.getPricingRule();
         long durationMinutes = ChronoUnit.MINUTES.between(sessionEntity.getEntryTime(), request.exitTime());
         long remainingMinutes = durationMinutes - pricingRuleEntity.getInitialDurationMinute();
+
+        BigDecimal newTotal;
+
         if (remainingMinutes > 0) {
             BigDecimal total = sessionEntity.getTotalAmount();
             Long block = (long) Math.ceil((double) remainingMinutes / pricingRuleEntity.getStepMinute());
-            total = total.add(BigDecimal.valueOf(block * pricingRuleEntity.getStepRate()));
-            sessionEntity.setTotalAmount(total);
+            newTotal = total.add(BigDecimal.valueOf(block * pricingRuleEntity.getStepRate()));
+            sessionEntity.setTotalAmount(newTotal);
         } else {
-            sessionEntity.setTotalAmount(BigDecimal.valueOf(pricingRuleEntity.getInitialCharge()));
+            newTotal = BigDecimal.valueOf(pricingRuleEntity.getInitialCharge());
+            sessionEntity.setTotalAmount(newTotal);
         }
 
-        sessionEntity.setExitTime(sessionEntity.getEntryTime());
+        sessionEntity.setExitTime(request.exitTime());
         sessionEntity.setNote(request.note());
         sessionEntity.setDurationMinute(Math.toIntExact(durationMinutes));
         sessionEntity.setStatus(SessionStatus.COMPLETED);
@@ -140,12 +146,12 @@ public class SessionServiceImpl implements SessionService {
 
         if (groupedByRule.isEmpty()) return 0;
 
-        // Load all pricing rules once
+        // Load all pricing rules at once
         Map<Long, PricingRuleEntity> pricingRules = pricingRuleRepository.findAllById(groupedByRule.keySet())
                 .stream()
                 .collect(Collectors.toMap(PricingRuleEntity::getId, r -> r));
 
-        // Flatten grouped map -> list of SessionEntity
+        // Flatten a grouped map -> list of SessionEntity
         List<SessionEntity> sessions = groupedByRule.entrySet().stream()
                 .flatMap(entry -> {
                     Long ruleId = entry.getKey();

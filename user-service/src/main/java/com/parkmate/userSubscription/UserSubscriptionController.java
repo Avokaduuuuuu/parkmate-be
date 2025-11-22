@@ -488,4 +488,48 @@ public class UserSubscriptionController {
         return ResponseEntity.ok(ApiResponse.success(userSubscriptionService.getUserSubscriptionSync(lotId)));
     }
 
+    @PostMapping("/{id}/renewal-decision")
+    @Operation(
+            summary = "Set subscription renewal decision",
+            description = """
+                    Allow users to decide whether to continue auto-renewal when subscription is expiring.
+
+                    **Path Parameters:**
+                    - `id` (required): User subscription ID
+
+                    **Request Body:**
+                    - `continueRenewal` (required): true to keep auto-renewal enabled, false to disable
+
+                    **Returns (UserSubscriptionResponse):** Updated subscription with new autoRenew value
+
+                    **Business Logic:**
+                    - Updates the autoRenew flag based on user decision
+                    - If true: Subscription will auto-renew on endDate (if balance sufficient)
+                    - If false: Subscription will expire on endDate (no auto-renewal)
+                    - User can change their decision multiple times before expiration
+
+                    **Use Cases:**
+                    - User receives "expiring in 7 days" notification
+                    - User clicks notification action button to decide
+                    - User changes mind and updates decision later
+
+                    **Access Control:**
+                    - USER: Can only update own subscriptions
+                    - ADMIN: Can update any subscription
+
+                    **Error Cases:**
+                    - SUBSCRIPTION_NOT_FOUND: Invalid subscription ID
+                    - UNAUTHORIZED: User trying to modify others' subscription
+                    - SUBSCRIPTION_ALREADY_EXPIRED: Cannot modify expired subscriptions
+                    """
+    )
+    public ResponseEntity<ApiResponse<UserSubscriptionResponse>> setRenewalDecision(
+            @Parameter(description = "User subscription ID", required = true, example = "1")
+            @PathVariable Long id,
+            @RequestBody RenewalDecisionRequest request
+    ) {
+        UserSubscriptionResponse response = userSubscriptionService.setRenewalDecision(id, request.getContinueRenewal());
+        return ResponseEntity.ok(ApiResponse.success("Renewal decision updated successfully", response));
+    }
+
 }

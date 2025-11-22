@@ -7,8 +7,10 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +54,12 @@ public interface UserClient {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
     );
 
+    @PostMapping("/internal/users/{userId}/check-wallet-balance")
+    ApiResponse<Boolean> checkWalletBalance(
+            @PathVariable("userId") Long userId,
+            @RequestParam("sessionId") String sessionId,
+            @RequestParam("requiredAmount") BigDecimal requiredAmount
+    );
 
 //    @GetMapping("/api/v1/user-service/reservations/count")
 //    ApiResponse<Long> countReservation(

@@ -59,15 +59,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
     )
     ReservationProjection getStatistic(@Param("lotId") Long lotId, @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
-    /**
-     * Get total revenue from reservations that were cancelled or expired (penalty/deposit revenue)
-     * This includes reservations that didn't create sessions but kept the deposit
-     *
-     * @param lotId The parking lot ID
-     * @param from Start date/time
-     * @param to End date/time
-     * @return Total revenue from cancelled/expired reservations
-     */
     @Query("SELECT COALESCE(SUM(r.totalFee), 0) " +
             "FROM Reservation r " +
             "WHERE r.parkingLotId = :lotId " +
@@ -80,14 +71,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             @Param("to") LocalDateTime to
     );
 
-    /**
-     * Get count of reservations that were cancelled or expired
-     *
-     * @param lotId The parking lot ID
-     * @param from Start date/time
-     * @param to End date/time
-     * @return Count of cancelled/expired reservations
-     */
     @Query("SELECT COUNT(r) " +
             "FROM Reservation r " +
             "WHERE r.parkingLotId = :lotId " +
@@ -99,4 +82,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to
     );
+
+    List<Reservation> findByStatusAndReservedFromBetween(
+            ReservationStatus status,
+            LocalDateTime start,
+            LocalDateTime end
+    );
+
+    List<Reservation> findByParkingLotIdAndStatus(Long parkingLotId, ReservationStatus status);
 }

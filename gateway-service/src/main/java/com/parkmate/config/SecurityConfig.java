@@ -84,6 +84,7 @@ public class SecurityConfig {
             "/api/v1/parking-service/policies/sync",
             "/api/v1/user-service/user-subscriptions/{id}/sync",
             "/api/v1/user-service/user-subscriptions/{lotId}/sync",
+            "/api/v1/payment-service/transactions/session-payment",
 
             // Test
             "/api/v1/fcm/test",

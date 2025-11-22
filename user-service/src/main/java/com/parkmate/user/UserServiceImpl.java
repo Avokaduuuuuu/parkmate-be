@@ -119,7 +119,7 @@ public class UserServiceImpl implements UserService {
         if (hasIdentityInfo(user)) {
             CreateWalletRequest createWalletRequest = CreateWalletRequest.builder()
                     .holderId(user.getId())
-                    .walletType("MEMBER")
+                    .walletOwnerType("MEMBER")
                     .build();
             paymentClient.createWallet(createWalletRequest);
             log.info("Creating wallet for user ID: {}", user.getId());

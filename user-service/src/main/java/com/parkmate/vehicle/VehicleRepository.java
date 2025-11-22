@@ -16,7 +16,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long>, Queryds
 
     Page<Vehicle> findAll(Predicate predicate, Pageable pageable);
 
-    List<Vehicle> findAllByUserId(Long userId);
+    List<Vehicle> findAllByUserIdAndIsActiveIsTrue(Long userId);
 
 }
 

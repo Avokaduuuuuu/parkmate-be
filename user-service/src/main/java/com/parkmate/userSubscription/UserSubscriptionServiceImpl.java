@@ -432,6 +432,32 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         return userSubscriptionRepository.getTotalCount(lotId, fromDate, toDate);
     }
 
+    @Override
+    @Transactional
+    public UserSubscriptionResponse setRenewalDecision(Long subscriptionId, Boolean continueRenewal) {
+        log.info("Setting renewal decision for subscription {}: continueRenewal={}", subscriptionId, continueRenewal);
+
+        UserSubscription subscription = userSubscriptionRepository.findById(subscriptionId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_SUBSCRIPTION_NOT_FOUND));
+
+        // Check if subscription is already expired
+        if (subscription.getStatus() == UserSubscriptionStatus.EXPIRED) {
+            throw new AppException(ErrorCode.USER_SUBSCRIPTION_EXPIRED,
+                    "Cannot modify renewal settings for expired subscription");
+        }
+
+        // Update autoRenew flag
+        subscription.setAutoRenew(continueRenewal);
+        subscription.setUpdatedAt(LocalDateTime.now());
+
+        UserSubscription updated = userSubscriptionRepository.save(subscription);
+
+        log.info("✅ Renewal decision updated for subscription {}. autoRenew is now: {}",
+                subscriptionId, continueRenewal);
+
+        return userSubscriptionMapper.toDto(updated, parkingLotClient, vehicleService);
+    }
+
     private void releaseSpotAfterSubscription(Long spotId, String userId) {
         try {
             log.info("Releasing spot hold for spotId: {}, userId: {}", spotId, userId);
