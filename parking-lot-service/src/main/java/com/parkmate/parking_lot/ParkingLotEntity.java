@@ -9,6 +9,7 @@ import com.parkmate.lot_capacity.LotCapacityEntity;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import com.parkmate.policy.PolicyEntity;
 import com.parkmate.pricing_rule.PricingRuleEntity;
+import com.parkmate.rating.RatingEntity;
 import com.parkmate.session.SessionEntity;
 import com.parkmate.subscription.SubscriptionEntity;
 import jakarta.persistence.*;
@@ -104,4 +105,7 @@ public class ParkingLotEntity extends BaseEntity {
 
     @OneToMany(mappedBy = "parkingLot")
     List<DeviceEntity> devices;
+
+    @OneToMany(mappedBy = "parkingLot")
+    List<RatingEntity> ratings;
 }

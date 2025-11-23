@@ -2,6 +2,9 @@ package com.parkmate.device;
 
 import com.parkmate.device.enums.DeviceStatus;
 import com.parkmate.device.enums.DeviceType;
+import com.parkmate.parking_lot.ParkingLotEntity;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -30,7 +33,8 @@ public class DeviceFilterParams {
             List<Predicate> predicates = new ArrayList<>();
 
             if (lotId != null) {
-                predicates.add(cb.equal(root.get("lotId"), lotId));
+                Join<DeviceEntity, ParkingLotEntity> join = root.join("parkingLot", JoinType.INNER);
+                predicates.add(cb.equal(join.get("id"), lotId));
             }
             if (deviceId != null) {
                 predicates.add(cb.equal(root.get("deviceId"), deviceId));

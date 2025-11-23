@@ -31,6 +31,7 @@ import com.parkmate.pricing_rule.PricingRuleRepository;
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleSimpleResponse;
+import com.parkmate.rating.dto.resp.RatingResponse;
 import com.parkmate.s3.S3Service;
 import com.parkmate.session.SessionRepository;
 import com.parkmate.session.enums.SyncStatus;
@@ -79,6 +80,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
 
     @Override
     public ParkingLotDetailedResponse getParkingLotById(Long id) {
+        log.info("getParkingLotById {}", id);
         ParkingLotDetailedResponse parkingLotResponse = ParkingLotMapper.INSTANCE.toDetailedResponse(
                 parkingLotRepository.findById(id)
                         .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND)));
@@ -90,6 +92,27 @@ public class ParkingLotServiceImpl implements ParkingLotService {
             countAvailableSpot.setPricing(null);
             availableSpotResponses.add(countAvailableSpot);
         }
+        List<RatingResponse> ratings = parkingLotResponse.getRatings();
+
+        if (ratings != null && !ratings.isEmpty()) {
+            log.info("First rating - ID: {}, Overall Rating: {}, Type: {}",
+                    ratings.get(0).getId(),
+                    ratings.get(0).getOverallRating(),
+                    ratings.get(0).getOverallRating().getClass().getSimpleName()
+            );
+        }
+
+        Long totalRatings = ratings != null ? (long) ratings.size() : 0L;
+
+        Double averageRating = (ratings != null && !ratings.isEmpty())
+                ? ratings.stream()
+                .mapToInt(RatingResponse::getOverallRating)
+                .average()
+                .orElse(0.0)
+                : 0.0;
+        parkingLotResponse.setTotalRatings(totalRatings);
+        parkingLotResponse.setAverageRating(averageRating);
+
         parkingLotResponse.setAvailableSpots(availableSpotResponses);
         return parkingLotResponse;
     }

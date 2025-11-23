@@ -97,12 +97,20 @@ public class SecurityConfig {
     // Partner only endpoints
     public static final String[] PARTNER_ENDPOINTS = {
             "/api/v1/user-service/partners/**",
-            "/api/v1/parking-service/**",
+            "/api/v1/parking-service/lots/**",
+            "/api/v1/parking-service/floors/**",
+            "/api/v1/parking-service/areas/**",
+            "/api/v1/parking-service/spots/**",
+            "/api/v1/parking-service/sessions/**",
+            "/api/v1/parking-service/policies/**",
+            "/api/v1/parking-service/pricing-rules/**",
+            "/api/v1/parking-service/subscriptions/**",
+            "/api/v1/parking-service/devices/**",
     };
 
     public static final String[] MEMBER_PARKING_ENDPOINTS = {
             "/api/v1/parking-service/spots/*/session",
-            "/api/v1/parking-service/lots/*/available-spots"
+            "/api/v1/parking-service/lots/*/available-spots",
     };
 
     // Member endpoints (regular users)
@@ -114,6 +122,7 @@ public class SecurityConfig {
             "/api/v1/payment-service/**",
             "/api/v1/payment-service/wallets/**",
             "/api/v1/user-service/reservations/**",
+            "/api/v1/parking-service/ratings/**"
     };
 
     @Value("${jwt.secret}")
