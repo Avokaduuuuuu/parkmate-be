@@ -9,6 +9,7 @@ import com.parkmate.parking_lot.dto.resp.ParkingLotDetailedResponse;
 import com.parkmate.parking_lot.dto.resp.ParkingLotResponse;
 import com.parkmate.policy.PolicyMapper;
 import com.parkmate.pricing_rule.PricingRuleMapper;
+import com.parkmate.rating.RatingMapper;
 import com.parkmate.subscription.SubscriptionMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -18,7 +19,10 @@ import org.mapstruct.factory.Mappers;
 @Mapper(
         unmappedTargetPolicy = ReportingPolicy.IGNORE,
         unmappedSourcePolicy = ReportingPolicy.IGNORE,
-        uses = {FloorMapper.class, PricingRuleMapper.class, LotCapacityMapper.class, ImageMapper.class, PolicyMapper.class, SubscriptionMapper.class}
+        uses = {FloorMapper.class, PricingRuleMapper.class, LotCapacityMapper.class,
+                ImageMapper.class, PolicyMapper.class, SubscriptionMapper.class,
+                RatingMapper.class
+        }
 )
 public interface ParkingLotMapper {
     ParkingLotMapper INSTANCE = Mappers.getMapper(ParkingLotMapper.class);

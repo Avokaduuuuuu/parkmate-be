@@ -14,6 +14,7 @@ public enum ErrorCode {
     UNAUTHORIZED(1004, "Unauthorized", HttpStatus.UNAUTHORIZED),
     VEHICLE_TYPE_MISMATCH(1005, "Vehicle type mismatch", HttpStatus.BAD_REQUEST),
     UNABLE_TO_DELETE_MAP(1006, "Unable to delete map", HttpStatus.CONFLICT),
+    RATING_NOT_FOUND(1007, "Rating not found", HttpStatus.NOT_FOUND),
 
     // ParkingLot errors
     PARKING_NOT_FOUND(3101, "Parking Lot not found", HttpStatus.NOT_FOUND),

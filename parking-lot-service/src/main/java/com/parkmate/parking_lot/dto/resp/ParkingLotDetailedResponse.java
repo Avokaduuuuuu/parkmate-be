@@ -8,6 +8,7 @@ import com.parkmate.lot_capacity.dto.resp.LotCapacityResponse;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import com.parkmate.policy.dto.resp.PolicyResponse;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
+import com.parkmate.rating.dto.resp.RatingResponse;
 import com.parkmate.subscription.dto.resp.SubscriptionResponse;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -39,6 +40,8 @@ public class ParkingLotDetailedResponse {
     Boolean is24Hour;
     ParkingLotStatus status;
     String reason;
+    Long totalRatings;
+    Double averageRating;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -50,4 +53,5 @@ public class ParkingLotDetailedResponse {
     List<PolicyResponse> policies;
     List<SubscriptionResponse> subscriptions;
     List<ParkingLotAvailableReservationSpotResponse> availableSpots;
+    List<RatingResponse> ratings;
 }
