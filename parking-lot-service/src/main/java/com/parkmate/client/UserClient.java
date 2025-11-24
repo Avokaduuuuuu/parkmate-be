@@ -1,5 +1,7 @@
 package com.parkmate.client;
 
+import com.parkmate.client.response.PlatformPartnerStatistic;
+import com.parkmate.client.response.PlatformUserStatistic;
 import com.parkmate.client.response.UserServiceStatistic;
 import com.parkmate.common.ApiResponse;
 import com.parkmate.common.enums.VehicleType;
@@ -59,6 +61,17 @@ public interface UserClient {
             @PathVariable("userId") Long userId,
             @RequestParam("sessionId") String sessionId,
             @RequestParam("requiredAmount") BigDecimal requiredAmount
+    );
+
+    @GetMapping("/api/v1/user-service/statistics/platform/partner")
+    ApiResponse<PlatformPartnerStatistic> getPartnerStatistic();
+
+    @GetMapping("/api/v1/user-service/statistics/platform/user")
+    ApiResponse<PlatformUserStatistic> getUserStatistic(
+            @RequestParam("from")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam("to")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
     );
 
 //    @GetMapping("/api/v1/user-service/reservations/count")
