@@ -3,8 +3,10 @@ package com.parkmate.operationalPayment;
 import com.parkmate.operationalPayment.enums.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,4 +26,13 @@ public interface OperationalPaymentRepository extends JpaRepository<OperationalP
 
     @Query("SELECT COUNT(op) > 0 FROM OperationalPaymentEntity op WHERE op.lotId = :lotId AND op.paymentStatus = 'PAID'")
     boolean hasAnyPaidPayment(Long lotId);
+
+    @Query("SELECT " +
+            "COALESCE(SUM(CASE WHEN op.paymentStatus = 'PAID' AND op.paidAt IS NOT NULL " +
+            "AND op.paidAt >= :from AND op.paidAt <= :to THEN op.totalFee END), 0.0) as totalOperationalFee " +
+            "FROM OperationalPaymentEntity op")
+    PlatformOperationalFeeProjection getPlatformOperationalFee(
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
 }

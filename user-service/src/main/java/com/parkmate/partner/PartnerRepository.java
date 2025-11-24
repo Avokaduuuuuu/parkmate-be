@@ -17,5 +17,11 @@ public interface PartnerRepository extends JpaRepository<Partner, Long>, Queryds
     @Query("SELECT p.id FROM Partner p JOIN p.accounts a WHERE a.id = :accountId")
     Long findPartnerIdByAccountId(Long accountId);
 
+    @Query("SELECT " +
+            "COUNT(p) AS total, " +
+            "COALESCE(COUNT(CASE WHEN p.status = 'APPROVED' THEN 1 END), 0)  as activeTotal," +
+            "COALESCE(COUNT(CASE WHEN p.status = 'SUSPENDED' THEN 1 END), 0)  as suspendedTotal " +
+            "FROM Partner p")
+    PlatformPartnerProjection getPlatformPartnerStatistic();
 }
 

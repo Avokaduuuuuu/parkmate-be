@@ -1,8 +1,10 @@
 package com.parkmate.statistic;
 
+import com.parkmate.client.PaymentClient;
 import com.parkmate.client.UserClient;
-import com.parkmate.client.response.UserServiceStatistic;
-import com.parkmate.client.response.UserSubscriptionStatistic;
+import com.parkmate.client.response.*;
+import com.parkmate.parking_lot.ParkingLotRepository;
+import com.parkmate.parking_lot.PlatformLotProjection;
 import com.parkmate.session.SessionRepository;
 import com.parkmate.statistic.dto.resp.*;
 import com.parkmate.subscription.SubscriptionEntity;
@@ -25,6 +27,8 @@ public class StatisticServiceImpl implements StatisticService {
     private final SessionRepository sessionRepository;
     private final UserClient userClient;
     private final SubscriptionRepository subscriptionRepository;
+    private final ParkingLotRepository parkingLotRepository;
+    private final PaymentClient paymentClient;
 
     @Override
     public ParkingLotStatisticResponse getParkingLotStatistic(Long lotId, LocalDateTime from, LocalDateTime to) {
@@ -96,6 +100,65 @@ public class StatisticServiceImpl implements StatisticService {
                 )
                 .reservationStatistic(reservationStatisticResponse)
                 .subscriptionStatistic(subscriptionStatisticResponse)
+                .build();
+    }
+
+    @Override
+    public PlatformOverviewStatistic getPlatformOverviewStatistic(LocalDateTime from, LocalDateTime to) {
+        PlatformLots platformLots = getPlatformLotStatistic();
+        PlatformPartners platformPartners = getPlatformPartnerStatistic();
+        PlatformUsers platformUsers = getPlatformUserStatistic(from, to);
+        PlatformRevenue platformRevenue = getPlatformRevenue(from, to);
+        return PlatformOverviewStatistic.builder()
+                .revenue(platformRevenue)
+                .lots(platformLots)
+                .partners(platformPartners)
+                .users(platformUsers)
+                .build();
+    }
+
+    private PlatformLots getPlatformLotStatistic() {
+        PlatformLotProjection platformLotProjection = parkingLotRepository.getPlatformLotStatistic();
+        return PlatformLots.builder()
+                .total(platformLotProjection.getTotal())
+                .activeTotal(platformLotProjection.getActiveTotal())
+                .pendingTotal(platformLotProjection.getPendingTotal())
+                .underMaintenanceTotal(platformLotProjection.getUnderMaintenanceTotal())
+                .preparingTotal(platformLotProjection.getPreparingTotal())
+                .build();
+    }
+
+    private PlatformPartners getPlatformPartnerStatistic() {
+        PlatformPartnerStatistic platformPartnerStatistic = userClient.getPartnerStatistic().getData();
+        return PlatformPartners.builder()
+                .total(platformPartnerStatistic.getTotal())
+                .activeTotal(platformPartnerStatistic.getActiveTotal())
+                .suspendedTotal(platformPartnerStatistic.getSuspendedTotal())
+                .pendingRegistrations(platformPartnerStatistic.getPendingRegistrations())
+                .build();
+    }
+
+    private PlatformUsers getPlatformUserStatistic(LocalDateTime from, LocalDateTime to) {
+        PlatformUserStatistic platformUserStatistic = userClient.getUserStatistic(from, to).getData();
+        return PlatformUsers.builder()
+                .total(platformUserStatistic.getTotal())
+                .newThisPeriod(platformUserStatistic.getNewThisPeriod())
+                .build();
+    }
+
+    private PlatformRevenue getPlatformRevenue(LocalDateTime from, LocalDateTime to) {
+        PlatformRevenueStatistic platformRevenueStatistic = paymentClient.getPlatformRevenueStatistic(from, to).getData();
+        return PlatformRevenue.builder()
+                .totalOperationalFee(platformRevenueStatistic.getTotalOperationalFee())
+                .operationalGrowthRate(platformRevenueStatistic.getOperationalGrowthRate())
+                .totalSubscription(platformRevenueStatistic.getTotalSubscription())
+                .subscriptionGrowthRate(platformRevenueStatistic.getSubscriptionGrowthRate())
+                .totalReservationRevenue(platformRevenueStatistic.getTotalReservationRevenue())
+                .reservationGrowthRate(platformRevenueStatistic.getReservationGrowthRate())
+                .totalSessionRevenue(platformRevenueStatistic.getTotalSessionRevenue())
+                .sessionRevenueGrowthRate(platformRevenueStatistic.getSessionRevenueGrowthRate())
+                .totalPlatformRevenue(platformRevenueStatistic.getTotalPlatformRevenue())
+                .platformRevenueGrowthRate(platformRevenueStatistic.getPlatformRevenueGrowthRate())
                 .build();
     }
 

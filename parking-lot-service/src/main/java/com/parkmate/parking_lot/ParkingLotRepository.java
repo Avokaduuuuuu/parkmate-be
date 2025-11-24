@@ -3,8 +3,11 @@ package com.parkmate.parking_lot;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -14,4 +17,14 @@ public interface ParkingLotRepository extends JpaRepository<ParkingLotEntity, Lo
     List<ParkingLotEntity> findByPartnerId(Long partnerId);
 
     List<ParkingLotEntity> findByStatus(ParkingLotStatus status);
+
+
+    @Query("SELECT " +
+            "COALESCE(COUNT(p), 0) AS total," +
+            "COALESCE(COUNT(CASE WHEN p.status = 'ACTIVE' THEN 1 END), 0) AS activeTotal," +
+            "COALESCE(COUNT(CASE WHEN p.status = 'PENDING' THEN 1 END), 0) AS pendingTotal," +
+            "COALESCE(COUNT(CASE WHEN p.status = 'UNDER_MAINTENANCE' THEN 1 END), 0) AS underMaintenanceTotal," +
+            "COALESCE(COUNT(CASE WHEN p.status = 'PREPARING' THEN 1 END), 0) AS preparingTotal " +
+            "FROM ParkingLotEntity p")
+    PlatformLotProjection getPlatformLotStatistic();
 }

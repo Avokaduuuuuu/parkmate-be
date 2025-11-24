@@ -4,14 +4,19 @@ import com.parkmate.client.request.CreateOperationalPaymentRequest;
 import com.parkmate.client.request.CreateTransactionRequest;
 import com.parkmate.client.request.CreateWalletRequest;
 import com.parkmate.client.response.OperationalPaymentResponse;
+import com.parkmate.client.response.PlatformRevenueStatistic;
 import com.parkmate.client.response.WalletResponse;
 import com.parkmate.client.response.WalletTransactionResponse;
 import com.parkmate.common.ApiResponse;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.time.LocalDateTime;
 
 @FeignClient(name = "payment-service")
 public interface PaymentClient {
@@ -36,4 +41,12 @@ public interface PaymentClient {
      */
     @PostMapping("/api/v1/internal/operational-payments")
     ResponseEntity<ApiResponse<OperationalPaymentResponse>> createOperationalPayment(@RequestBody CreateOperationalPaymentRequest request);
+
+    @GetMapping("/api/v1/payment-service/statistics/platform")
+    ApiResponse<PlatformRevenueStatistic> getPlatformRevenueStatistic(
+            @RequestParam("from")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam("to")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
+    );
 }

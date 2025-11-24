@@ -63,4 +63,40 @@ public class StatisticController {
                         )
                 );
     }
+
+    @Operation(
+            summary = "Get Platform statistics",
+            description = """
+                    Retrieve the lots, users, and partners of this platform
+                    """,
+            parameters = {
+                    @Parameter(
+                            name = "from",
+                            description = "Start of the time range (ISO 8601 format)",
+                            required = true,
+                            example = "2025-11-09T00:00:00"
+                    ),
+                    @Parameter(
+                            name = "to",
+                            description = "End of the time range (ISO 8601 format)",
+                            required = true,
+                            example = "2025-11-11T23:59:59"
+                    )
+            }
+    )
+    @GetMapping("/platform")
+    public ResponseEntity<?> fetchStatisticsOfPlatform(
+            @RequestParam("from")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam("to")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
+    ) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(
+                        ApiResponse.success(
+                                "Fetch Statistic of Platform successfully",
+                                statisticService.getPlatformOverviewStatistic(from, to)
+                        )
+                );
+    }
 }
