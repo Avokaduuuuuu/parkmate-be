@@ -67,20 +67,35 @@ public class StatisticController {
     @Operation(
             summary = "Get Platform statistics",
             description = """
-                    Retrieve the lots, users, and partners of this platform
-                    """,
+                Retrieve comprehensive platform-wide statistics including parking lots, partners, users, and revenue.
+                Provides an overview of the entire ParkMate ecosystem for admin dashboard and business analytics.
+                
+                **Statistics Included:**
+                - **Lots**: Total, active, pending, under maintenance, preparing
+                - **Partners**: Total, active, suspended, pending registrations
+                - **Users**: Total and new users in the specified period
+                - **Revenue**: Operational fees, subscriptions, reservations, sessions with growth rates
+                
+                **Authorization:** Admin only - contains sensitive business metrics
+                
+                **Use Cases:**
+                - Admin dashboard overview
+                - Business performance monitoring
+                - Executive reports and analytics
+                - Growth tracking and trend analysis
+                """,
             parameters = {
                     @Parameter(
                             name = "from",
-                            description = "Start of the time range (ISO 8601 format)",
+                            description = "Start of the time range (ISO 8601 format). Used for calculating new users and revenue in the period.",
                             required = true,
-                            example = "2025-11-09T00:00:00"
+                            example = "2025-11-01T00:00:00"
                     ),
                     @Parameter(
                             name = "to",
-                            description = "End of the time range (ISO 8601 format)",
+                            description = "End of the time range (ISO 8601 format). Used for calculating new users and revenue in the period.",
                             required = true,
-                            example = "2025-11-11T23:59:59"
+                            example = "2025-11-30T23:59:59"
                     )
             }
     )

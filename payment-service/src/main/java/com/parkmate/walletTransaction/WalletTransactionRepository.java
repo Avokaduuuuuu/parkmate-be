@@ -26,7 +26,7 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
             "COALESCE(SUM(CASE WHEN wt.transactionType = 'DEDUCTION' AND wt.status = 'COMPLETED' THEN wt.amount ELSE 0 END), 0.0) * :platformFee as totalSessionPlatformFee, " +
             "COALESCE(SUM(CASE WHEN wt.transactionType = 'RESERVATION_PAYMENT' AND wt.status = 'COMPLETED' THEN wt.amount ELSE 0 END), 0.0) * :platformFee as totalReservationPlatformFee " +
             "FROM WalletTransaction wt " +
-            "WHERE wt.processedAt BETWEEN :from AND :to")
+            "WHERE wt.createdAt BETWEEN :from AND :to")
     PlatformRevenueProjection getPlatformRevenueStatistic(
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to,
