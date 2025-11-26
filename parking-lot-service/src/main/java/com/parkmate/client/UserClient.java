@@ -2,6 +2,7 @@ package com.parkmate.client;
 
 import com.parkmate.client.response.PlatformPartnerStatistic;
 import com.parkmate.client.response.PlatformUserStatistic;
+import com.parkmate.client.response.UserRatingResponse;
 import com.parkmate.client.response.UserServiceStatistic;
 import com.parkmate.common.ApiResponse;
 import com.parkmate.common.enums.VehicleType;
@@ -72,6 +73,11 @@ public interface UserClient {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam("to")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
+    );
+
+    @PostMapping("/internal/users/rating")
+    ApiResponse<Map<Long, UserRatingResponse>> getUserRating(
+            List<Long> userIds
     );
 
 //    @GetMapping("/api/v1/user-service/reservations/count")

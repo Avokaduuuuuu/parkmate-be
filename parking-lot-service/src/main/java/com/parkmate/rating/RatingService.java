@@ -11,12 +11,13 @@ public interface RatingService {
             int size,
             String sortBy,
             String sortOrder,
-            RatingFilterParams filterParams
+            RatingFilterParams filterParams,
+            String userHeaderId
     );
 
     RatingResponse getRatingById(Long id);
 
-    RatingResponse createRating(Long lotId, RatingCreateRequest request);
+    RatingResponse createRating(Long lotId, RatingCreateRequest request, String userIdHeader);
     RatingResponse updateRating(Long id, RatingUpdateRequest request);
     void deleteRating(Long id);
     Long countRatings();

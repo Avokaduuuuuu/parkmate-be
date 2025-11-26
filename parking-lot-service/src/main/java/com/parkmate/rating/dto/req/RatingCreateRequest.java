@@ -16,14 +16,6 @@ import jakarta.validation.constraints.*;
 )
 public record RatingCreateRequest(
         @Schema(
-                description = "ID of the user creating this rating",
-                example = "1001",
-                requiredMode = Schema.RequiredMode.REQUIRED
-        )
-        @NotNull(message = "User ID must not be null")
-        Long userId,
-
-        @Schema(
                 description = "Overall star rating for the parking lot (1-5)",
                 example = "5",
                 minimum = "1",

@@ -1,5 +1,7 @@
 package com.parkmate.rating;
 
+import com.parkmate.exception.AppException;
+import com.parkmate.exception.ErrorCode;
 import com.parkmate.parking_lot.ParkingLotEntity;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -32,10 +34,10 @@ public class RatingFilterParams {
 
     @Parameter(
             description = "Filter by user ID - returns only ratings created by this specific user",
-            example = "1001",
-            schema = @Schema(type = "integer", format = "int64")
+            example = "true",
+            schema = @Schema(type = "boolean", format = "int64")
     )
-    Long userId;
+    Boolean ownedByMe;
 
     @Parameter(
             description = "Filter by exact star rating value (1-5) - returns ratings matching this exact value",
@@ -117,7 +119,7 @@ public class RatingFilterParams {
      *
      * @return Specification that can be used with JPA repository for filtering
      */
-    public Specification<RatingEntity> getSpecification() {
+    public Specification<RatingEntity> getSpecification(Long userId) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -127,9 +129,10 @@ public class RatingFilterParams {
                 predicates.add(cb.equal(join.get("id"), lotId));
             }
 
-            // Filter by user ID
-            if (userId != null) {
-                predicates.add(cb.equal(root.get("userId"), userId));
+            if (ownedByMe != null && ownedByMe) {
+                if (userId != null) {
+                    predicates.add(cb.equal(root.get("userId"), userId));
+                } else throw new AppException(ErrorCode.UNAUTHORIZED);
             }
 
             // Filter by exact rating value
