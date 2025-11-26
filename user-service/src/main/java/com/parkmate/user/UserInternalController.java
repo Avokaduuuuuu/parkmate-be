@@ -11,6 +11,8 @@ import com.parkmate.mobileDevice.MobileDeviceRepository;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,6 +38,7 @@ public class UserInternalController {
 
     private final Map<String, LocalDateTime> notificationCache = new HashMap<>();
     private static final int NOTIFICATION_COOLDOWN_MINUTES = 30;
+    private final UserService userService;
 
     @PostMapping("/{userId}/check-wallet-balance")
     public ApiResponse<Boolean> checkWalletBalance(
@@ -204,5 +207,15 @@ public class UserInternalController {
         } catch (Exception e) {
             log.error("❌ [LOW-BALANCE] Error sending reminder to user {}", userId, e);
         }
+    }
+
+    @PostMapping("/rating")
+    public ResponseEntity<?> getRatingProfile(
+            @RequestBody List<Long> userIds
+    ) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(
+                        ApiResponse.success("Fetch data successfully", userService.userRatings(userIds))
+                );
     }
 }

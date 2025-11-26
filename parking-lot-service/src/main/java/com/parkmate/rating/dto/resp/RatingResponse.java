@@ -14,7 +14,8 @@ import java.time.LocalDateTime;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RatingResponse {
     Long id;
-    Long userId;
+    String fullName;
+    String avatarUrl;
     Integer overallRating;
     String title;
     String comment;

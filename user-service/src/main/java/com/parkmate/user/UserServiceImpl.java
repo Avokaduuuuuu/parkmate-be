@@ -29,10 +29,8 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.parkmate.auth.AuthServiceImpl.getUserResponse;
 
@@ -373,6 +371,15 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_INFO_NOT_FOUND));
         return user.getId();
+    }
+
+    @Override
+    public Map<Long, UserRatingResponse> userRatings(List<Long> userIds) {
+        List<User> users = userRepository.findAllById(userIds);
+        return users.stream().collect(Collectors.toMap(User::getId,user -> UserRatingResponse.builder()
+                        .fullName(user.getFullName())
+                        .avatarUrl(user.getProfilePictureUrl())
+                .build()));
     }
 
     private String validateFile(MultipartFile file) {

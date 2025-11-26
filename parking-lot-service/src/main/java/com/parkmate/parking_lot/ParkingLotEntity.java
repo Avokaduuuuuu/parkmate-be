@@ -106,6 +106,6 @@ public class ParkingLotEntity extends BaseEntity {
     @OneToMany(mappedBy = "parkingLot")
     List<DeviceEntity> devices;
 
-    @OneToMany(mappedBy = "parkingLot")
+    @OneToMany(mappedBy = "parkingLot", fetch = FetchType.LAZY)
     List<RatingEntity> ratings;
 }

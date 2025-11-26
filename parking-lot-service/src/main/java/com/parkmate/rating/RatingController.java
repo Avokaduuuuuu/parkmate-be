@@ -119,7 +119,8 @@ public class RatingController {
 
             @Parameter(description = "Sort direction (ASC or DESC)", example = "DESC")
             @RequestParam(required = false, defaultValue = "DESC") String sortOrder,
-
+            @Parameter(hidden = true)
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
             RatingFilterParams filterParams
     ) {
         return ResponseEntity
@@ -127,7 +128,7 @@ public class RatingController {
                 .body(
                         ApiResponse.success(
                                 "All ratings retrieved successfully",
-                                ratingService.getRatings(page, size, sortBy, sortOrder, filterParams)
+                                ratingService.getRatings(page, size, sortBy, sortOrder, filterParams, userIdHeader)
                         )
                 );
     }
@@ -247,7 +248,8 @@ public class RatingController {
     public ResponseEntity<?> createRating(
             @Parameter(description = "ID of the parking lot being rated", required = true, example = "1")
             @PathVariable("lotId") Long lotId,
-
+            @Parameter(hidden = true)
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
             @RequestBody @Valid RatingCreateRequest request
     ) {
         return ResponseEntity
@@ -255,7 +257,7 @@ public class RatingController {
                 .body(
                         ApiResponse.success(
                                 "Rating created successfully",
-                                ratingService.createRating(lotId, request)
+                                ratingService.createRating(lotId, request, userIdHeader)
                         )
                 );
     }

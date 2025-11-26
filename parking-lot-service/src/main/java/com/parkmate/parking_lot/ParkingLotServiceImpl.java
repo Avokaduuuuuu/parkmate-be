@@ -3,6 +3,7 @@ package com.parkmate.parking_lot;
 import com.parkmate.area.AreaRepository;
 import com.parkmate.client.PaymentClient;
 import com.parkmate.client.UserClient;
+import com.parkmate.client.response.UserRatingResponse;
 import com.parkmate.common.enums.VehicleType;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
@@ -31,6 +32,8 @@ import com.parkmate.pricing_rule.PricingRuleRepository;
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleSimpleResponse;
+import com.parkmate.rating.RatingEntity;
+import com.parkmate.rating.RatingMapper;
 import com.parkmate.rating.dto.resp.RatingResponse;
 import com.parkmate.s3.S3Service;
 import com.parkmate.session.SessionRepository;
@@ -114,6 +117,23 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         parkingLotResponse.setAverageRating(averageRating);
 
         parkingLotResponse.setAvailableSpots(availableSpotResponses);
+
+        List<RatingEntity> top3Ratings = parkingLotRepository.getTop3RatingsByParkingLotId(parkingLotResponse.getId(), PageRequest.of(0 ,3));
+        List<Long> userIds = top3Ratings.stream().map(RatingEntity::getUserId).toList();
+        log.info("Top3 Ratings {}", userIds);
+
+        Map<Long, UserRatingResponse> userRatingResponseMap = userClient.getUserRating(userIds).getData();
+        log.info(userRatingResponseMap.toString());
+        List<RatingResponse> top3RatingResponses = top3Ratings.stream()
+                .map(rating -> {
+                    RatingResponse ratingResponse = RatingMapper.INSTANCE.toResponse(rating);
+                    ratingResponse.setFullName(userRatingResponseMap.get(rating.getUserId()).getFullName());
+                    ratingResponse.setAvatarUrl(userRatingResponseMap.get(rating.getUserId()).getAvatarUrl());
+                    return ratingResponse;
+                })
+                .toList();
+        parkingLotResponse.setRatings(top3RatingResponses);
+
         return parkingLotResponse;
     }
 
