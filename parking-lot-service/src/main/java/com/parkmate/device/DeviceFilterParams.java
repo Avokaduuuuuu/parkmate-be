@@ -54,9 +54,6 @@ public class DeviceFilterParams {
             if (deviceStatus != null) {
                 predicates.add(cb.equal(root.get("deviceStatus"), deviceStatus));
             }
-            if (isActive != null) {
-                predicates.add(cb.equal(root.get("isActive"), isActive));
-            }
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };

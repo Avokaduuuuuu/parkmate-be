@@ -15,6 +15,7 @@ public record DeviceCreateRequest(
         DeviceType deviceType,
         Long partnerId,
         String model,
-        String serialNumber
+        String serialNumber,
+        String notes
 ) {
 }

@@ -6,13 +6,11 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 public record DeviceUpdateRequest(
-        @NotEmpty(message = "Device Id must not be empty")
         String deviceId,
-        @NotEmpty(message = "Device Name must not be empty")
         String deviceName,
         String model,
         String serialNumber,
         DeviceStatus deviceStatus,
-        Boolean isActive
+        String notes
 ) {
 }

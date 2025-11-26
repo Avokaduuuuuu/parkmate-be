@@ -46,8 +46,6 @@ public class DeviceEntity extends BaseEntity {
     @JdbcType(PostgreSQLEnumJdbcType.class)
     DeviceStatus status;
 
-    @Column(name = "is_active")
-    Boolean isActive;
 
     @Column(name = "last_maintained_at")
     LocalDateTime lastMaintainedAt;

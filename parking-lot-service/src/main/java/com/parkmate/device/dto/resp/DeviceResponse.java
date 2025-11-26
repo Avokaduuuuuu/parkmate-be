@@ -27,7 +27,6 @@ public class DeviceResponse {
     String model;
     String serialNumber;
     DeviceStatus status;
-    Boolean isActive;
     LocalDateTime lastMaintainedAt;
     String notes;
     Long lotId;

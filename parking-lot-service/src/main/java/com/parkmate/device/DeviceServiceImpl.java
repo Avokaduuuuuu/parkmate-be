@@ -3,6 +3,7 @@ package com.parkmate.device;
 import com.parkmate.device.dto.req.DeviceCreateRequest;
 import com.parkmate.device.dto.req.DeviceUpdateRequest;
 import com.parkmate.device.dto.resp.DeviceResponse;
+import com.parkmate.device.enums.DeviceStatus;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.parking_lot.ParkingLotEntity;
@@ -45,7 +46,8 @@ public class DeviceServiceImpl implements DeviceService{
         deviceEntity.setPartnerId(request.partnerId());
         deviceEntity.setModel(request.model());
         deviceEntity.setSerialNumber(request.serialNumber());
-        deviceEntity.setIsActive(false);
+        deviceEntity.setStatus(DeviceStatus.ACTIVE);
+        deviceEntity.setNotes(request.notes());
         return DeviceMapper.INSTANCE.toResponse(deviceRepository.save(deviceEntity));
     }
 
@@ -72,9 +74,10 @@ public class DeviceServiceImpl implements DeviceService{
         if (request.serialNumber() != null) {
             deviceEntity.setSerialNumber(request.serialNumber());
         }
-        if (request.isActive() != null) {
-            deviceEntity.setIsActive(request.isActive());
+        if (request.notes() != null) {
+            deviceEntity.setNotes(request.notes());
         }
+
         return DeviceMapper.INSTANCE.toResponse(deviceRepository.save(deviceEntity));
     }
 
