@@ -70,4 +70,15 @@ public interface ParkingLotClient {
      */
     @GetMapping("/internal/parking-lots/all")
     ApiResponse<List<ParkingLotBasicInfo>> getAllParkingLots();
+
+    /**
+     * Get parking lot name by ID
+     *
+     * @param lotId The parking lot ID
+     * @return Parking lot basic info with name
+     */
+    @GetMapping("/internal/parking-lots/{lotId}/name")
+    ApiResponse<ParkingLotNameDto> getParkingLotName(@PathVariable("lotId") Long lotId);
+
+    record ParkingLotNameDto(Long id, String name) {}
 }

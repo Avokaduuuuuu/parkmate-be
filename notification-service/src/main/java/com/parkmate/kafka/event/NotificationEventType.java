@@ -26,6 +26,8 @@ public enum NotificationEventType {
 
     // Wallet/Payment events
     LOW_WALLET_BALANCE("LOW_WALLET_BALANCE", "Wallet balance insufficient"),
+    OPERATIONAL_PAYMENT_REMINDER("OPERATIONAL_PAYMENT_REMINDER", "Operational fee payment reminder"),
+    OPERATIONAL_PAYMENT_OVERDUE("OPERATIONAL_PAYMENT_OVERDUE", "Operational fee payment overdue"),
 
     // Approval/Rejection events
     PARTNER_APPROVED("PARTNER_APPROVED", "Partner registration approved"),
