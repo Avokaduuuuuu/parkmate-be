@@ -660,9 +660,66 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     private void logCancelledReservation(Reservation reservation) {
-        log.info("Reservation {} cancelled. Initial fee: {} VND (TODO: implement refund policy)",
-                reservation.getId(),
-                reservation.getInitialFee() != null ? reservation.getInitialFee() : BigDecimal.ZERO);
+        BigDecimal initialFee = reservation.getInitialFee() != null ? reservation.getInitialFee() : BigDecimal.ZERO;
+        log.info("Reservation {} cancelled. Initial fee: {} VND. Processing refund...",
+                reservation.getId(), initialFee);
+
+        // Implement refund policy for cancelled reservations
+        if (initialFee.compareTo(BigDecimal.ZERO) > 0) {
+            try {
+                // Get partner ID for the parking lot
+                Long partnerId = null;
+                try {
+                    ApiResponse<ParkingLotClient.PartnerIdDto> partnerResponse =
+                            parkingLotClient.getPartnerIdByParkingLotId(reservation.getParkingLotId());
+                    if (partnerResponse != null && partnerResponse.data() != null) {
+                        partnerId = partnerResponse.data().partnerId();
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to get partner ID for parking lot {}. Proceeding with refund without partner deduction.",
+                            reservation.getParkingLotId());
+                }
+
+                // Process refund via PaymentClient
+                ResponseEntity<ApiResponse<WalletTransactionResponse>> refundResponse = paymentClient.refundWallet(
+                        CreateTransactionRequest.builder()
+                                .userId(reservation.getUser().getId())
+                                .partnerId(partnerId)
+                                .amount(initialFee)
+                                .transactionType(TransactionConstants.TYPE_REFUND)
+                                .description(String.format("Refund for cancelled reservation %d", reservation.getId()))
+                                .build()
+                );
+
+                // Validate refund response
+                if (!refundResponse.hasBody() || refundResponse.getBody() == null) {
+                    log.error("Payment service returned empty response for refund of reservation {}", reservation.getId());
+                    return;
+                }
+
+                ApiResponse<WalletTransactionResponse> paymentResponse = refundResponse.getBody();
+
+                if (!paymentResponse.success()) {
+                    log.error("Failed to refund wallet for cancelled reservation {}: {}",
+                            reservation.getId(), paymentResponse.message());
+                    return;
+                }
+
+                WalletTransactionResponse txn = paymentResponse.data();
+                if (txn == null || !TransactionStatus.COMPLETED.toString().equals(txn.getStatus())) {
+                    log.error("Refund transaction not completed for reservation {}: status={}",
+                            reservation.getId(), txn != null ? txn.getStatus() : "null");
+                    return;
+                }
+
+                log.info("✅ Successfully refunded {} VND for cancelled reservation {}", initialFee, reservation.getId());
+
+            } catch (Exception e) {
+                log.error("❌ Unexpected error processing refund for cancelled reservation {}", reservation.getId(), e);
+            }
+        } else {
+            log.info("No refund needed for reservation {} (initial fee is zero)", reservation.getId());
+        }
     }
 
     private void deductWalletAfterCompletingReservation(Reservation reservation) {
@@ -734,11 +791,63 @@ public class ReservationServiceImpl implements ReservationService {
                 log.error("Unexpected error deducting wallet for reservation {}", reservation.getId(), e);
             }
         }
-        // Case 2: User paid more than actual cost (totalFee < initialFee) - TODO: implement refund policy
+        // Case 2: User paid more than actual cost (totalFee < initialFee) - implement refund policy
         else if (deductionAmount.compareTo(BigDecimal.ZERO) < 0) {
             BigDecimal refundAmount = deductionAmount.abs();
-            log.info("User overpaid for reservation {}. Refund amount: {} VND (TODO: implement refund policy)",
+            log.info("User overpaid for reservation {}. Refund amount: {} VND. Processing refund...",
                     reservation.getId(), refundAmount);
+
+            // Get partner ID for the parking lot
+            Long partnerId = null;
+            try {
+                ApiResponse<ParkingLotClient.PartnerIdDto> partnerResponse =
+                        parkingLotClient.getPartnerIdByParkingLotId(reservation.getParkingLotId());
+                if (partnerResponse != null && partnerResponse.data() != null) {
+                    partnerId = partnerResponse.data().partnerId();
+                }
+            } catch (Exception e) {
+                log.warn("Failed to get partner ID for parking lot {}. Proceeding with refund without partner deduction.",
+                        reservation.getParkingLotId());
+            }
+
+            try {
+                ResponseEntity<ApiResponse<WalletTransactionResponse>> refundResponse = paymentClient.refundWallet(
+                        CreateTransactionRequest.builder()
+                                .userId(reservation.getUser().getId())
+                                .partnerId(partnerId)
+                                .amount(refundAmount)
+                                .transactionType(TransactionConstants.TYPE_REFUND)
+                                .description(String.format("Refund for overpayment on reservation %d (Paid: %s VND, Actual: %s VND)",
+                                        reservation.getId(), reservation.getInitialFee(), reservation.getTotalFee()))
+                                .build()
+                );
+
+                // Validate response
+                if (!refundResponse.hasBody() || refundResponse.getBody() == null) {
+                    log.error("Payment service returned empty response for refund of reservation {}", reservation.getId());
+                    return;
+                }
+
+                ApiResponse<WalletTransactionResponse> paymentResponse = refundResponse.getBody();
+
+                if (!paymentResponse.success()) {
+                    log.error("Failed to refund wallet for reservation {}: {}",
+                            reservation.getId(), paymentResponse.message());
+                    return;
+                }
+
+                WalletTransactionResponse txn = paymentResponse.data();
+                if (txn == null || !TransactionStatus.COMPLETED.toString().equals(txn.getStatus())) {
+                    log.error("Refund transaction not completed for reservation {}: status={}",
+                            reservation.getId(), txn != null ? txn.getStatus() : "null");
+                    return;
+                }
+
+                log.info("✅ Successfully refunded {} VND for overpaid reservation {}", refundAmount, reservation.getId());
+
+            } catch (Exception e) {
+                log.error("❌ Unexpected error processing refund for reservation {}", reservation.getId(), e);
+            }
         }
         // Case 3: Exact match (totalFee == initialFee)
         else {

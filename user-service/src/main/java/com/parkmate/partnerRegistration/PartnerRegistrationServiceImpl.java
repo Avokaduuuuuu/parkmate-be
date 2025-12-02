@@ -53,7 +53,7 @@ public class PartnerRegistrationServiceImpl implements PartnerRegistrationServic
                 .role(AccountRole.PARTNER_OWNER)
                 .status(AccountStatus.PENDING_VERIFICATION)
                 .emailVerificationToken(verificationToken)
-                .phoneVerified(false)
+                .isIdVerified(false)
                 .emailVerified(false)
                 .build();
 

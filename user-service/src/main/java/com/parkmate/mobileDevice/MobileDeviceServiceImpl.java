@@ -61,7 +61,7 @@ public class MobileDeviceServiceImpl implements MobileDeviceService {
         Optional<MobileDevice> existingByDeviceId = mobileDeviceRepository.findByDeviceId(request.getDeviceId());
 
         if (existingByDeviceId.isPresent()) {
-            MobileDevice device = existingByDeviceId.get();
+            MobileDevice device = existingByDeviceId.orElseThrow();
 
             // Case 1a: DeviceId thuộc về user hiện tại → Update thông tin
             if (device.getUser().getId().equals(request.getUserId())) {
@@ -96,11 +96,13 @@ public class MobileDeviceServiceImpl implements MobileDeviceService {
 
         // Case 2: Check pushToken có đang được user khác sử dụng không
         Optional<MobileDevice> tokenUsedByOthers = mobileDeviceRepository.findByPushToken(request.getPushToken());
-        if (tokenUsedByOthers.isPresent() && !tokenUsedByOthers.get().getUser().getId().equals(request.getUserId())) {
-            // PushToken đang được user khác sử dụng → vô hiệu hóa device cũ
-            MobileDevice oldDevice = tokenUsedByOthers.get();
-            oldDevice.setIsActive(false);
-            mobileDeviceRepository.save(oldDevice);
+        if (tokenUsedByOthers.isPresent()) {
+            MobileDevice oldDevice = tokenUsedByOthers.orElseThrow();
+            if (!oldDevice.getUser().getId().equals(request.getUserId())) {
+                // PushToken đang được user khác sử dụng → vô hiệu hóa device cũ
+                oldDevice.setIsActive(false);
+                mobileDeviceRepository.save(oldDevice);
+            }
         }
 
         // Case 3: Tạo device mới (deviceId và pushToken đều chưa tồn tại)

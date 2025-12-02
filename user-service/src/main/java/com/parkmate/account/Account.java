@@ -60,7 +60,7 @@ public class Account {
 
     @Column(name = "phone_verified")
     @Builder.Default
-    private Boolean phoneVerified = false;
+    private Boolean isIdVerified = false;
 
     @Column(name = "phone_verification_token")
     private String phoneVerificationToken;

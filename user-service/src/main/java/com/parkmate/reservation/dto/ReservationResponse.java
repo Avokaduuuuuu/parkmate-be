@@ -41,6 +41,9 @@ public class ReservationResponse {
     @Schema(description = "Total fee in VND", example = "10000")
     BigDecimal totalFee;
 
+    @Schema(description = "Refund policy - null if parking lot has no refund policy")
+    RefundPolicyDto refundPolicy;
+
     @Schema(description = "Reserved from timestamp", example = "2024-07-01 10:00:00")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime reservedFrom;
@@ -66,6 +69,16 @@ public class ReservationResponse {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
 
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class RefundPolicyDto {
+        @Schema(description = "Minutes before reservation start to get refund", example = "30")
+        Integer refundWindowMinutes;
+
+        @Schema(description = "Refund rate/percentage (1.0 = 100%)", example = "1.0")
+        Double refundRate;
+    }
 }
 
 

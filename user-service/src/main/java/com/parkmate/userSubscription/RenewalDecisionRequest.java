@@ -15,8 +15,6 @@ public class RenewalDecisionRequest {
     @NotNull(message = "Renewal decision is required")
     @Schema(
             description = "Whether to continue auto-renewal. true = keep auto-renewal enabled, false = disable auto-renewal",
-            example = "true",
-            required = true
-    )
+            example = "true")
     private Boolean continueRenewal;
 }

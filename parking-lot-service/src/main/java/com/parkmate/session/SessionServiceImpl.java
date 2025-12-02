@@ -79,7 +79,38 @@ public class SessionServiceImpl implements SessionService {
         Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<SessionEntity> sessionEntities = sessionRepository.findAll(params.getSpecification(userId), pageable);
-        return sessionEntities.map(SessionMapper.INSTANCE::toResponse);
+
+        return sessionEntities.map(sessionEntity -> {
+            SessionResponse sessionResponse = SessionMapper.INSTANCE.toResponse(sessionEntity);
+            if (sessionEntity.getStatus().equals(SessionStatus.ACTIVE)) {
+                BigDecimal currentAmount = calculateCurrentTotalAmount(sessionEntity);
+                sessionResponse.setTotalAmount(currentAmount);
+            }
+            return sessionResponse;
+        });
+    }
+
+    private BigDecimal calculateCurrentTotalAmount(SessionEntity session) {
+        LocalDateTime now = LocalDateTime.now().plusHours(7);
+        PricingRuleEntity pricingRuleEntity = session.getPricingRule();
+
+        long durationMinutes = ChronoUnit.MINUTES.between(session.getEntryTime(), now);
+
+        long remainingMinutes = durationMinutes - pricingRuleEntity.getInitialDurationMinute();
+
+        BigDecimal currentTotal;
+
+        if (remainingMinutes > 0) {
+            Long block = (long) Math.ceil((double) remainingMinutes / pricingRuleEntity.getStepMinute());
+
+            BigDecimal initialCharge = BigDecimal.valueOf(pricingRuleEntity.getInitialCharge());
+            BigDecimal additionalCharge = BigDecimal.valueOf(block * pricingRuleEntity.getStepRate());
+            currentTotal = initialCharge.add(additionalCharge);
+        } else {
+            currentTotal = BigDecimal.valueOf(pricingRuleEntity.getInitialCharge());
+        }
+
+        return currentTotal;
     }
 
     @Override
