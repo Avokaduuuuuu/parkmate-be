@@ -34,16 +34,17 @@ public class RatingServiceImpl implements RatingService {
         Long userId = Long.valueOf(userHeaderId);
         Page<RatingEntity> ratingEntities = ratingRepository
                 .findAll(filterParams.getSpecification(userId), PageRequest.of(page, size, Sort.Direction.valueOf(sortOrder), sortBy));
-
-        List<Long> userIds = ratingEntities.getContent().stream().map(RatingEntity::getId).toList();
-        Map<Long, UserRatingResponse> userRatingResponseMap = userClient.getUserRating(userIds).getData();
-        log.info(userRatingResponseMap.toString());
         Page<RatingResponse> ratingResponses = ratingEntities.map(RatingMapper.INSTANCE::toResponse);
-        ratingResponses.map(rating -> {
-            rating.setFullName(userRatingResponseMap.get(rating.getId()).getFullName());
-            rating.setAvatarUrl(userRatingResponseMap.get(rating.getId()).getAvatarUrl());
-            return rating;
-        });
+        if (filterParams.getOwnedByMe() != null && !filterParams.getOwnedByMe()) {
+            List<Long> userIds = ratingEntities.getContent().stream().map(RatingEntity::getUserId).toList();
+            Map<Long, UserRatingResponse> userRatingResponseMap = userClient.getUserRating(userIds).getData();
+            log.info(userRatingResponseMap.toString());
+            ratingResponses.map(rating -> {
+                rating.setFullName(userRatingResponseMap.get(rating.getId()).getFullName());
+                rating.setAvatarUrl(userRatingResponseMap.get(rating.getId()).getAvatarUrl());
+                return rating;
+            });
+        }
         return ratingResponses;
     }
 
