@@ -40,8 +40,8 @@ public class RatingServiceImpl implements RatingService {
             Map<Long, UserRatingResponse> userRatingResponseMap = userClient.getUserRating(userIds).getData();
             log.info(userRatingResponseMap.toString());
             ratingResponses.map(rating -> {
-                rating.setFullName(userRatingResponseMap.get(rating.getId()).getFullName());
-                rating.setAvatarUrl(userRatingResponseMap.get(rating.getId()).getAvatarUrl());
+                rating.setFullName(userRatingResponseMap.get(rating.getUserId()).getFullName());
+                rating.setAvatarUrl(userRatingResponseMap.get(rating.getUserId()).getAvatarUrl());
                 return rating;
             });
         }

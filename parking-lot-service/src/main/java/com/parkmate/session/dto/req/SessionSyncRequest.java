@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record SessionSyncRequest(
-        UUID id,
+        String id,
         Long lotId,
         String licensePlate,
         VehicleType vehicleType,
