@@ -1,0 +1,212 @@
+@startuml Login API Class Diagram
+
+' Controllers
+class AuthController {
+  + login(LoginRequest): ResponseEntity<ApiResponse<LoginResponse>>
+}
+
+' Services
+class AuthServiceImpl {
+  + login(LoginRequest): LoginResponse
+  - buildClaims(Account): Map<String, Object>
+  - responseWithPresignedURL(UserResponse, User): UserResponse
+  + {static} getUserResponse(UserResponse, User, S3Service): UserResponse
+}
+
+interface AuthService {
+  + login(LoginRequest): LoginResponse
+}
+
+class JwtUtil {
+  + generateToken(Map<String, Object>): String
+}
+
+class RedisTokenService {
+  + storeRefreshToken(String, Map<String, Object>, long): void
+}
+
+class S3Service {
+  + generatePresignedUrl(String): String
+}
+
+' Repositories
+interface AccountRepository {
+  + findAccountByEmail(String): Optional<Account>
+}
+
+' Mappers
+interface PartnerMapper {
+  + toDto(Partner): PartnerResponse
+}
+
+class PartnerMapperImpl {
+  + toDto(Partner): PartnerResponse
+  # accountListToAccountBasicResponseList(List<Account>): List<AccountBasicResponse>
+}
+
+abstract class UserMapper {
+  + toResponse(User): UserResponse
+  # generateUserQRCode(User): String
+}
+
+class UserMapperImpl {
+  + toResponse(User): UserResponse
+}
+
+' DTOs
+class LoginRequest {
+  - email: String
+  - password: String
+}
+
+class LoginResponse {
+  - authResponse: AuthResponse
+  - partnerResponse: PartnerResponse
+  - userResponse: UserResponse
+  + {static} builder(): LoginResponseBuilder
+}
+
+class AuthResponse {
+  - accessToken: String
+  - refreshToken: String
+  - tokenType: String
+  - expiresIn: Long
+  + {static} builder(): AuthResponseBuilder
+}
+
+class PartnerResponse {
+  - id: Long
+  - companyName: String
+  - taxNumber: String
+  - businessLicenseNumber: String
+  - businessLicenseFileUrl: String
+  - companyAddress: String
+  - companyPhone: String
+  - companyEmail: String
+  - businessDescription: String
+  - status: PartnerStatus
+  - suspensionReason: String
+  - createdAt: LocalDateTime
+  - updatedAt: LocalDateTime
+  - accounts: List<AccountBasicResponse>
+}
+
+class UserResponse {
+  - account: AccountBasicResponse
+  - id: Long
+  - phone: String
+  - firstName: String
+  - lastName: String
+  - fullName: String
+  - dateOfBirth: LocalDate
+  - address: String
+  - gender: String
+  - nationality: String
+  - idNumber: String
+  - issuePlace: String
+  - issueDate: LocalDate
+  - expiryDate: LocalDate
+  - frontPhotoPresignedUrl: String
+  - backPhotoPresignedUrl: String
+  - profilePicturePresignedUrl: String
+  - createdAt: LocalDateTime
+  - updatedAt: LocalDateTime
+  - qrCode: String
+}
+
+class AccountBasicResponse {
+  - id: Long
+  - email: String
+  - status: AccountStatus
+  - role: AccountRole
+}
+
+class ApiResponse<T> {
+  - success: boolean
+  - message: String
+  - data: T
+  - error: ErrorDetails
+  - meta: Map<String, Object>
+  - timestamp: LocalDateTime
+  + {static} success(T, String): ApiResponse<T>
+}
+
+' Entities
+class Account {
+  - id: Long
+  - email: String
+  - password: String
+}
+
+class Partner {
+  - id: Long
+  - companyName: String
+  - accounts: List<Account>
+}
+
+class User {
+  - id: Long
+  - account: Account
+  - phone: String
+  - firstName: String
+  - lastName: String
+}
+
+' Exception Classes
+class AppException {
+  + new(ErrorCode, Object...): AppException
+}
+
+enum ErrorCode {
+  + formatMessage(Object...): String
+}
+
+' Enums
+enum PartnerStatus
+enum AccountStatus
+enum AccountRole
+
+' Relationships - Controller Layer
+AuthController --> LoginRequest: receives
+AuthController --> ApiResponse: returns
+AuthController --> AuthServiceImpl: uses
+
+' Service Layer
+AuthServiceImpl ..|> AuthService: implements
+AuthServiceImpl --> AccountRepository: uses
+AuthServiceImpl --> JwtUtil: uses
+AuthServiceImpl --> RedisTokenService: uses
+AuthServiceImpl --> S3Service: uses
+AuthServiceImpl --> PartnerMapper: uses
+AuthServiceImpl --> UserMapper: uses
+AuthServiceImpl --> LoginResponse: creates
+AuthServiceImpl --> AuthResponse: creates
+AuthServiceImpl --> AppException: throws
+
+' Mapper Layer
+PartnerMapperImpl ..|> PartnerMapper: implements
+PartnerMapperImpl --> Partner: converts
+PartnerMapperImpl --> PartnerResponse: produces
+
+UserMapperImpl --|> UserMapper: extends
+UserMapperImpl --> User: converts
+UserMapperImpl --> UserResponse: produces
+
+' Repository Layer
+AccountRepository --> Account: queries
+
+' DTO Relationships
+LoginResponse *-- AuthResponse
+LoginResponse *-- PartnerResponse
+LoginResponse *-- UserResponse
+PartnerResponse *-- AccountBasicResponse
+UserResponse *-- AccountBasicResponse
+
+' Entity Relationships
+Partner *-- Account
+User --> Account
+
+' Exception Relationships
+AppException --> ErrorCode: uses
+
+@enduml
