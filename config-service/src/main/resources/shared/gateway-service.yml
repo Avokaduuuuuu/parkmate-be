@@ -82,6 +82,7 @@ spring:
             allowedOrigins:
               - "http://localhost:5173"
               - "http://localhost:3000"
+              - "https://park-mate-sand.vercel.app"
             allowedMethods:
               - GET
               - POST
