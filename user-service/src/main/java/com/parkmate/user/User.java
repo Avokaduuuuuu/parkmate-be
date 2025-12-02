@@ -67,7 +67,6 @@ public class User {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate issueDate;
 
-
     @JsonFormat(pattern = "yyyy-MM-dd")
     @Column(name = "expiry_date", length = 10)
     private LocalDate expiryDate;

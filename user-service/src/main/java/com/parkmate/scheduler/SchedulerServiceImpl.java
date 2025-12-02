@@ -3,6 +3,9 @@ package com.parkmate.scheduler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.parkmate.client.ParkingLotClient;
 import com.parkmate.client.PaymentClient;
+import com.parkmate.client.dto.request.CreateTransactionRequest;
+import com.parkmate.client.dto.response.WalletTransactionResponse;
+import com.parkmate.common.dto.ApiResponse;
 import com.parkmate.common.enums.ReservationStatus;
 import com.parkmate.kafka.KafkaTopics;
 import com.parkmate.kafka.event.NotificationEvent;
@@ -17,11 +20,13 @@ import com.parkmate.userSubscription.UserSubscriptionRepository;
 import com.parkmate.userSubscription.UserSubscriptionStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -45,7 +50,7 @@ public class SchedulerServiceImpl {
     @Scheduled(fixedRate = 300000, zone = "Asia/Ho_Chi_Minh") // Every 5 minutes
     @Transactional(readOnly = true)
     public void sendUpcomingReservationReminders() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().plusHours(7);
         LocalDateTime reminderStart = now.plusMinutes(55); // 55 min from now
         LocalDateTime reminderEnd = now.plusMinutes(65);   // 65 min from now
 
@@ -80,7 +85,7 @@ public class SchedulerServiceImpl {
     @Scheduled(fixedRate = 300000, zone = "Asia/Ho_Chi_Minh") // Every 5 minutes
     @Transactional
     public void detectNoShowReservations() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().plusHours(7);
 
         log.info("🚫 [SCHEDULER] Task 2: Starting no-show detection at {}", now.format(DATETIME_FORMATTER));
 
@@ -102,9 +107,19 @@ public class SchedulerServiceImpl {
                     int gracePeriodMinutes = 15;
 
                     try {
-                        // TODO: Implement policy fetch from parking-lot-service
-                        // For now, using default 15 minutes
-                        // var policyResponse = parkingLotClient.getPolicy(reservation.getParkingLotId(), "NO_SHOW_GRACE_PERIOD");
+                        var policyResponse = parkingLotClient.getPolicyByLotIdAndType(
+                                reservation.getParkingLotId(),
+                                "NO_SHOW_GRACE_PERIOD"
+                        );
+
+                        if (policyResponse != null && policyResponse.data() != null && policyResponse.data().value() != null) {
+                            gracePeriodMinutes = policyResponse.data().value();
+                            log.info("✅ [SCHEDULER] Task 2: Fetched grace period policy for lot {}: {} minutes",
+                                    reservation.getParkingLotId(), gracePeriodMinutes);
+                        } else {
+                            log.warn("⚠️ [SCHEDULER] Task 2: Grace period policy not found for lot {}, using default 15 minutes",
+                                    reservation.getParkingLotId());
+                        }
                     } catch (Exception e) {
                         log.warn("⚠️ [SCHEDULER] Task 2: Failed to fetch grace period policy for lot {}, using default 15 minutes",
                                 reservation.getParkingLotId());
@@ -149,7 +164,7 @@ public class SchedulerServiceImpl {
     @Scheduled(cron = "0 0 9 * * ?", zone = "Asia/Ho_Chi_Minh") // Daily at 9:00 AM
     @Transactional(readOnly = true)
     public void sendSubscriptionExpirationReminders() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().plusHours(7);
         LocalDateTime reminderStart = now.plusDays(6); // 6 days from now
         LocalDateTime reminderEnd = now.plusDays(8);   // 8 days from now
 
@@ -190,7 +205,7 @@ public class SchedulerServiceImpl {
     @Scheduled(cron = "0 0 */6 * * ?", zone = "Asia/Ho_Chi_Minh") // Every 6 hours
     @Transactional
     public void processSubscriptionAutoRenewal() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().plusHours(7);
 
         log.info("🔄 [SCHEDULER] Task 4: Starting auto-renewal processing at {}", now.format(DATETIME_FORMATTER));
 
@@ -324,7 +339,7 @@ public class SchedulerServiceImpl {
         String autoRenewStatus = subscription.getAutoRenew() ? "Tự động gia hạn: BẬT" : "Tự động gia hạn: TẮT";
 
         String message = String.format(
-                "Gói đăng ký của bạn tại %s sẽ hết hạn vào %s. %s. Bạn có muốn tiếp tục gia hạn không?",
+                "Gói đăng ký của bạn tại %s sẽ hết hạn vào %s. %s. Hãy vào app kiểm tra?",
                 lotName,
                 endDate,
                 autoRenewStatus
@@ -335,8 +350,7 @@ public class SchedulerServiceImpl {
         data.put("parkingLotId", subscription.getParkingLotId());
         data.put("endDate", subscription.getEndDate().toString());
         data.put("autoRenew", subscription.getAutoRenew());
-        data.put("deepLink", "parkmate://subscription/" + subscription.getId() + "/renewal-decision");
-        data.put("actionRequired", true);
+        data.put("needDecision", true);
 
         sendNotification(
                 user,
@@ -364,9 +378,17 @@ public class SchedulerServiceImpl {
 
             var subscriptionPackage = subscriptionResponse.data();
 
-            // TODO: Extract price from subscription package
-            // For now, use the original paidAmount as a fallback
-            var renewalAmount = subscription.getPaidAmount();
+            // Extract price from subscription package
+            var renewalAmount = subscriptionPackage.amount();
+
+            if (renewalAmount == null || renewalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                log.warn("⚠️ [AUTO-RENEWAL] Invalid renewal amount for subscription package {}. Using original paid amount as fallback.",
+                        subscription.getSubscriptionPackageId());
+                renewalAmount = subscription.getPaidAmount();
+            }
+
+            log.info("✅ [AUTO-RENEWAL] Renewal amount for subscription {}: {} VND",
+                    subscription.getId(), renewalAmount);
 
             // Check wallet balance
             var walletResponse = paymentClient.getWallet(subscription.getUser().getId());
@@ -379,14 +401,73 @@ public class SchedulerServiceImpl {
             }
 
             var wallet = walletResponse.getBody().data();
-            // TODO: Compare wallet balance with renewalAmount
-            // For now, assuming sufficient balance
 
-            // TODO: Process payment via PaymentClient
-            // For now, just extend the subscription
+            // Compare wallet balance with renewal amount
+            // Convert renewal amount from BigDecimal to Long (assuming balance is in VND cents/smallest unit)
+            Long renewalAmountLong = renewalAmount.multiply(new BigDecimal("100")).longValue();
 
-            // Extend subscription
-            LocalDateTime newEndDate = subscription.getEndDate().plusMonths(1); // Assuming monthly subscription
+            if (wallet.balance() < renewalAmountLong) {
+                log.error("❌ [AUTO-RENEWAL] Insufficient balance for subscription {}. Required: {} VND, Available: {} VND",
+                        subscription.getId(),
+                        renewalAmount,
+                        new BigDecimal(wallet.balance()).divide(new BigDecimal("100")));
+                handleRenewalFailure(subscription, "Số dư ví không đủ. Vui lòng nạp thêm tiền.");
+                return false;
+            }
+
+            log.info("✅ [AUTO-RENEWAL] Sufficient balance for subscription {}. Required: {} VND, Available: {} VND",
+                    subscription.getId(),
+                    renewalAmount,
+                    new BigDecimal(wallet.balance()).divide(new BigDecimal("100")));
+
+            // Process payment via PaymentClient
+            try {
+                // Get partner ID for the parking lot
+                Long partnerId = null;
+                try {
+                    ApiResponse<ParkingLotClient.PartnerIdDto> partnerResponse =
+                            parkingLotClient.getPartnerIdByParkingLotId(subscription.getParkingLotId());
+                    if (partnerResponse != null && partnerResponse.data() != null) {
+                        partnerId = partnerResponse.data().partnerId();
+                    }
+                } catch (Exception e) {
+                    log.warn("⚠️ [AUTO-RENEWAL] Failed to get partner ID for parking lot {}. Proceeding without partner credit.",
+                            subscription.getParkingLotId());
+                }
+
+                ResponseEntity<ApiResponse<WalletTransactionResponse>> paymentResponse = paymentClient.deductWallet(
+                        CreateTransactionRequest.builder()
+                                .userId(subscription.getUser().getId())
+                                .partnerId(partnerId)
+                                .amount(renewalAmount)
+                                .transactionType("SUBSCRIPTION_RENEWAL")
+                                .description(String.format("Auto-renewal for subscription %d at parking lot (Package: %s)",
+                                        subscription.getId(), subscriptionPackage.name()))
+                                .build()
+                );
+
+                // Validate payment response
+                if (!paymentResponse.hasBody() || paymentResponse.getBody() == null ||
+                        !paymentResponse.getBody().success() || paymentResponse.getBody().data() == null) {
+                    log.error("❌ [AUTO-RENEWAL] Payment failed for subscription {}: {}",
+                            subscription.getId(),
+                            paymentResponse.getBody() != null ? paymentResponse.getBody().message() : "Empty response");
+                    handleRenewalFailure(subscription, "Thanh toán thất bại");
+                    return false;
+                }
+
+                log.info("✅ [AUTO-RENEWAL] Payment successful for subscription {}.",
+                        subscription.getId());
+
+            } catch (Exception e) {
+                log.error("❌ [AUTO-RENEWAL] Payment processing error for subscription {}", subscription.getId(), e);
+                handleRenewalFailure(subscription, "Lỗi xử lý thanh toán");
+                return false;
+            }
+
+            // Extend subscription based on package duration
+            int durationMonths = subscriptionPackage.durationValue() != null ? subscriptionPackage.durationValue() : 1;
+            LocalDateTime newEndDate = subscription.getEndDate().plusMonths(durationMonths);
             subscription.setEndDate(newEndDate);
             subscription.setUpdatedAt(LocalDateTime.now());
             userSubscriptionRepository.save(subscription);

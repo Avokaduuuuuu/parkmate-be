@@ -2,6 +2,8 @@ package com.parkmate.operationalPayment;
 
 import com.parkmate.client.ParkingLotClient;
 import com.parkmate.client.dto.ParkingLotBasicInfo;
+import com.parkmate.exception.AppException;
+import com.parkmate.exception.ErrorCode;
 import com.parkmate.operationalFeeConfig.OperationalFeeConfigEntity;
 import com.parkmate.operationalFeeConfig.OperationalFeeConfigRepository;
 import com.parkmate.operationalPayment.enums.PaymentStatus;
@@ -97,7 +99,7 @@ public class RecurringOperationalPaymentScheduler {
                     }
 
                 } catch (Exception e) {
-                    log.error("Error processing lot {}: {}", lot.id(), e.getMessage(), e);
+                    log.error("Error processing lot {}: {}", lot.getId(), e.getMessage(), e);
                 }
             }
 
@@ -120,23 +122,23 @@ public class RecurringOperationalPaymentScheduler {
             OperationalFeeConfigEntity config,
             LocalDate today
     ) {
-        log.debug("Checking lot {} ({})", lot.id(), lot.name());
+        log.debug("Checking lot {} ({})", lot.getId(), lot.getName());
 
         // Get latest payment for this lot (any status)
-        var latestPaymentOpt = operationalPaymentRepository.findLatestByLotId(lot.id());
+        var latestPaymentOpt = operationalPaymentRepository.findLatestByLotId(lot.getId());
 
         if (latestPaymentOpt.isEmpty()) {
             log.info("No previous payment found for lot {} - this should have been created during PENDING_PAYMENT status",
-                    lot.id());
+                    lot.getId());
             return false; // Initial payment should be created when lot status changes to PENDING_PAYMENT
         }
 
-        OperationalPaymentEntity latestPayment = latestPaymentOpt.get();
+        OperationalPaymentEntity latestPayment = latestPaymentOpt.orElseThrow();
 
         // Only create recurring payment if latest payment is PAID
         if (latestPayment.getPaymentStatus() != PaymentStatus.PAID) {
             log.debug("Latest payment for lot {} is not PAID (status: {}), skipping",
-                    lot.id(), latestPayment.getPaymentStatus());
+                    lot.getId(), latestPayment.getPaymentStatus());
             return false;
         }
 
@@ -147,7 +149,7 @@ public class RecurringOperationalPaymentScheduler {
         // Check if we've reached or passed the next billing cycle start
         if (today.isBefore(nextBillingStartDate)) {
             log.debug("Not yet time for next billing cycle for lot {}. Next start: {}, Today: {}",
-                    lot.id(), nextBillingStartDate, today);
+                    lot.getId(), nextBillingStartDate, today);
             return false;
         }
 
@@ -162,12 +164,13 @@ public class RecurringOperationalPaymentScheduler {
             Integer billingCycleDays
     ) {
         log.info("Creating recurring operational payment for lot {} starting {}",
-                lot.id(), billingStartDate);
+                lot.getId(), billingStartDate);
 
         try {
             // Fetch lot area from parking-lot-service (assuming it's in ParkingLotBasicInfo or needs separate call)
             // For now, we'll fetch from latest payment as area shouldn't change
-            var latestPayment = operationalPaymentRepository.findLatestByLotId(lot.id()).get();
+            var latestPayment = operationalPaymentRepository.findLatestByLotId(lot.getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
             Double lotAreaSqm = latestPayment.getLotAreaSqm();
 
             // Calculate billing period
@@ -186,8 +189,8 @@ public class RecurringOperationalPaymentScheduler {
 
             // Create new payment entity
             OperationalPaymentEntity newPayment = OperationalPaymentEntity.builder()
-                    .lotId(lot.id())
-                    .partnerId(lot.partnerId())
+                    .lotId(lot.getId())
+                    .partnerId(lot.getPartnerId())
                     .feeConfigId(config.getId())
                     .lotAreaSqm(lotAreaSqm)
                     .feePerSqm(pricePerSqm)
@@ -203,12 +206,12 @@ public class RecurringOperationalPaymentScheduler {
             operationalPaymentRepository.save(newPayment);
 
             log.info("✅ Created recurring payment #{} for lot {}: {} VND, due {}",
-                    newPayment.getId(), lot.id(), totalFee, dueDate);
+                    newPayment.getId(), lot.getId(), totalFee, dueDate);
 
             return true;
 
         } catch (Exception e) {
-            log.error("Failed to create recurring payment for lot {}", lot.id(), e);
+            log.error("Failed to create recurring payment for lot {}", lot.getId(), e);
             return false;
         }
     }

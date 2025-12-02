@@ -15,8 +15,9 @@ public record AccountBasicResponse(
         AccountStatus status,
 
         @Schema(description = "Role of the account", example = "USER")
-        AccountRole role
+        AccountRole role,
 
+        Boolean isIdVerified
 
 ) {
 }

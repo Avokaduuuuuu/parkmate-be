@@ -108,7 +108,7 @@ public class PartnerWithdrawalPeriodServiceImpl implements PartnerWithdrawalPeri
         if (existing.isPresent()) {
             log.info("Withdrawal period already exists for lot {} in period {} to {}",
                     lotId, periodStartDate, periodEndDate);
-            return partnerWithdrawalPeriodMapper.toResponse(existing.get());
+            return existing.map(partnerWithdrawalPeriodMapper::toResponse).get();
         }
 
         // Calculate revenues and counts for this parking lot

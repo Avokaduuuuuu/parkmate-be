@@ -108,11 +108,11 @@ public class OperationalPaymentReminderScheduler {
         try {
             // Fetch partner email
             var partnerResponse = userServiceClient.getUserById(payment.getPartnerId());
-            if (partnerResponse == null || partnerResponse.getData() == null) {
+            if (partnerResponse == null || partnerResponse.data() == null) {
                 log.warn("Partner {} not found, skipping reminder", payment.getPartnerId());
                 return;
             }
-            String partnerEmail = partnerResponse.getData().getEmail();
+            String partnerEmail = partnerResponse.data().getEmail();
 
             // Fetch parking lot name
             var lotResponse = parkingLotClient.getParkingLotName(payment.getLotId());
@@ -146,11 +146,11 @@ public class OperationalPaymentReminderScheduler {
         try {
             // Fetch partner email
             var partnerResponse = userServiceClient.getUserById(payment.getPartnerId());
-            if (partnerResponse == null || partnerResponse.getData() == null) {
+            if (partnerResponse == null || partnerResponse.data() == null) {
                 log.warn("Partner {} not found, skipping overdue notification", payment.getPartnerId());
                 return;
             }
-            String partnerEmail = partnerResponse.getData().getEmail();
+            String partnerEmail = partnerResponse.data().getEmail();
 
             // Fetch parking lot name
             var lotResponse = parkingLotClient.getParkingLotName(payment.getLotId());
