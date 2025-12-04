@@ -42,6 +42,7 @@ public class ParkingLotDetailedResponse {
     String reason;
     Long totalRatings;
     Double averageRating;
+    Double lotSquare;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

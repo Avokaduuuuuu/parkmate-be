@@ -199,7 +199,63 @@ public class SchedulerServiceImpl {
     }
 
     /**
-     * Task 4: Process auto-renewal for subscriptions
+     * Task 4: Daily balance check for subscriptions expiring within 7 days
+     * Runs daily at 10:00 AM to remind users with insufficient balance
+     */
+    @Scheduled(cron = "0 0 10 * * ?", zone = "Asia/Ho_Chi_Minh") // Daily at 10:00 AM
+    @Transactional(readOnly = true)
+    public void checkBalanceForExpiringSubscriptions() {
+        LocalDateTime now = LocalDateTime.now().plusHours(7);
+        LocalDateTime checkStart = now;
+        LocalDateTime checkEnd = now.plusDays(7);
+
+        log.info("💰 [SCHEDULER] Task 4: Checking balance for subscriptions expiring between {} and {}",
+                checkStart.format(DATETIME_FORMATTER),
+                checkEnd.format(DATETIME_FORMATTER));
+
+        try {
+            List<UserSubscriptionStatus> statuses = Arrays.asList(
+                    UserSubscriptionStatus.ACTIVE,
+                    UserSubscriptionStatus.INACTIVE
+            );
+
+            // Find subscriptions expiring within 7 days with auto-renew enabled
+            List<UserSubscription> expiringSubscriptions = userSubscriptionRepository
+                    .findByStatusInAndAutoRenewAndEndDateBetween(statuses, true, checkStart, checkEnd);
+
+            log.info("💰 [SCHEDULER] Task 4: Found {} subscriptions with auto-renew enabled expiring soon",
+                    expiringSubscriptions.size());
+
+            int insufficientCount = 0;
+            int sufficientCount = 0;
+
+            for (UserSubscription subscription : expiringSubscriptions) {
+                try {
+                    String balanceWarning = checkBalanceForRenewal(subscription);
+
+                    if (!balanceWarning.isEmpty()) {
+                        // User has insufficient balance - send warning
+                        sendInsufficientBalanceWarning(subscription, balanceWarning);
+                        insufficientCount++;
+                    } else {
+                        sufficientCount++;
+                    }
+                } catch (Exception e) {
+                    log.error("❌ [SCHEDULER] Task 4: Error checking balance for subscription {}",
+                            subscription.getId(), e);
+                }
+            }
+
+            log.info("✅ [SCHEDULER] Task 4: Completed. Insufficient balance: {}, Sufficient balance: {}",
+                    insufficientCount, sufficientCount);
+
+        } catch (Exception e) {
+            log.error("❌ [SCHEDULER] Task 4: Fatal error in checkBalanceForExpiringSubscriptions", e);
+        }
+    }
+
+    /**
+     * Task 5: Process auto-renewal for subscriptions
      * Runs every 6 hours to check for subscriptions that need renewal
      */
     @Scheduled(cron = "0 0 */6 * * ?", zone = "Asia/Ho_Chi_Minh") // Every 6 hours
@@ -207,7 +263,7 @@ public class SchedulerServiceImpl {
     public void processSubscriptionAutoRenewal() {
         LocalDateTime now = LocalDateTime.now().plusHours(7);
 
-        log.info("🔄 [SCHEDULER] Task 4: Starting auto-renewal processing at {}", now.format(DATETIME_FORMATTER));
+        log.info("🔄 [SCHEDULER] Task 5: Starting auto-renewal processing at {}", now.format(DATETIME_FORMATTER));
 
         try {
             // Find subscriptions that are expired or expiring and have autoRenew enabled
@@ -219,7 +275,7 @@ public class SchedulerServiceImpl {
             List<UserSubscription> subscriptionsToRenew = userSubscriptionRepository
                     .findByStatusInAndAutoRenewAndEndDateBefore(statuses, true, now);
 
-            log.info("🔄 [SCHEDULER] Task 4: Found {} subscriptions to auto-renew", subscriptionsToRenew.size());
+            log.info("🔄 [SCHEDULER] Task 5: Found {} subscriptions to auto-renew", subscriptionsToRenew.size());
 
             int renewedCount = 0;
             int failedCount = 0;
@@ -233,15 +289,15 @@ public class SchedulerServiceImpl {
                         failedCount++;
                     }
                 } catch (Exception e) {
-                    log.error("❌ [SCHEDULER] Task 4: Error processing renewal for subscription {}",
+                    log.error("❌ [SCHEDULER] Task 5: Error processing renewal for subscription {}",
                             subscription.getId(), e);
                     failedCount++;
                 }
             }
 
-            log.info("✅ [SCHEDULER] Task 4: Completed. Renewed: {}, Failed: {}", renewedCount, failedCount);
+            log.info("✅ [SCHEDULER] Task 5: Completed. Renewed: {}, Failed: {}", renewedCount, failedCount);
         } catch (Exception e) {
-            log.error("❌ [SCHEDULER] Task 4: Fatal error in processSubscriptionAutoRenewal", e);
+            log.error("❌ [SCHEDULER] Task 5: Fatal error in processSubscriptionAutoRenewal", e);
         }
     }
 
@@ -338,11 +394,18 @@ public class SchedulerServiceImpl {
 
         String autoRenewStatus = subscription.getAutoRenew() ? "Tự động gia hạn: BẬT" : "Tự động gia hạn: TẮT";
 
+        // Check if auto-renew is enabled, then check balance
+        String balanceWarning = "";
+        if (subscription.getAutoRenew()) {
+            balanceWarning = checkBalanceForRenewal(subscription);
+        }
+
         String message = String.format(
-                "Gói đăng ký của bạn tại %s sẽ hết hạn vào %s. %s. Hãy vào app kiểm tra?",
+                "Gói đăng ký của bạn tại %s sẽ hết hạn vào %s. %s%s. Hãy vào app kiểm tra?",
                 lotName,
                 endDate,
-                autoRenewStatus
+                autoRenewStatus,
+                balanceWarning.isEmpty() ? "" : ". " + balanceWarning
         );
 
         Map<String, Object> data = new HashMap<>();
@@ -351,6 +414,7 @@ public class SchedulerServiceImpl {
         data.put("endDate", subscription.getEndDate().toString());
         data.put("autoRenew", subscription.getAutoRenew());
         data.put("needDecision", true);
+        data.put("hasInsufficientBalance", !balanceWarning.isEmpty());
 
         sendNotification(
                 user,
@@ -567,6 +631,153 @@ public class SchedulerServiceImpl {
                 message,
                 data
         );
+    }
+
+    private void sendInsufficientBalanceWarning(UserSubscription subscription, String balanceWarning) {
+        log.info("🔔 [INSUFFICIENT-BALANCE] Sending balance warning for subscription {}", subscription.getId());
+
+        User user = subscription.getUser();
+        List<String> deviceTokens = mobileDeviceRepository.findActivePushTokensByUserId(user.getId());
+
+        if (deviceTokens.isEmpty()) {
+            log.warn("⚠️ [INSUFFICIENT-BALANCE] No device tokens found for user {}", user.getId());
+            return;
+        }
+
+        String parkingLotName = reservationMapper.getParkingLotName(parkingLotClient, subscription.getParkingLotId());
+        String lotName = (parkingLotName != null) ? parkingLotName : "bãi xe";
+        String endDate = subscription.getEndDate().format(DATETIME_FORMATTER);
+
+        // Extract amount info from warning message for better notification
+        try {
+            var subscriptionResponse = parkingLotClient.getSubscription(subscription.getSubscriptionPackageId());
+            if (subscriptionResponse != null && subscriptionResponse.data() != null) {
+                var subscriptionPackage = subscriptionResponse.data();
+                var renewalAmount = subscriptionPackage.amount();
+
+                if (renewalAmount == null || renewalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                    renewalAmount = subscription.getPaidAmount();
+                }
+
+                var walletResponse = paymentClient.getWallet(subscription.getUser().getId());
+                if (walletResponse != null && walletResponse.getBody() != null &&
+                        walletResponse.getBody().data() != null) {
+
+                    var wallet = walletResponse.getBody().data();
+                    BigDecimal currentBalance = new BigDecimal(wallet.balance()).divide(new BigDecimal("100"));
+                    BigDecimal shortfall = renewalAmount.subtract(currentBalance);
+
+                    String message = String.format(
+                            "⚠️ Gói đăng ký tại %s sẽ hết hạn vào %s. Số dư ví của bạn không đủ để gia hạn tự động.\n\n" +
+                                    "Cần: %,.0f đ\n" +
+                                    "Hiện có: %,.0f đ\n" +
+                                    "Thiếu: %,.0f đ\n\n" +
+                                    "Vui lòng nạp tiền trước ngày hết hạn để tránh mất quyền sử dụng.",
+                            lotName,
+                            endDate,
+                            renewalAmount,
+                            currentBalance,
+                            shortfall
+                    );
+
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("subscriptionId", subscription.getId());
+                    data.put("parkingLotId", subscription.getParkingLotId());
+                    data.put("endDate", subscription.getEndDate().toString());
+                    data.put("requiredAmount", renewalAmount.toString());
+                    data.put("currentBalance", currentBalance.toString());
+                    data.put("shortfall", shortfall.toString());
+                    data.put("deepLink", "parkmate://wallet/topup");
+
+                    sendNotification(
+                            user,
+                            deviceTokens,
+                            NotificationEventType.SUBSCRIPTION_INSUFFICIENT_BALANCE,
+                            "SỐ DƯ KHÔNG ĐỦ ĐỂ GIA HẠN",
+                            message,
+                            data
+                    );
+                    return;
+                }
+            }
+        } catch (Exception e) {
+            log.error("❌ [INSUFFICIENT-BALANCE] Error fetching detailed balance info for subscription {}",
+                    subscription.getId(), e);
+        }
+
+        // Fallback to simple warning message
+        String message = String.format(
+                "⚠️ Gói đăng ký tại %s sẽ hết hạn vào %s. %s",
+                lotName,
+                endDate,
+                balanceWarning
+        );
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("subscriptionId", subscription.getId());
+        data.put("parkingLotId", subscription.getParkingLotId());
+        data.put("endDate", subscription.getEndDate().toString());
+        data.put("deepLink", "parkmate://wallet/topup");
+
+        sendNotification(
+                user,
+                deviceTokens,
+                NotificationEventType.SUBSCRIPTION_INSUFFICIENT_BALANCE,
+                "SỐ DƯ KHÔNG ĐỦ ĐỂ GIA HẠN",
+                message,
+                data
+        );
+    }
+
+    /**
+     * Check if user has sufficient balance for renewal
+     * @return warning message if insufficient, empty string if sufficient
+     */
+    private String checkBalanceForRenewal(UserSubscription subscription) {
+        try {
+            // Fetch subscription package details
+            var subscriptionResponse = parkingLotClient.getSubscription(subscription.getSubscriptionPackageId());
+            if (subscriptionResponse == null || subscriptionResponse.data() == null) {
+                return "";
+            }
+
+            var subscriptionPackage = subscriptionResponse.data();
+            var renewalAmount = subscriptionPackage.amount();
+
+            if (renewalAmount == null || renewalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                renewalAmount = subscription.getPaidAmount();
+            }
+
+            // Check wallet balance
+            var walletResponse = paymentClient.getWallet(subscription.getUser().getId());
+            if (walletResponse == null || walletResponse.getBody() == null ||
+                    walletResponse.getBody().data() == null) {
+                return "";
+            }
+
+            var wallet = walletResponse.getBody().data();
+            Long renewalAmountLong = renewalAmount.multiply(new BigDecimal("100")).longValue();
+
+            if (wallet.balance() < renewalAmountLong) {
+                BigDecimal currentBalance = new BigDecimal(wallet.balance()).divide(new BigDecimal("100"));
+                BigDecimal shortfall = renewalAmount.subtract(currentBalance);
+
+                log.warn("⚠️ [BALANCE-CHECK] Insufficient balance for subscription {}. Required: {} VND, Available: {} VND, Shortfall: {} VND",
+                        subscription.getId(), renewalAmount, currentBalance, shortfall);
+
+                return String.format("⚠️ Số dư ví không đủ để gia hạn. Cần: %,.0f đ, Thiếu: %,.0f đ. Vui lòng nạp tiền trước ngày hết hạn",
+                        renewalAmount, shortfall);
+            }
+
+            log.info("✅ [BALANCE-CHECK] Sufficient balance for subscription {}. Required: {} VND, Available: {} VND",
+                    subscription.getId(), renewalAmount, new BigDecimal(wallet.balance()).divide(new BigDecimal("100")));
+
+            return ""; // Sufficient balance
+
+        } catch (Exception e) {
+            log.error("❌ [BALANCE-CHECK] Error checking balance for subscription {}", subscription.getId(), e);
+            return "";
+        }
     }
 
     private void sendNotification(
