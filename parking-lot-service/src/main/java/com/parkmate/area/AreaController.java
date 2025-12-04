@@ -63,26 +63,8 @@ public class AreaController {
             @PathVariable("id")
             @Parameter(description = "Unique identifier of the parking area", required = true, example = "1")
             @Positive(message = "Area ID must be positive")
-            Long id,
-
-            @RequestParam(required = false)
-            @Parameter(description = "Check-in time for availability filtering", example = "2025-10-29T14:00:00")
-            LocalDateTime checkIn,
-
-            @RequestParam(required = false)
-            @Parameter(description = "Check-out time for availability filtering", example = "2025-10-29T16:00:00")
-            LocalDateTime checkOut
+            Long id
     ) {
-        // If both dates provided, use date-filtered service method
-        if (checkIn != null && checkOut != null) {
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(
-                            ApiResponse.success(
-                                    "Fetch Area by Id with availability successfully",
-                                    areaService.findAreaDetailByIdAndTime(id, checkIn, checkOut)
-                            )
-                    );
-        }
 
         // Otherwise, use regular method
         return ResponseEntity.status(HttpStatus.OK)

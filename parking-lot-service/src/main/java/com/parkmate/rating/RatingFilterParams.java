@@ -120,6 +120,11 @@ public class RatingFilterParams {
      * @return Specification that can be used with JPA repository for filtering
      */
     public Specification<RatingEntity> getSpecification(Long userId) {
+        // Validate early if ownedByMe requires userId
+        if (ownedByMe != null && ownedByMe && userId == null) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -129,10 +134,9 @@ public class RatingFilterParams {
                 predicates.add(cb.equal(join.get("id"), lotId));
             }
 
+            // Now we know userId is not null if ownedByMe is true
             if (ownedByMe != null && ownedByMe) {
-                if (userId != null) {
-                    predicates.add(cb.equal(root.get("userId"), userId));
-                } else throw new AppException(ErrorCode.UNAUTHORIZED);
+                predicates.add(cb.equal(root.get("userId"), userId));
             }
 
             // Filter by exact rating value

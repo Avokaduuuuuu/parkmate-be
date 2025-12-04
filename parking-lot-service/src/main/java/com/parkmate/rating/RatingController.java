@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/parking-service/ratings")
@@ -120,7 +121,8 @@ public class RatingController {
             @Parameter(description = "Sort direction (ASC or DESC)", example = "DESC")
             @RequestParam(required = false, defaultValue = "DESC") String sortOrder,
             @Parameter(hidden = true)
-            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
+            @RequestHeader(value = "X-User-Id", required = false)
+            Optional<String> userIdHeader,
             RatingFilterParams filterParams
     ) {
         return ResponseEntity
@@ -128,7 +130,8 @@ public class RatingController {
                 .body(
                         ApiResponse.success(
                                 "All ratings retrieved successfully",
-                                ratingService.getRatings(page, size, sortBy, sortOrder, filterParams, userIdHeader)
+                                ratingService.getRatings(page, size, sortBy, sortOrder, filterParams,
+                                        userIdHeader.filter(s -> !s.isEmpty()).orElse(null))
                         )
                 );
     }

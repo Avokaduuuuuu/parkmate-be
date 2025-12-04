@@ -30,7 +30,7 @@ import java.util.UUID;
 public class SessionEntity {
     @Id
     @Column(name = "id")
-    UUID id;
+    String id;
 
     @Column(name = "user_id")
     Long userId;
@@ -127,10 +127,4 @@ public class SessionEntity {
     PricingRuleEntity pricingRule;
 
 
-    @PrePersist
-    private void initUUID() {
-        if (id == null) {
-            id = UuidCreator.getTimeOrderedEpoch();
-        }
-    }
 }

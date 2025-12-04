@@ -116,7 +116,7 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public SessionDetailedResponse getSession(String id) {
         SessionDetailedResponse sessionDetailedResponse = SessionMapper.INSTANCE.toDetailedResponse(
-                sessionRepository.findById(UUID.fromString(id))
+                sessionRepository.findById(id)
                         .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND, "Session with UUID " + id + " not found"))
         );
         sessionDetailedResponse.setEntryImage(s3Service.getPresignedUrl(sessionDetailedResponse.getEntryImage()));

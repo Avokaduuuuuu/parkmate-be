@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface SessionRepository extends JpaRepository<SessionEntity, UUID>, JpaSpecificationExecutor<SessionEntity> {
+public interface SessionRepository extends JpaRepository<SessionEntity, String>, JpaSpecificationExecutor<SessionEntity> {
     Optional<SessionEntity> findByCardUUIDAndStatus(String cardUUID, SessionStatus status);
 
     Optional<SessionEntity> findByCardUUID(String cardUUID);
