@@ -24,6 +24,7 @@ public class ParkingLotResponse {
     Double latitude;
     Double longitude;
     Integer totalFloors;
+    Double lotSquare;
     @JsonFormat(pattern = "HH:mm:ss")
     LocalTime openTime;
     @JsonFormat(pattern = "HH:mm:ss")

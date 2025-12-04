@@ -12,15 +12,15 @@ import java.util.List;
 
 public interface UserSubscriptionRepository extends JpaRepository<UserSubscription, Long>, QuerydslPredicateExecutor<UserSubscription> {
 
-    List<UserSubscription> findByVehicleIdInAndStatusAndParkingLotId(List<Long> vehicleIds,
-                                                                     UserSubscriptionStatus status,
-                                                                     Long parkingLotId);
+    List<UserSubscription> findByVehicleIdInAndStatusInAndParkingLotId(List<Long> vehicleIds,
+                                                                       List<UserSubscriptionStatus> status,
+                                                                       Long parkingLotId);
 
     @Query("SELECT DISTINCT uS.assignedSpotId FROM UserSubscription uS " +
             "WHERE uS.assignedSpotId IN :spotIds " +
             "AND uS.startDate < :to " +
             "AND uS.endDate > :from " +
-            "AND uS.status IN ('ACTIVE','PENDING_PAYMENT')")
+            "AND uS.status IN ('ACTIVE','PENDING_PAYMENT', 'INACTIVE')")
     List<Long> findOccupiedSpotIds(
             @Param("spotIds") List<Long> spotIds,
             @Param("from") LocalDateTime from,
@@ -93,5 +93,21 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
             List<UserSubscriptionStatus> statuses,
             Boolean autoRenew,
             LocalDateTime endDate
+    );
+
+    /**
+     * Find subscriptions by status list, autoRenew flag, and endDate within a time range (for daily balance checks)
+     *
+     * @param statuses List of statuses to filter by (e.g., ACTIVE, INACTIVE)
+     * @param autoRenew The autoRenew flag value
+     * @param start Start of the time range for endDate
+     * @param end End of the time range for endDate
+     * @return List of subscriptions matching the criteria
+     */
+    List<UserSubscription> findByStatusInAndAutoRenewAndEndDateBetween(
+            List<UserSubscriptionStatus> statuses,
+            Boolean autoRenew,
+            LocalDateTime start,
+            LocalDateTime end
     );
 }

@@ -23,6 +23,7 @@ public enum NotificationEventType {
     SUBSCRIPTION_EXPIRING("SUBSCRIPTION_EXPIRING", "Subscription expiring soon"),
     SUBSCRIPTION_RENEWED("SUBSCRIPTION_RENEWED", "Subscription renewed successfully"),
     SUBSCRIPTION_RENEWAL_FAILED("SUBSCRIPTION_RENEWAL_FAILED", "Subscription renewal failed"),
+    SUBSCRIPTION_INSUFFICIENT_BALANCE("SUBSCRIPTION_INSUFFICIENT_BALANCE", "Insufficient balance for subscription renewal"),
 
     // Wallet/Payment events
     LOW_WALLET_BALANCE("LOW_WALLET_BALANCE", "Wallet balance insufficient"),

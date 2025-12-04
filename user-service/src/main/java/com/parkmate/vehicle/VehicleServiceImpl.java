@@ -104,18 +104,9 @@ public class VehicleServiceImpl implements VehicleService {
         if (userIdHeader != null && !userIdHeader.isEmpty() && searchCriteria.isOwnedByMe()) {
             userId = Long.parseLong(userIdHeader);
         }
-
-        System.out.println("DEBUG - userId header: " + userIdHeader);
-        System.out.println("DEBUG - searchCriteria: " + searchCriteria);
-
         Predicate predicate = VehicleSpecification.buildPredicate(searchCriteria, userId);
-        System.out.println("DEBUG - predicate: " + predicate);
-
         Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
         Page<Vehicle> vehiclePage = vehicleRepository.findAll(predicate, pageable);
-        System.out.println("DEBUG - total elements: " + vehiclePage.getTotalElements());
-
-
         List<Long> vehicleIdsHasSubscription;
         List<Long> vehicleIdsHasReservation;
         Map<VehicleType, Boolean> vehicleTypeSupportMap = new HashMap<>();
@@ -184,9 +175,12 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     private List<Long> checkVehicleInSubscription(Long parkingLotId, List<Vehicle> vehicles) {
-        List<UserSubscription> userSubscriptions = userSubscriptionRepository.findByVehicleIdInAndStatusAndParkingLotId(
+        List<UserSubscriptionStatus> userSubscriptionStatuses = new ArrayList<>();
+        userSubscriptionStatuses.add(UserSubscriptionStatus.ACTIVE);
+        userSubscriptionStatuses.add(UserSubscriptionStatus.INACTIVE);
+        List<UserSubscription> userSubscriptions = userSubscriptionRepository.findByVehicleIdInAndStatusInAndParkingLotId(
                 vehicles.stream().map(Vehicle::getId).collect(Collectors.toList()),
-                UserSubscriptionStatus.ACTIVE,
+                userSubscriptionStatuses,
                 parkingLotId);
         List<Long> vehicleInSubscription = new ArrayList<>();
         userSubscriptions.forEach(userSubscription -> vehicleInSubscription.add(userSubscription.getVehicle().getId()));
