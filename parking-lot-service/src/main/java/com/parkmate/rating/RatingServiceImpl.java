@@ -17,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,21 +31,49 @@ public class RatingServiceImpl implements RatingService {
     private final ParkingLotRepository parkingLotRepository;
     private final UserClient userClient;
     @Override
-    public Page<RatingResponse> getRatings(int page, int size, String sortBy, String sortOrder, RatingFilterParams filterParams, String userHeaderId) {
-        Long userId = Long.valueOf(userHeaderId);
+    public Page<RatingResponse> getRatings(int page, int size, String sortBy, String sortOrder,
+                                           RatingFilterParams filterParams, String userHeaderId) {
+        Long userId = null;
+        if (userHeaderId != null) {
+            userId = Long.valueOf(userHeaderId);
+        }
+
         Page<RatingEntity> ratingEntities = ratingRepository
-                .findAll(filterParams.getSpecification(userId), PageRequest.of(page, size, Sort.Direction.valueOf(sortOrder), sortBy));
+                .findAll(filterParams.getSpecification(userId),
+                        PageRequest.of(page, size, Sort.Direction.valueOf(sortOrder), sortBy));
+
         Page<RatingResponse> ratingResponses = ratingEntities.map(RatingMapper.INSTANCE::toResponse);
-        if (filterParams.getOwnedByMe() != null && !filterParams.getOwnedByMe()) {
-            List<Long> userIds = ratingEntities.getContent().stream().map(RatingEntity::getUserId).toList();
-            Map<Long, UserRatingResponse> userRatingResponseMap = userClient.getUserRating(userIds).getData();
-            log.info(userRatingResponseMap.toString());
-            ratingResponses.map(rating -> {
-                rating.setFullName(userRatingResponseMap.get(rating.getUserId()).getFullName());
-                rating.setAvatarUrl(userRatingResponseMap.get(rating.getUserId()).getAvatarUrl());
+
+        // Determine which user IDs to fetch
+        List<Long> userIdsToFetch;
+
+        if (filterParams.getOwnedByMe() != null && filterParams.getOwnedByMe()) {
+            // If filtering by "owned by me", only fetch current user's data
+            userIdsToFetch = List.of(userId);
+        } else {
+            // Otherwise, fetch all users from the rating list
+            userIdsToFetch = ratingEntities.getContent().stream()
+                    .map(RatingEntity::getUserId)
+                    .distinct()
+                    .toList();
+        }
+
+        // Fetch user data from user service
+        if (!userIdsToFetch.isEmpty()) {
+            Map<Long, UserRatingResponse> userRatingResponseMap = userClient.getUserRating(userIdsToFetch).getData();
+            log.info("User rating response map: {}", userRatingResponseMap);
+
+            // Map user data to rating responses
+            ratingResponses = ratingResponses.map(rating -> {
+                UserRatingResponse userRatingResponse = userRatingResponseMap.get(rating.getUserId());
+                if (userRatingResponse != null) {
+                    rating.setFullName(userRatingResponse.getFullName());
+                    rating.setAvatarUrl(userRatingResponse.getAvatarUrl());
+                }
                 return rating;
             });
         }
+
         return ratingResponses;
     }
 
