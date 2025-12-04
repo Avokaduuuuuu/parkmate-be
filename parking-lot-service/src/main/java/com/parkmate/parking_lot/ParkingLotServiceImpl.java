@@ -91,7 +91,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         parkingLotResponse.getImages().forEach(image -> image.setPath(s3Service.getPresignedUrl(image.getPath())));
         List<ParkingLotAvailableReservationSpotResponse> availableSpotResponses = new ArrayList<>();
         for (VehicleType vehicleType : VehicleType.values()) {
-            ParkingLotAvailableReservationSpotResponse countAvailableSpot = countAvailableSpot(id, LocalDateTime.now(), 0, vehicleType);
+            ParkingLotAvailableReservationSpotResponse countAvailableSpot = countAvailableSpot(id, LocalDateTime.now().plusHours(7), 0, vehicleType);
             countAvailableSpot.setPricing(null);
             availableSpotResponses.add(countAvailableSpot);
         }

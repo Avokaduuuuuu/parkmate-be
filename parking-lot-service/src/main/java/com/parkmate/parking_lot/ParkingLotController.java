@@ -435,7 +435,7 @@ public class ParkingLotController {
             byte[] excelData = exportService.exportAllToExcel();
 
             String filename = "parking_lots_" +
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) +
+                    LocalDateTime.now().plusHours(7).format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) +
                     ".xlsx";
 
             HttpHeaders headers = new HttpHeaders();

@@ -218,7 +218,7 @@ public class SessionServiceImpl implements SessionService {
         sessionEntity.setReferenceId(request.referenceId());
         sessionEntity.setNote(request.note());
         sessionEntity.setReferenceType(request.referenceType());
-        sessionEntity.setSyncedFromLocal(LocalDateTime.now());
+        sessionEntity.setSyncedFromLocal(LocalDateTime.now().plusHours(7));
         sessionEntity.setEntryImage(request.entryImage());
         sessionEntity.setEntryPlateImage(request.entryImagePlate());
         sessionEntity.setExitImage(request.exitImage());

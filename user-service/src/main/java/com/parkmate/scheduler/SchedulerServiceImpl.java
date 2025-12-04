@@ -533,7 +533,7 @@ public class SchedulerServiceImpl {
             int durationMonths = subscriptionPackage.durationValue() != null ? subscriptionPackage.durationValue() : 1;
             LocalDateTime newEndDate = subscription.getEndDate().plusMonths(durationMonths);
             subscription.setEndDate(newEndDate);
-            subscription.setUpdatedAt(LocalDateTime.now());
+            subscription.setUpdatedAt(LocalDateTime.now().plusHours(7));
             userSubscriptionRepository.save(subscription);
 
             log.info("✅ [AUTO-RENEWAL] Successfully renewed subscription {}. New end date: {}",
@@ -557,7 +557,7 @@ public class SchedulerServiceImpl {
 
         subscription.setStatus(UserSubscriptionStatus.EXPIRED);
         subscription.setAutoRenew(false);
-        subscription.setUpdatedAt(LocalDateTime.now());
+        subscription.setUpdatedAt(LocalDateTime.now().plusHours(7));
         userSubscriptionRepository.save(subscription);
 
         sendRenewalFailureNotification(subscription, reason);
@@ -804,7 +804,7 @@ public class SchedulerServiceImpl {
                     .notificationType("PUSH")
                     .deviceTokens(deviceTokens)
                     .data(dataJson)
-                    .createdAt(LocalDateTime.now())
+                    .createdAt(LocalDateTime.now().plusHours(7))
                     .sourceService("user-service")
                     .build();
 

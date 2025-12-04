@@ -54,7 +54,7 @@ public class ScheduledPaymentChecker {
 
             log.info("Found {} pending TOP_UP transaction(s) to check", pendingPayments.size());
 
-            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime now = LocalDateTime.now().plusHours(7);
             int expiredCount = 0;
 
             for (WalletTransaction transaction : pendingPayments) {

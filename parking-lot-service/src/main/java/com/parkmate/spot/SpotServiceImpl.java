@@ -153,6 +153,9 @@ public class SpotServiceImpl implements SpotService {
             } else if (spotHoldService.isSpotHold(spot.getId())) {
                 isAvailable = false;
                 reason = SpotUnavailableReason.SPOT_HELD.name();
+            } else if (spot.getStatus() != SpotStatus.AVAILABLE) {
+                isAvailable = false;
+                reason = SpotUnavailableReason.ALREADY_ASSIGNED.name();
             }
             response.setIsAvailableForSubscription(isAvailable);
             response.setSubscriptionUnavailabilityReason(reason);
