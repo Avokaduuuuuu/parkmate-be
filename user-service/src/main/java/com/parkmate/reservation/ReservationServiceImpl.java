@@ -131,7 +131,7 @@ public class ReservationServiceImpl implements ReservationService {
                             .partnerId(partnerId)
                             .amount(reservation.getInitialFee())
                             .transactionType(TransactionConstants.TYPE_RESERVATION)
-                            .processedAt(LocalDateTime.now())
+                            .processedAt(LocalDateTime.now().plusHours(7))
                             .description("Cọc đặt chỗ: " + reservation.getId())
                             .build()
             );
@@ -258,7 +258,7 @@ public class ReservationServiceImpl implements ReservationService {
      * Returns true if cancelled before the refund deadline
      */
     private boolean checkRefundEligibility(Reservation reservation) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().plusHours(7);
 
         // Get cancellation refund policy from parking lot
         Integer refundWindowMinutes = null;
@@ -321,7 +321,7 @@ public class ReservationServiceImpl implements ReservationService {
                             .partnerId(partnerId)
                             .amount(reservation.getInitialFee())
                             .transactionType(TransactionConstants.TYPE_REFUND)
-                            .processedAt(LocalDateTime.now())
+                            .processedAt(LocalDateTime.now().plusHours(7))
                             .description("Hoàn tiền hủy đặt chỗ: " + reservation.getId())
                             .build()
             );
@@ -500,7 +500,7 @@ public class ReservationServiceImpl implements ReservationService {
                     log.info("Feign call to get parking lot name took: {}ms", (feignEndTime - feignStartTime));
 
                     String lotName = (parkingLotName != null) ? parkingLotName : "bãi xe";
-                    String time = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'lúc' HH:mm"));
+                    String time = LocalDateTime.now().plusHours(7).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'lúc' HH:mm"));
 
                     long totalTime = System.currentTimeMillis() - startTime;
                     log.info("ACTIVE notification completed for reservation: {} in {}ms", reservationId, totalTime);
@@ -617,7 +617,7 @@ public class ReservationServiceImpl implements ReservationService {
                     .notificationType("PUSH")
                     .deviceTokens(deviceTokens)
                     .data(dataJson)
-                    .createdAt(LocalDateTime.now())
+                    .createdAt(LocalDateTime.now().plusHours(7))
                     .sourceService("user-service")
                     .build();
 

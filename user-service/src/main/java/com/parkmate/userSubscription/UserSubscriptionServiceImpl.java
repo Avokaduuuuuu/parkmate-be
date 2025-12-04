@@ -92,11 +92,11 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
 
         userSubscription.setUser(user);
         userSubscription.setVehicle(vehicle);
-        userSubscription.setStatus(UserSubscriptionStatus.ACTIVE);
+        userSubscription.setStatus(UserSubscriptionStatus.INACTIVE);
         userSubscription.setEndDate(endDate);
         userSubscription.setSyncStatus(SyncStatus.PENDING);
         userSubscription.setPaidAmount(amount);
-        userSubscription.setAutoRenew(true);
+        userSubscription.setAutoRenew(false);
 
         try {
             deductSubscriptionFee(userSubscription, subscriptionPackageName, amount);
@@ -228,7 +228,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
                             .partnerId(partnerId)
                             .amount(amount)
                             .transactionType(TransactionConstants.TYPE_SUBSCRIPTION)
-                            .processedAt(LocalDateTime.now())
+                            .processedAt(LocalDateTime.now().plusHours(7))
                             .description("Thanh toán gói: " + subscriptionPackageName)
                             .build()
             );
@@ -256,7 +256,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
                     paymentResponse.data() != null ? paymentResponse.data().getSessionId() : "N/A");
 
             userSubscription.setStatus(UserSubscriptionStatus.ACTIVE);
-            userSubscription.setPaidAt(LocalDateTime.now());
+            userSubscription.setPaidAt(LocalDateTime.now().plusHours(7));
             userSubscriptionRepository.save(userSubscription);
 
         } catch (AppException e) {
@@ -448,7 +448,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
 
         // Update autoRenew flag
         subscription.setAutoRenew(continueRenewal);
-        subscription.setUpdatedAt(LocalDateTime.now());
+        subscription.setUpdatedAt(LocalDateTime.now().plusHours(7));
 
         UserSubscription updated = userSubscriptionRepository.save(subscription);
 

@@ -70,7 +70,7 @@ public class UserInternalController {
 
                 String cacheKey = userId + ":" + sessionId;
                 LocalDateTime lastNotification = notificationCache.get(cacheKey);
-                LocalDateTime now = LocalDateTime.now();
+                LocalDateTime now = LocalDateTime.now().plusHours(7);
 
                 if (lastNotification == null) {
                     sendLowBalanceNotification(userId, sessionId, balance, requiredAmount);
@@ -137,7 +137,7 @@ public class UserInternalController {
                     .notificationType("PUSH")
                     .deviceTokens(deviceTokens)
                     .data(dataJson)
-                    .createdAt(LocalDateTime.now())
+                    .createdAt(LocalDateTime.now().plusHours(7))
                     .sourceService("user-service")
                     .build();
 
@@ -193,7 +193,7 @@ public class UserInternalController {
                     .notificationType("PUSH")
                     .deviceTokens(deviceTokens)
                     .data(dataJson)
-                    .createdAt(LocalDateTime.now())
+                    .createdAt(LocalDateTime.now().plusHours(7))
                     .sourceService("user-service")
                     .build();
 

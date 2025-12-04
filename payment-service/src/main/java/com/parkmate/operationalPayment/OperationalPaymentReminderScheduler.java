@@ -83,7 +83,7 @@ public class OperationalPaymentReminderScheduler {
                 try {
                     // Update status to OVERDUE
                     payment.setPaymentStatus(PaymentStatus.OVERDUE);
-                    payment.setNotes("Payment marked as overdue on " + LocalDateTime.now());
+                    payment.setNotes("Payment marked as overdue on " + LocalDateTime.now().plusHours(7));
                     operationalPaymentRepository.save(payment);
                     markedCount++;
 

@@ -31,7 +31,7 @@ public class SessionBalanceScheduler {
     @Scheduled(fixedRate = 300000, zone = "Asia/Ho_Chi_Minh") // Every 5 minutes
     @Transactional(readOnly = true)
     public void checkActiveSessionsWalletBalance() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().plusHours(7);
 
         log.info("💰 [SCHEDULER] Task: Starting wallet balance check for active sessions at {}", now);
 

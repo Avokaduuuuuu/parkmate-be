@@ -37,7 +37,7 @@ public class OperationalPaymentServiceImpl implements OperationalPaymentService 
 
         // 1. Fetch active operational fee config
         OperationalFeeConfigEntity config = operationalFeeConfigRepository
-                .findActiveConfig(LocalDateTime.now())
+                .findActiveConfig(LocalDateTime.now().plusHours(7))
                 .orElseThrow(() -> new AppException(ErrorCode.OPERATIONAL_FEE_CONFIG_NOT_FOUND));
 
         log.debug("Using operational fee config: {} VND/sqm, {} months",
@@ -166,7 +166,7 @@ public class OperationalPaymentServiceImpl implements OperationalPaymentService 
             throw new AppException(ErrorCode.INVALID_PAYMENT_DETAILS);
         }
         payment.setPaymentStatus(PaymentStatus.PAID);
-        payment.setPaidAt(LocalDateTime.now());
+        payment.setPaidAt(LocalDateTime.now().plusHours(7));
         payment.setNotes("Payment confirmed via PayOS webhook");
         operationalPaymentRepository.save(payment);
 

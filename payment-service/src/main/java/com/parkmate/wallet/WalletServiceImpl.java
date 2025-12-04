@@ -279,7 +279,7 @@ public class WalletServiceImpl implements WalletService {
                     .status(TransactionStatus.PROCESSING)
                     .balanceBefore(oldBalance)
                     .balanceAfter(wallet.getBalance())
-                    .requestedAt(LocalDateTime.now())
+                    .requestedAt(LocalDateTime.now().plusHours(7))
                     .message("Withdrawal request submitted successfully. You will be notified when the payout is processed.")
                     .build();
 

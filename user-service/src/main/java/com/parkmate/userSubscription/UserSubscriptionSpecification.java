@@ -72,7 +72,7 @@ public class UserSubscriptionSpecification {
 
         // Filter by active subscriptions (current date between start and end date)
         if (Boolean.TRUE.equals(criteria.getIsActive())) {
-            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime now = LocalDateTime.now().plusHours(7);
             builder.and(userSubscription.startDate.loe(now))
                     .and(userSubscription.endDate.goe(now))
                     .and(userSubscription.status.eq(UserSubscriptionStatus.ACTIVE));
@@ -80,7 +80,7 @@ public class UserSubscriptionSpecification {
 
         // Filter by expired subscriptions (current date after end date)
         if (Boolean.TRUE.equals(criteria.getIsExpired())) {
-            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime now = LocalDateTime.now().plusHours(7);
             builder.and(userSubscription.endDate.lt(now));
         }
 
@@ -105,7 +105,7 @@ public class UserSubscriptionSpecification {
      */
     public static Predicate activeOnly() {
         QUserSubscription userSubscription = QUserSubscription.userSubscription;
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().plusHours(7);
         return userSubscription.startDate.loe(now)
                 .and(userSubscription.endDate.goe(now))
                 .and(userSubscription.status.eq(UserSubscriptionStatus.ACTIVE));
@@ -196,7 +196,7 @@ public class UserSubscriptionSpecification {
      */
     public static Predicate expiringInDays(int days) {
         QUserSubscription userSubscription = QUserSubscription.userSubscription;
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().plusHours(7);
         LocalDateTime futureDate = now.plusDays(days);
 
         return userSubscription.endDate.between(now, futureDate)

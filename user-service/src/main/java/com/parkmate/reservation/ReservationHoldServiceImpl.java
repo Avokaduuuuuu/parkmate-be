@@ -39,7 +39,7 @@ public class ReservationHoldServiceImpl implements ReservationHoldService {
                 .orElseThrow(() -> new AppException(ErrorCode.VEHICLE_NOT_FOUND));
 
         String holdId = UUID.randomUUID().toString();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().plusHours(7);
         LocalDateTime expiresAt = now.plusMinutes(HOLD_TTL_MINUTES);
 
         TemporaryReservationHold hold = TemporaryReservationHold.builder()
