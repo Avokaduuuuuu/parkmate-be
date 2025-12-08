@@ -3,8 +3,10 @@ package com.parkmate.parking_lot;
 import com.parkmate.area.AreaRepository;
 import com.parkmate.client.PaymentClient;
 import com.parkmate.client.UserClient;
+import com.parkmate.client.request.CreateDeviceItemPaymentRequest;
 import com.parkmate.client.response.UserRatingResponse;
 import com.parkmate.common.enums.VehicleType;
+import com.parkmate.device.DeviceEntity;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.floor.dto.resp.FloorResponse;
@@ -467,11 +469,19 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                 parkingLot.getId(), parkingLot.getPartnerId(), parkingLot.getLotSquare());
 
         try {
+            List<CreateDeviceItemPaymentRequest> createDeviceItemPaymentRequests =
+                    parkingLot.getDevices().stream().collect(Collectors.groupingBy(
+                            DeviceEntity::getDeviceType,
+                            Collectors.counting()
+                    )).entrySet().stream().map(entry ->
+                            new CreateDeviceItemPaymentRequest(entry.getKey(), Math.toIntExact(entry.getValue())))
+                            .toList();
             com.parkmate.client.request.CreateOperationalPaymentRequest request =
                     com.parkmate.client.request.CreateOperationalPaymentRequest.builder()
                             .lotId(parkingLot.getId())
                             .partnerId(parkingLot.getPartnerId())
                             .lotAreaSqm(parkingLot.getLotSquare())
+                            .deviceItemPaymentRequests(createDeviceItemPaymentRequests)
                             .build();
 
             var response = paymentClient.createOperationalPayment(request);
@@ -546,13 +556,24 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         log.debug("Getting parking lots for partner: {}", partnerId);
 
         List<ParkingLotEntity> parkingLots = parkingLotRepository.findByPartnerId(partnerId);
+        List<ParkingLotBasicInfo> lotBasicInfos = new ArrayList<>();
+        parkingLots.forEach(parkingLot -> {
+            List<CreateDeviceItemPaymentRequest> createDeviceItemPaymentRequests =
+                    parkingLot.getDevices().stream().collect(Collectors.groupingBy(
+                                    DeviceEntity::getDeviceType,
+                                    Collectors.counting()
+                            )).entrySet().stream().map(entry ->
+                                    new CreateDeviceItemPaymentRequest(entry.getKey(), Math.toIntExact(entry.getValue())))
+                            .toList();
+            lotBasicInfos.add(ParkingLotBasicInfo.builder()
+                    .id(parkingLot.getId())
+                    .name(parkingLot.getName())
+                    .partnerId(parkingLot.getPartnerId())
+                    .deviceItemPaymentRequests(createDeviceItemPaymentRequests)
+                    .build());
+        });
 
-        return parkingLots.stream()
-                .map(lot -> ParkingLotBasicInfo.builder()
-                        .id(lot.getId())
-                        .name(lot.getName())
-                        .partnerId(lot.getPartnerId())
-                        .build())
-                .collect(Collectors.toList());
+
+        return lotBasicInfos;
     }
 }

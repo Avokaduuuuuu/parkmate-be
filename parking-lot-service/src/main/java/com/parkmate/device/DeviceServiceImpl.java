@@ -16,6 +16,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -35,21 +38,43 @@ public class DeviceServiceImpl implements DeviceService{
     }
 
     @Override
-    public DeviceResponse createDevice(Long lotId, DeviceCreateRequest request) {
+    @Transactional
+    public List<DeviceResponse> createDevices(Long lotId, List<DeviceCreateRequest> requests) {
+
         ParkingLotEntity lotEntity = parkingLotRepository.findById(lotId)
-                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND, "Device with id " + lotId + " not found"));
-        DeviceEntity deviceEntity = new DeviceEntity();
-        deviceEntity.setParkingLot(lotEntity);
-        deviceEntity.setDeviceId(request.deviceId());
-        deviceEntity.setDeviceName(request.deviceName());
-        deviceEntity.setDeviceType(request.deviceType());
-        deviceEntity.setPartnerId(request.partnerId());
-        deviceEntity.setModel(request.model());
-        deviceEntity.setSerialNumber(request.serialNumber());
-        deviceEntity.setStatus(DeviceStatus.ACTIVE);
-        deviceEntity.setNotes(request.notes());
-        return DeviceMapper.INSTANCE.toResponse(deviceRepository.save(deviceEntity));
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.PARKING_NOT_FOUND,
+                        "Lot with id " + lotId + " not found"
+                ));
+
+        List<DeviceEntity> newDevices = requests.stream()
+                .map(request -> {
+                    if (deviceRepository.existsByDeviceId(request.deviceId()))
+                        throw new AppException(ErrorCode.DEVICE_ID_EXISTS, "Device with device Id " + request.deviceId() + " exists");
+                    DeviceEntity device = new DeviceEntity();
+                    device.setParkingLot(lotEntity);
+                    device.setDeviceId(request.deviceId());
+                    device.setDeviceName(request.deviceName());
+                    device.setDeviceType(request.deviceType());
+                    device.setPartnerId(request.partnerId());
+                    device.setModel(request.model());
+                    device.setSerialNumber(request.serialNumber());
+                    device.setStatus(DeviceStatus.ACTIVE);
+                    device.setNotes(request.notes());
+                    return device;
+                })
+                .collect(Collectors.toList()); // ✅ MUST be mutable
+
+        // ✅ Append instead of override
+        lotEntity.getDevices().addAll(newDevices);
+
+        parkingLotRepository.save(lotEntity);
+
+        return newDevices.stream()
+                .map(DeviceMapper.INSTANCE::toResponse)
+                .toList();
     }
+
 
     @Override
     public DeviceResponse updateDevice(Long id, DeviceUpdateRequest request) {
