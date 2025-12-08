@@ -287,6 +287,10 @@ public class ParkingLotServiceImpl implements ParkingLotService {
             response.setOperationalFee(paymentResponse.totalFee());
             response.setPaymentDueDate(paymentResponse.dueDate());
             response.setPaymentPaidAt(paymentResponse.paidAt());
+            response.setAreaFee(paymentResponse.areaFee());
+            response.setDeviceFee(paymentResponse.deviceFee());
+            response.setDevicePaymentItems(paymentResponse.devicePaymentItems());
+
         }
 
         return response;
