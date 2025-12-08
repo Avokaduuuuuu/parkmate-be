@@ -96,6 +96,25 @@ public class InternalParkingController {
                 .body(ApiResponse.success("Pricing rule fetched successfully", response));
     }
 
+    @GetMapping("/pricing-rules/{id}")
+    public ResponseEntity<?> getPricingRuleById(
+            @PathVariable @Parameter(description = "Pricing rule ID", required = true, example = "1") Long id
+    ) {
+        var pricingRule = pricingRuleService.findPricingRuleById(id);
+        var response = new PricingRuleDetailsDto(
+                pricingRule.getId(),
+                pricingRule.getVehicleType(),
+                pricingRule.getRuleName(),
+                pricingRule.getStepRate(),
+                pricingRule.getStepMinute(),
+                pricingRule.getInitialCharge(),
+                pricingRule.getInitialDurationMinute(),
+                pricingRule.getIsActive()
+        );
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success("Pricing rule details fetched successfully", response));
+    }
+
     @GetMapping("/subscriptions/{id}")
     public ResponseEntity<?> getSubscriptionById(
             @PathVariable @Parameter(description = "Subscription ID", required = true, example = "1") Long id
@@ -132,5 +151,17 @@ public class InternalParkingController {
     }
 
     public record PartnerIdDto(Long partnerId) {
+    }
+
+    public record PricingRuleDetailsDto(
+            Long id,
+            VehicleType vehicleType,
+            String ruleName,
+            Double stepRate,
+            Integer stepMinute,
+            Double initialCharge,
+            Integer initialDurationMinute,
+            Boolean isActive
+    ) {
     }
 }
