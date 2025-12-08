@@ -88,11 +88,11 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
 
         UserSubscription userSubscription = userSubscriptionMapper.toEntity(request);
 
-        LocalDateTime endDate = request.getStartDate().plusDays(durationValue * 30L);
+        LocalDateTime endDate = request.getStartDate().plusDays(durationValue);
 
         userSubscription.setUser(user);
         userSubscription.setVehicle(vehicle);
-        userSubscription.setStatus(UserSubscriptionStatus.ACTIVE);
+        userSubscription.setStatus(UserSubscriptionStatus.INACTIVE);
         userSubscription.setEndDate(endDate);
         userSubscription.setSyncStatus(SyncStatus.PENDING);
         userSubscription.setPaidAmount(amount);
@@ -306,7 +306,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
             durationValue = subscriptionDto.durationValue();
         }
 
-        LocalDateTime endDate = startDate.plusDays(durationValue * 30L);
+        LocalDateTime endDate = startDate.plusDays(durationValue);
 
         // Call parking-lot-service internal API
         ApiResponse<List<ParkingLotClient.FloorSubscriptionAvailabilityDto>> response =
@@ -341,7 +341,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
             durationValue = subscriptionDto.durationValue();
         }
 
-        LocalDateTime endDate = startDate.plusDays(durationValue * 30L);
+        LocalDateTime endDate = startDate.plusDays(durationValue);
 
         // Call parking-lot-service internal API
         ApiResponse<List<ParkingLotClient.AreaSubscriptionAvailabilityDto>> response =
@@ -372,7 +372,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
             durationValue = subscriptionDto.durationValue();
         }
 
-        LocalDateTime endDate = startDate.plusDays(durationValue * 30L);
+        LocalDateTime endDate = startDate.plusDays(durationValue);
 
         // Call parking-lot-service internal API
         ApiResponse<List<ParkingLotClient.SpotSubscriptionAvailabilityDto>> response =
