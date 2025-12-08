@@ -1,5 +1,6 @@
 package com.parkmate.operationalPayment;
 
+import com.parkmate.device_payment_item.DevicePaymentItemEntity;
 import com.parkmate.operationalPayment.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,6 +14,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -52,6 +54,12 @@ public class OperationalPaymentEntity {
     @Column(name = "fee_per_sqm")
     BigDecimal feePerSqm;
 
+    @Column(name = "area_fee")
+    BigDecimal areaFee;
+
+    @Column(name = "device_fee")
+    BigDecimal deviceFee;
+
     @Column(name = "total_fee")
     BigDecimal totalFee;
 
@@ -79,4 +87,7 @@ public class OperationalPaymentEntity {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "operationalPayment", cascade = CascadeType.ALL)
+    List<DevicePaymentItemEntity> devicePaymentItems;
 }

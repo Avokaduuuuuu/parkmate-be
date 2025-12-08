@@ -2,6 +2,9 @@ package com.parkmate.operationalPayment;
 
 import com.parkmate.client.ParkingLotClient;
 import com.parkmate.client.dto.ParkingLotBasicInfo;
+import com.parkmate.device_fee_config.DeviceFeeConfigEntity;
+import com.parkmate.device_fee_config.DeviceFeeConfigRepository;
+import com.parkmate.device_payment_item.DevicePaymentItemEntity;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.operationalFeeConfig.OperationalFeeConfigEntity;
@@ -19,6 +22,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -29,6 +33,7 @@ public class RecurringOperationalPaymentScheduler {
     private final OperationalFeeConfigRepository operationalFeeConfigRepository;
     private final ParkingLotClient parkingLotClient;
     private final SystemConfigService systemConfigService;
+    private final DeviceFeeConfigRepository deviceFeeConfigRepository;
 
     /**
      * Task: Create recurring operational payments for ACTIVE parking lots
@@ -180,11 +185,9 @@ public class RecurringOperationalPaymentScheduler {
             // Calculate total fee
             BigDecimal pricePerSqm = BigDecimal.valueOf(config.getPricePerSqm());
             BigDecimal lotArea = BigDecimal.valueOf(lotAreaSqm);
-            BigDecimal billingMonths = BigDecimal.valueOf(config.getBillingPeriodMonths());
 
-            BigDecimal totalFee = lotArea
+            BigDecimal areaFee = lotArea
                     .multiply(pricePerSqm)
-                    .multiply(billingMonths)
                     .setScale(2, RoundingMode.HALF_UP);
 
             // Create new payment entity
@@ -197,12 +200,32 @@ public class RecurringOperationalPaymentScheduler {
                     .billingPeriodMonths(config.getBillingPeriodMonths())
                     .billingStartDate(billingStartDate)
                     .billingEndDate(billingEndDate)
-                    .totalFee(totalFee)
+                    .areaFee(areaFee)
                     .dueDate(dueDate)
                     .paymentStatus(PaymentStatus.PENDING)
                     .notes(String.format("Recurring operational fee payment (cycle: %d days)", billingCycleDays))
                     .build();
 
+
+            List<DevicePaymentItemEntity> devicePaymentItemEntities = lot.getDeviceItemPaymentRequests().stream().map(
+                    itemReq -> {
+                        DeviceFeeConfigEntity deviceFeeConfigEntity = deviceFeeConfigRepository.findByDeviceType(itemReq.deviceType())
+                                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_FEE_CONFIG_NOT_FOUND));
+                        DevicePaymentItemEntity devicePaymentItemEntity = new DevicePaymentItemEntity();
+                        devicePaymentItemEntity.setDeviceType(itemReq.deviceType());
+                        devicePaymentItemEntity.setTotalDevice(itemReq.totalDevice());
+                        devicePaymentItemEntity.setDeviceFee(deviceFeeConfigEntity.getDeviceFee());
+                        devicePaymentItemEntity.setTotalFee(deviceFeeConfigEntity.getDeviceFee().multiply(BigDecimal.valueOf(itemReq.totalDevice())));
+                        devicePaymentItemEntity.setOperationalPayment(newPayment);
+                        devicePaymentItemEntity.setDeviceFeeConfig(deviceFeeConfigEntity);
+                        return devicePaymentItemEntity;
+                    }).collect(Collectors.toList());
+            newPayment.setDevicePaymentItems(devicePaymentItemEntities);
+
+            BigDecimal deviceFee = devicePaymentItemEntities.stream().map(DevicePaymentItemEntity::getTotalFee).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalFee = areaFee.add(deviceFee);
+            newPayment.setDeviceFee(deviceFee);
+            newPayment.setTotalFee(totalFee);
             operationalPaymentRepository.save(newPayment);
 
             log.info("✅ Created recurring payment #{} for lot {}: {} VND, due {}",

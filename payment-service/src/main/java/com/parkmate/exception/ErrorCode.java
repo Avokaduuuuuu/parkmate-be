@@ -14,6 +14,7 @@ public enum ErrorCode {
     INVALID_ENUM(1003, "Invalid enum", HttpStatus.BAD_REQUEST),
     IO_ERROR(1004, "I/O error", HttpStatus.INTERNAL_SERVER_ERROR),
     UNAUTHENTICATED(1005, "Unauthenticated", HttpStatus.UNAUTHORIZED),
+    DEVICE_FEE_CONFIG_NOT_FOUND(1006, "Device fee config not found", HttpStatus.NOT_FOUND),
 
     // Payment errors 31
     PAYMENT_NOT_FOUND(3101, "Payment not found", HttpStatus.NOT_FOUND),

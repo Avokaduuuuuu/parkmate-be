@@ -1,5 +1,9 @@
 package com.parkmate.operationalPayment;
 
+import com.parkmate.device_fee_config.DeviceFeeConfigEntity;
+import com.parkmate.device_fee_config.DeviceFeeConfigRepository;
+import com.parkmate.device_payment_item.DevicePaymentItemEntity;
+import com.parkmate.device_payment_item.DevicePaymentItemMapper;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.operationalFeeConfig.OperationalFeeConfigEntity;
@@ -19,6 +23,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +34,7 @@ public class OperationalPaymentServiceImpl implements OperationalPaymentService 
     private final OperationalPaymentRepository operationalPaymentRepository;
     private final OperationalFeeConfigRepository operationalFeeConfigRepository;
     private final PayOSService payOSService;
+    private final DeviceFeeConfigRepository deviceFeeConfigRepository;
 
     @Override
     @Transactional
@@ -46,15 +53,14 @@ public class OperationalPaymentServiceImpl implements OperationalPaymentService 
         // 2. Calculate total fee: lotAreaSqm × pricePerSqm × billingPeriodMonths
         BigDecimal pricePerSqm = BigDecimal.valueOf(config.getPricePerSqm());
         BigDecimal lotArea = BigDecimal.valueOf(request.lotAreaSqm());
-        BigDecimal billingMonths = BigDecimal.valueOf(config.getBillingPeriodMonths());
 
-        BigDecimal totalFee = lotArea
+
+        BigDecimal areaFee = lotArea
                 .multiply(pricePerSqm)
-                .multiply(billingMonths)
                 .setScale(2, RoundingMode.HALF_UP);
 
         log.info("Calculated total fee: {} VND for {} sqm × {} VND/sqm × {} months",
-                totalFee, request.lotAreaSqm(), config.getPricePerSqm(), config.getBillingPeriodMonths());
+                areaFee, request.lotAreaSqm(), config.getPricePerSqm(), config.getBillingPeriodMonths());
 
         // 3. Calculate billing period dates
         LocalDate billingStartDate = LocalDate.now();
@@ -71,12 +77,31 @@ public class OperationalPaymentServiceImpl implements OperationalPaymentService 
                 .billingPeriodMonths(config.getBillingPeriodMonths())
                 .billingStartDate(billingStartDate)
                 .billingEndDate(billingEndDate)
-                .totalFee(totalFee)
+                .areaFee(areaFee)
                 .dueDate(dueDate)
                 .paymentStatus(PaymentStatus.PENDING)
                 .notes("Initial operational fee payment for parking lot activation")
                 .build();
 
+        List<DevicePaymentItemEntity> devicePaymentItemEntities = request.deviceItemPaymentRequests().stream().map(
+                itemReq -> {
+                    DeviceFeeConfigEntity deviceFeeConfigEntity = deviceFeeConfigRepository.findByDeviceType(itemReq.deviceType())
+                            .orElseThrow(() -> new AppException(ErrorCode.DEVICE_FEE_CONFIG_NOT_FOUND));
+                    DevicePaymentItemEntity devicePaymentItemEntity = new DevicePaymentItemEntity();
+                    devicePaymentItemEntity.setDeviceType(itemReq.deviceType());
+                    devicePaymentItemEntity.setTotalDevice(itemReq.totalDevice());
+                    devicePaymentItemEntity.setDeviceFee(deviceFeeConfigEntity.getDeviceFee());
+                    devicePaymentItemEntity.setTotalFee(deviceFeeConfigEntity.getDeviceFee().multiply(BigDecimal.valueOf(itemReq.totalDevice())));
+                    devicePaymentItemEntity.setOperationalPayment(paymentEntity);
+                    devicePaymentItemEntity.setDeviceFeeConfig(deviceFeeConfigEntity);
+                    return devicePaymentItemEntity;
+                }).collect(Collectors.toList());
+        paymentEntity.setDevicePaymentItems(devicePaymentItemEntities);
+
+        BigDecimal deviceFee = devicePaymentItemEntities.stream().map(DevicePaymentItemEntity::getTotalFee).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalFee = areaFee.add(deviceFee);
+        paymentEntity.setDeviceFee(deviceFee);
+        paymentEntity.setTotalFee(totalFee);
         OperationalPaymentEntity savedPayment = operationalPaymentRepository.save(paymentEntity);
         log.info("Created operational payment entity with ID: {}", savedPayment.getId());
 
@@ -119,6 +144,8 @@ public class OperationalPaymentServiceImpl implements OperationalPaymentService 
                 .lotAreaSqm(savedPayment.getLotAreaSqm())
                 .feePerSqm(savedPayment.getFeePerSqm())
                 .billingPeriodMonths(savedPayment.getBillingPeriodMonths())
+                .areaFee(savedPayment.getAreaFee())
+                .deviceFee(savedPayment.getDeviceFee())
                 .totalFee(savedPayment.getTotalFee())
                 .paymentStatus(savedPayment.getPaymentStatus())
                 .paymentLink(payOSResponse.getCheckoutUrl())
@@ -126,6 +153,7 @@ public class OperationalPaymentServiceImpl implements OperationalPaymentService 
                 .dueDate(savedPayment.getDueDate().atStartOfDay())
                 .paidAt(savedPayment.getPaidAt())
                 .createdAt(savedPayment.getCreatedAt())
+                .devicePaymentItems(savedPayment.getDevicePaymentItems().stream().map(DevicePaymentItemMapper.INSTANCE::toResponse).toList())
                 .build();
     }
 

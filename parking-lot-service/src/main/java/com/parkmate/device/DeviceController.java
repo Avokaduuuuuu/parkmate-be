@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/parking-service/devices")
 @RequiredArgsConstructor
@@ -140,18 +142,18 @@ public class DeviceController {
                     **Returns:** Created device with assigned database ID and initial status
                     """
     )
-    public ResponseEntity<?> createDevice(
+    public ResponseEntity<?> createDevices(
             @Parameter(description = "ID of the parking lot", required = true, example = "1")
             @PathVariable("lotId") Long lotId,
 
-            @RequestBody @Valid DeviceCreateRequest request
+            @RequestBody @Valid List<DeviceCreateRequest> request
     ) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(
                         ApiResponse.success(
                                 "Device registered successfully",
-                                deviceService.createDevice(lotId, request)
+                                deviceService.createDevices(lotId, request)
                         )
                 );
     }

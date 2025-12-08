@@ -19,6 +19,7 @@ import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Builder
@@ -103,8 +104,8 @@ public class ParkingLotEntity extends BaseEntity {
     @OneToMany(mappedBy = "parkingLot", cascade = CascadeType.ALL)
     List<PolicyEntity> policies;
 
-    @OneToMany(mappedBy = "parkingLot")
-    List<DeviceEntity> devices;
+    @OneToMany(mappedBy = "parkingLot", cascade = CascadeType.ALL)
+    List<DeviceEntity> devices = new ArrayList<>();
 
     @OneToMany(mappedBy = "parkingLot", fetch = FetchType.LAZY)
     List<RatingEntity> ratings;

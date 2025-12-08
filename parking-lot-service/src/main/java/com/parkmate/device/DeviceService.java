@@ -5,6 +5,8 @@ import com.parkmate.device.dto.req.DeviceUpdateRequest;
 import com.parkmate.device.dto.resp.DeviceResponse;
 import org.springframework.data.domain.Page;
 
+import java.util.List;
+
 public interface DeviceService {
     Page<DeviceResponse> getDevices(
             int page,
@@ -16,7 +18,7 @@ public interface DeviceService {
 
     DeviceResponse getDeviceById(Long id);
 
-    DeviceResponse createDevice(Long lotId, DeviceCreateRequest request);
+    List<DeviceResponse> createDevices(Long lotId, List<DeviceCreateRequest> requests);
     DeviceResponse updateDevice(Long id, DeviceUpdateRequest request);
     void deleteDevice(Long id);
     Long countDevices();
