@@ -29,7 +29,7 @@ public class PolicyController {
             summary = "Pull all policies for a parking lot",
             description = """
                     Retrieves all policies configured for a specific parking lot.
-                    Returns all 4 policy types: EARLY_CHECK_IN_BUFFER, LATE_CHECK_OUT_BUFFER, 
+                    Returns all 4 policy types: EARLY_CHECK_IN_BUFFER,
                     LATE_CHECK_IN_CANCEL_AFTER, and EARLY_CANCEL_REFUND_BEFORE
                     """
     )
@@ -51,11 +51,7 @@ public class PolicyController {
                                                   "policyType": "EARLY_CHECK_IN_BUFFER",
                                                   "value": 10
                                                 },
-                                                {
-                                                  "id": 2,
-                                                  "policyType": "LATE_CHECK_OUT_BUFFER",
-                                                  "value": 15
-                                                },
+                                              
                                                 {
                                                   "id": 3,
                                                   "policyType": "LATE_CHECK_IN_CANCEL_AFTER",

@@ -1,6 +1,7 @@
 package com.parkmate.parking_lot.dto.resp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.parkmate.client.response.DevicePaymentItemResponse;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -8,6 +9,7 @@ import lombok.experimental.FieldDefaults;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -24,6 +26,7 @@ public class ParkingLotResponse {
     Double latitude;
     Double longitude;
     Integer totalFloors;
+    Double lotSquare;
     @JsonFormat(pattern = "HH:mm:ss")
     LocalTime openTime;
     @JsonFormat(pattern = "HH:mm:ss")
@@ -42,8 +45,11 @@ public class ParkingLotResponse {
     Long operationalPaymentId;   // Payment record ID
     String paymentStatus;        // Payment status (PENDING, PAID, CANCELLED, OVERDUE)
     BigDecimal operationalFee;   // Total operational fee amount
+    BigDecimal areaFee;
+    BigDecimal deviceFee;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime paymentDueDate;    // Payment due date
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime paymentPaidAt;     // When payment was completed
+    List<DevicePaymentItemResponse> devicePaymentItems;
 }

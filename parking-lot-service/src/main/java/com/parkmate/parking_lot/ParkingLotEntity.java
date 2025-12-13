@@ -2,12 +2,14 @@ package com.parkmate.parking_lot;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.common.BaseEntity;
+import com.parkmate.device.DeviceEntity;
 import com.parkmate.floor.FloorEntity;
 import com.parkmate.image.ImageEntity;
 import com.parkmate.lot_capacity.LotCapacityEntity;
 import com.parkmate.parking_lot.enums.ParkingLotStatus;
 import com.parkmate.policy.PolicyEntity;
 import com.parkmate.pricing_rule.PricingRuleEntity;
+import com.parkmate.rating.RatingEntity;
 import com.parkmate.session.SessionEntity;
 import com.parkmate.subscription.SubscriptionEntity;
 import jakarta.persistence.*;
@@ -17,6 +19,7 @@ import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Builder
@@ -100,4 +103,10 @@ public class ParkingLotEntity extends BaseEntity {
 
     @OneToMany(mappedBy = "parkingLot", cascade = CascadeType.ALL)
     List<PolicyEntity> policies;
+
+    @OneToMany(mappedBy = "parkingLot", cascade = CascadeType.ALL)
+    List<DeviceEntity> devices = new ArrayList<>();
+
+    @OneToMany(mappedBy = "parkingLot", fetch = FetchType.LAZY)
+    List<RatingEntity> ratings;
 }

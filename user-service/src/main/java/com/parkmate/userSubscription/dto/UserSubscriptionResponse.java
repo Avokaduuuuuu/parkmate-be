@@ -52,5 +52,6 @@ public class UserSubscriptionResponse {
 
     private String qrCode;
     private Long daysRemaining;
+    private boolean needRenewalDecision;
 
 }

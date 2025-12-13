@@ -14,6 +14,7 @@ public enum ErrorCode {
     UNAUTHORIZED(1004, "Unauthorized", HttpStatus.UNAUTHORIZED),
     VEHICLE_TYPE_MISMATCH(1005, "Vehicle type mismatch", HttpStatus.BAD_REQUEST),
     UNABLE_TO_DELETE_MAP(1006, "Unable to delete map", HttpStatus.CONFLICT),
+    RATING_NOT_FOUND(1007, "Rating not found", HttpStatus.NOT_FOUND),
 
     // ParkingLot errors
     PARKING_NOT_FOUND(3101, "Parking Lot not found", HttpStatus.NOT_FOUND),
@@ -56,9 +57,11 @@ public enum ErrorCode {
     POLICY_NOT_ENOUGH(3801, "Policy not enough", HttpStatus.BAD_REQUEST),
     DUPLICATE_POLICY(3802, "Duplicate policy", HttpStatus.BAD_REQUEST),
     MISSING_POLICY(3803, "Missing policy", HttpStatus.BAD_REQUEST),
-    POLICY_NOT_FOUND(3804, "Policy not found", HttpStatus.NOT_FOUND),;
+    POLICY_NOT_FOUND(3804, "Policy not found", HttpStatus.NOT_FOUND),
 
-    // Operational Fee Config errors
+    // Device
+    DEVICE_NOT_FOUND(3901, "Device not found", HttpStatus.NOT_FOUND),
+    DEVICE_ID_EXISTS(3902, "Device id already exists", HttpStatus.CONFLICT),;
 
     private final int code;
     private final String message;

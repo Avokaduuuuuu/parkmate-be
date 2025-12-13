@@ -1,13 +1,11 @@
 package com.parkmate.user;
 
-import com.parkmate.user.dto.ImportUserResponse;
-import com.parkmate.user.dto.UpdateUserRequest;
-import com.parkmate.user.dto.UserResponse;
-import com.parkmate.user.dto.UserSearchCriteria;
+import com.parkmate.user.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 public interface UserService {
 
@@ -30,5 +28,7 @@ public interface UserService {
     void deleteUser(Long id);
 
     Long getUserIdByAccountId(Long userHeaderId);
+
+    Map<Long, UserRatingResponse> userRatings(List<Long> userIds);
 
 }

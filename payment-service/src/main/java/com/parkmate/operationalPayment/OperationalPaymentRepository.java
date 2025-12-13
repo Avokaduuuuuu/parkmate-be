@@ -3,8 +3,11 @@ package com.parkmate.operationalPayment;
 import com.parkmate.operationalPayment.enums.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,9 +22,36 @@ public interface OperationalPaymentRepository extends JpaRepository<OperationalP
 
     List<OperationalPaymentEntity> findByPaymentStatus(PaymentStatus paymentStatus);
 
+    /**
+     * Find pending payments with due date matching the specified date (for reminders)
+     */
+    @Query("SELECT op FROM OperationalPaymentEntity op WHERE op.paymentStatus = :status AND op.dueDate = :dueDate")
+    List<OperationalPaymentEntity> findPendingPaymentsDueSoon(
+            @Param("status") PaymentStatus status,
+            @Param("dueDate") LocalDate dueDate
+    );
+
+    /**
+     * Find overdue payments (due date has passed and still pending)
+     */
+    @Query("SELECT op FROM OperationalPaymentEntity op WHERE op.paymentStatus = :status AND op.dueDate < :today")
+    List<OperationalPaymentEntity> findOverduePayments(
+            @Param("status") PaymentStatus status,
+            @Param("today") LocalDate today
+    );
+
     @Query("SELECT op FROM OperationalPaymentEntity op WHERE op.lotId = :lotId ORDER BY op.createdAt DESC LIMIT 1")
     Optional<OperationalPaymentEntity> findLatestByLotId(Long lotId);
 
     @Query("SELECT COUNT(op) > 0 FROM OperationalPaymentEntity op WHERE op.lotId = :lotId AND op.paymentStatus = 'PAID'")
     boolean hasAnyPaidPayment(Long lotId);
+
+    @Query("SELECT " +
+            "COALESCE(SUM(CASE WHEN op.paymentStatus = 'PAID' AND op.paidAt IS NOT NULL " +
+            "AND op.paidAt >= :from AND op.paidAt <= :to THEN op.totalFee END), 0.0) as totalOperationalFee " +
+            "FROM OperationalPaymentEntity op")
+    PlatformOperationalFeeProjection getPlatformOperationalFee(
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
 }

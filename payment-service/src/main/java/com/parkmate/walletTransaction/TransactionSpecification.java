@@ -1,8 +1,14 @@
 package com.parkmate.walletTransaction;
 
+import com.parkmate.client.dto.ParkingLotBasicInfo;
 import com.parkmate.walletTransaction.dto.TransactionSearchCriteria;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Predicate;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 public class TransactionSpecification {
 
@@ -13,7 +19,7 @@ public class TransactionSpecification {
         if (criteria == null) {
             return builder;
         }
-
+        
         // Filter by wallet ID from header (applies when ownedByMe is true)
         if (walletId != null && Boolean.TRUE.equals(criteria.getOwnedByMe())) {
             builder.and(transaction.walletId.eq(walletId));

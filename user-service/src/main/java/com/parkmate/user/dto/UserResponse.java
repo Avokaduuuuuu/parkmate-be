@@ -32,7 +32,6 @@ public record UserResponse(
         LocalDateTime createdAt,
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         LocalDateTime updatedAt,
-
         String qrCode
 ) {
 }

@@ -29,10 +29,8 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.parkmate.auth.AuthServiceImpl.getUserResponse;
 
@@ -101,25 +99,28 @@ public class UserServiceImpl implements UserService {
             createWalletIfNotExists(user);
         } catch (Exception e) {
             log.error("Error creating wallet for user ID {}: {}", user.getId(), e.getMessage());
-            // Proceed without failing the entire update
         }
-
-        return responseWithPresignedURL(userMapper.toResponse(userRepository.save(user)), user);
+        User updatedUser = userRepository.save(user);
+        if (!updatedUser.getAccount().getIsIdVerified()
+                && updatedUser.getIdNumber() != null
+                && updatedUser.getIssuePlace() != null
+                && updatedUser.getIssueDate() != null) {
+            updatedUser.getAccount().setIsIdVerified(true);
+            accountRepository.save(updatedUser.getAccount());
+        }
+        return responseWithPresignedURL(userMapper.toResponse(updatedUser), user);
     }
 
     private UserResponse responseWithPresignedURL(UserResponse response, User user) {
         return getUserResponse(response, user, s3Service);
     }
 
-    private boolean hasIdentityInfo(User user) {
-        return user.getIdNumber() != null || user.getIssueDate() != null || user.getExpiryDate() != null;
-    }
 
     private void createWalletIfNotExists(User user) {
-        if (hasIdentityInfo(user)) {
+        if (user.getAccount().getIsIdVerified()) {
             CreateWalletRequest createWalletRequest = CreateWalletRequest.builder()
                     .holderId(user.getId())
-                    .walletType("MEMBER")
+                    .walletOwnerType("MEMBER")
                     .build();
             paymentClient.createWallet(createWalletRequest);
             log.info("Creating wallet for user ID: {}", user.getId());
@@ -264,7 +265,7 @@ public class UserServiceImpl implements UserService {
                     .role(AccountRole.MEMBER)
                     .status(AccountStatus.ACTIVE)
                     .emailVerified(false)
-                    .phoneVerified(true)
+                    .isIdVerified(true)
                     .build();
             accounts.add(account);
         }
@@ -373,6 +374,15 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_INFO_NOT_FOUND));
         return user.getId();
+    }
+
+    @Override
+    public Map<Long, UserRatingResponse> userRatings(List<Long> userIds) {
+        List<User> users = userRepository.findAllById(userIds);
+        return users.stream().collect(Collectors.toMap(User::getId, user -> UserRatingResponse.builder()
+                .fullName(user.getFullName())
+                .avatarUrl(user.getProfilePictureUrl())
+                .build()));
     }
 
     private String validateFile(MultipartFile file) {
@@ -504,7 +514,7 @@ public class UserServiceImpl implements UserService {
                 .role(AccountRole.MEMBER)
                 .status(AccountStatus.ACTIVE)
                 .emailVerified(false)
-                .phoneVerified(true) // Assume phone is verified since we're importing
+                .isIdVerified(true) // Assume phone is verified since we're importing
                 .build();
 
         return accountRepository.save(account);

@@ -25,6 +25,7 @@ public abstract class UserSubscriptionMapper {
     @Mapping(target = "vehicleLicensePlate", ignore = true)
     @Mapping(target = "vehicleType", ignore = true)
     @Mapping(target = "subscriptionPackageName", ignore = true)
+    @Mapping(target = "needRenewalDecision", ignore = true)
     public abstract UserSubscriptionResponse toDto(UserSubscription userSubscription,
                                                    @Context ParkingLotClient parkingLotClient,
                                                    @Context VehicleService vehicleService);
@@ -34,12 +35,14 @@ public abstract class UserSubscriptionMapper {
                                   UserSubscription entity,
                                   @Context ParkingLotClient parkingLotClient,
                                   @Context VehicleService vehicleService) {
-        // Calculate days remaining
         if (entity.getStartDate() != null && entity.getEndDate() != null) {
-            response.setDaysRemaining(calculateDaysRemaining(entity.getStartDate(), entity.getEndDate()));
+            long daysRemaining = calculateDaysRemaining(entity.getStartDate(), entity.getEndDate());
+            response.setDaysRemaining(daysRemaining);
+            if (daysRemaining <= 7 && entity.getAutoRenew() != null && !entity.getAutoRenew()) {
+                response.setNeedRenewalDecision(true);
+            }
         }
 
-        // Get parking lot name from external service
         if (entity.getParkingLotId() != null && parkingLotClient != null) {
             response.setParkingLotName(fetchParkingLotName(parkingLotClient, entity.getParkingLotId()));
         }
@@ -48,15 +51,14 @@ public abstract class UserSubscriptionMapper {
             response.setSubscriptionPackageName(fetchSubscriptionPackage(parkingLotClient, entity.getSubscriptionPackageId()));
         }
 
-        // Get assigned spot name from external service
         if (entity.getAssignedSpotId() != null && parkingLotClient != null) {
             response.setAssignedSpotName(fetchSpotName(parkingLotClient, entity.getAssignedSpotId()));
         }
 
-        // Get vehicle information
         if (entity.getVehicle() != null && entity.getVehicle().getId() != null && vehicleService != null) {
             enrichVehicleInfo(response, entity.getVehicle().getId(), vehicleService);
         }
+
     }
 
     @Mapping(target = "assignedSpotName", ignore = true)

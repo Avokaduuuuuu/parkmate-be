@@ -108,5 +108,13 @@ public class ReservationController {
         return ResponseEntity.ok(ApiResponse.success(hold));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<String>> cancelReservation(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-User-Id", required = false) @Parameter(hidden = true) String userIdHeader) {
+        reservationService.cancelReservation(id, userIdHeader);
+        return ResponseEntity.ok(ApiResponse.success("Reservation cancelled successfully"));
+    }
+
 
 }

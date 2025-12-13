@@ -336,7 +336,8 @@ public class AuthServiceImpl implements AuthService {
                 user.getAccount().getId(),
                 user.getAccount().getEmail(),
                 user.getAccount().getStatus(),
-                user.getAccount().getRole()
+                user.getAccount().getRole(),
+                user.getAccount().getIsIdVerified()
         );
 
         return new UserResponse(

@@ -3,7 +3,10 @@ package com.parkmate.parking_lot;
 import com.parkmate.area.AreaRepository;
 import com.parkmate.client.PaymentClient;
 import com.parkmate.client.UserClient;
+import com.parkmate.client.request.CreateDeviceItemPaymentRequest;
+import com.parkmate.client.response.UserRatingResponse;
 import com.parkmate.common.enums.VehicleType;
+import com.parkmate.device.DeviceEntity;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.floor.dto.resp.FloorResponse;
@@ -31,6 +34,9 @@ import com.parkmate.pricing_rule.PricingRuleRepository;
 import com.parkmate.pricing_rule.dto.req.PricingRuleCreateRequest;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleResponse;
 import com.parkmate.pricing_rule.dto.resp.PricingRuleSimpleResponse;
+import com.parkmate.rating.RatingEntity;
+import com.parkmate.rating.RatingMapper;
+import com.parkmate.rating.dto.resp.RatingResponse;
 import com.parkmate.s3.S3Service;
 import com.parkmate.session.SessionRepository;
 import com.parkmate.session.enums.SyncStatus;
@@ -79,6 +85,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
 
     @Override
     public ParkingLotDetailedResponse getParkingLotById(Long id) {
+        log.info("getParkingLotById {}", id);
         ParkingLotDetailedResponse parkingLotResponse = ParkingLotMapper.INSTANCE.toDetailedResponse(
                 parkingLotRepository.findById(id)
                         .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND)));
@@ -90,7 +97,45 @@ public class ParkingLotServiceImpl implements ParkingLotService {
             countAvailableSpot.setPricing(null);
             availableSpotResponses.add(countAvailableSpot);
         }
+        List<RatingResponse> ratings = parkingLotResponse.getRatings();
+
+        if (ratings != null && !ratings.isEmpty()) {
+            log.info("First rating - ID: {}, Overall Rating: {}, Type: {}",
+                    ratings.get(0).getId(),
+                    ratings.get(0).getOverallRating(),
+                    ratings.get(0).getOverallRating().getClass().getSimpleName()
+            );
+        }
+
+        Long totalRatings = ratings != null ? (long) ratings.size() : 0L;
+
+        Double averageRating = (ratings != null && !ratings.isEmpty())
+                ? ratings.stream()
+                .mapToInt(RatingResponse::getOverallRating)
+                .average()
+                .orElse(0.0)
+                : 0.0;
+        parkingLotResponse.setTotalRatings(totalRatings);
+        parkingLotResponse.setAverageRating(averageRating);
+
         parkingLotResponse.setAvailableSpots(availableSpotResponses);
+
+        List<RatingEntity> top3Ratings = parkingLotRepository.getTop3RatingsByParkingLotId(parkingLotResponse.getId(), PageRequest.of(0 ,3));
+        List<Long> userIds = top3Ratings.stream().map(RatingEntity::getUserId).toList();
+        log.info("Top3 Ratings {}", userIds);
+
+        Map<Long, UserRatingResponse> userRatingResponseMap = userClient.getUserRating(userIds).getData();
+        log.info(userRatingResponseMap.toString());
+        List<RatingResponse> top3RatingResponses = top3Ratings.stream()
+                .map(rating -> {
+                    RatingResponse ratingResponse = RatingMapper.INSTANCE.toResponse(rating);
+                    ratingResponse.setFullName(userRatingResponseMap.get(rating.getUserId()).getFullName());
+                    ratingResponse.setAvatarUrl(userRatingResponseMap.get(rating.getUserId()).getAvatarUrl());
+                    return ratingResponse;
+                })
+                .toList();
+        parkingLotResponse.setRatings(top3RatingResponses);
+
         return parkingLotResponse;
     }
 
@@ -242,6 +287,10 @@ public class ParkingLotServiceImpl implements ParkingLotService {
             response.setOperationalFee(paymentResponse.totalFee());
             response.setPaymentDueDate(paymentResponse.dueDate());
             response.setPaymentPaidAt(paymentResponse.paidAt());
+            response.setAreaFee(paymentResponse.areaFee());
+            response.setDeviceFee(paymentResponse.deviceFee());
+            response.setDevicePaymentItems(paymentResponse.devicePaymentItems());
+
         }
 
         return response;
@@ -424,11 +473,19 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                 parkingLot.getId(), parkingLot.getPartnerId(), parkingLot.getLotSquare());
 
         try {
+            List<CreateDeviceItemPaymentRequest> createDeviceItemPaymentRequests =
+                    parkingLot.getDevices().stream().collect(Collectors.groupingBy(
+                            DeviceEntity::getDeviceType,
+                            Collectors.counting()
+                    )).entrySet().stream().map(entry ->
+                            new CreateDeviceItemPaymentRequest(entry.getKey(), Math.toIntExact(entry.getValue())))
+                            .toList();
             com.parkmate.client.request.CreateOperationalPaymentRequest request =
                     com.parkmate.client.request.CreateOperationalPaymentRequest.builder()
                             .lotId(parkingLot.getId())
                             .partnerId(parkingLot.getPartnerId())
                             .lotAreaSqm(parkingLot.getLotSquare())
+                            .deviceItemPaymentRequests(createDeviceItemPaymentRequests)
                             .build();
 
             var response = paymentClient.createOperationalPayment(request);
@@ -503,13 +560,24 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         log.debug("Getting parking lots for partner: {}", partnerId);
 
         List<ParkingLotEntity> parkingLots = parkingLotRepository.findByPartnerId(partnerId);
+        List<ParkingLotBasicInfo> lotBasicInfos = new ArrayList<>();
+        parkingLots.forEach(parkingLot -> {
+            List<CreateDeviceItemPaymentRequest> createDeviceItemPaymentRequests =
+                    parkingLot.getDevices().stream().collect(Collectors.groupingBy(
+                                    DeviceEntity::getDeviceType,
+                                    Collectors.counting()
+                            )).entrySet().stream().map(entry ->
+                                    new CreateDeviceItemPaymentRequest(entry.getKey(), Math.toIntExact(entry.getValue())))
+                            .toList();
+            lotBasicInfos.add(ParkingLotBasicInfo.builder()
+                    .id(parkingLot.getId())
+                    .name(parkingLot.getName())
+                    .partnerId(parkingLot.getPartnerId())
+                    .deviceItemPaymentRequests(createDeviceItemPaymentRequests)
+                    .build());
+        });
 
-        return parkingLots.stream()
-                .map(lot -> ParkingLotBasicInfo.builder()
-                        .id(lot.getId())
-                        .name(lot.getName())
-                        .partnerId(lot.getPartnerId())
-                        .build())
-                .collect(Collectors.toList());
+
+        return lotBasicInfos;
     }
 }

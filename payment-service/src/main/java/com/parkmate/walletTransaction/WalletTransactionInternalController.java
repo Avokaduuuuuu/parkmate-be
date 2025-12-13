@@ -23,4 +23,11 @@ public class WalletTransactionInternalController {
         return ResponseEntity.ok(ApiResponse.success(walletTransactionService.createWalletTransaction(walletTransaction)));
     }
 
+    @PostMapping("/refund")
+    @Hidden
+    public ResponseEntity<ApiResponse<?>> refundWallet(@RequestBody CreateTransactionRequest walletTransaction) {
+        return ResponseEntity.ok(ApiResponse.success(walletTransactionService.createWalletTransaction(walletTransaction)));
+    }
+
+
 }

@@ -27,6 +27,9 @@ public interface ParkingLotClient {
     @GetMapping("/internal/parking-service/lots/{id}/pricing-rules")
     ApiResponse<PricingRuleDto> getPricingRule(@PathVariable Long id, @RequestParam VehicleType vehicleType);
 
+    @GetMapping("/internal/parking-service/pricing-rules/{id}")
+    ApiResponse<PricingRuleDetailsDto> getPricingRuleById(@PathVariable Long id);
+
     @GetMapping("/internal/parking-service/subscriptions/{id}")
     ApiResponse<SubscriptionDto> getSubscription(@PathVariable Long id);
 
@@ -69,6 +72,12 @@ public interface ParkingLotClient {
     ApiResponse<Boolean> supportsVehicleType(
             @PathVariable Long id,
             @RequestParam VehicleType vehicleType
+    );
+
+    @GetMapping("/internal/parking-service/policies")
+    ApiResponse<PolicyDto> getPolicyByLotIdAndType(
+            @RequestParam Long lotId,
+            @RequestParam String policyType
     );
 
 
@@ -140,6 +149,28 @@ public interface ParkingLotClient {
             String status,
             String blockReason,
             Boolean hasSession
+    ) {
+    }
+
+    record PolicyDto(
+            Long id,
+            Long lotId,
+            String policyType,
+            Integer value,
+            Double rate,
+            Boolean isActive
+    ) {
+    }
+
+    record PricingRuleDetailsDto(
+            Long id,
+            VehicleType vehicleType,
+            String ruleName,
+            Double stepRate,
+            Integer stepMinute,
+            Double initialCharge,
+            Integer initialDurationMinute,
+            Boolean isActive
     ) {
     }
 }

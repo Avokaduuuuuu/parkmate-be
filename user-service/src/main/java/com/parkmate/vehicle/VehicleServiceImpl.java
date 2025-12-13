@@ -1,6 +1,5 @@
 package com.parkmate.vehicle;
 
-import com.parkmate.account.AccountRepository;
 import com.parkmate.common.enums.ReservationStatus;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
@@ -38,7 +37,6 @@ public class VehicleServiceImpl implements VehicleService {
 
     private final VehicleRepository vehicleRepository;
     private final VehicleMapper vehicleMapper;
-    private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
@@ -106,18 +104,9 @@ public class VehicleServiceImpl implements VehicleService {
         if (userIdHeader != null && !userIdHeader.isEmpty() && searchCriteria.isOwnedByMe()) {
             userId = Long.parseLong(userIdHeader);
         }
-
-        System.out.println("DEBUG - userId header: " + userIdHeader);
-        System.out.println("DEBUG - searchCriteria: " + searchCriteria);
-
         Predicate predicate = VehicleSpecification.buildPredicate(searchCriteria, userId);
-        System.out.println("DEBUG - predicate: " + predicate);
-
         Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
         Page<Vehicle> vehiclePage = vehicleRepository.findAll(predicate, pageable);
-        System.out.println("DEBUG - total elements: " + vehiclePage.getTotalElements());
-
-
         List<Long> vehicleIdsHasSubscription;
         List<Long> vehicleIdsHasReservation;
         Map<VehicleType, Boolean> vehicleTypeSupportMap = new HashMap<>();
@@ -162,7 +151,7 @@ public class VehicleServiceImpl implements VehicleService {
     public List<VehicleSimpleResponse> getVehiclesByUserId(Long userId) {
         userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, userId));
         List<VehicleSimpleResponse> vehicleSimpleResponses = new ArrayList<>();
-        vehicleRepository.findAllByUserId(userId).forEach(vehicle ->
+        vehicleRepository.findAllByUserIdAndIsActiveIsTrue(userId).forEach(vehicle ->
                 vehicleSimpleResponses.add(new VehicleSimpleResponse(
                         userId,
                         vehicle.getId(),
@@ -186,9 +175,12 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     private List<Long> checkVehicleInSubscription(Long parkingLotId, List<Vehicle> vehicles) {
-        List<UserSubscription> userSubscriptions = userSubscriptionRepository.findByVehicleIdInAndStatusAndParkingLotId(
+        List<UserSubscriptionStatus> userSubscriptionStatuses = new ArrayList<>();
+        userSubscriptionStatuses.add(UserSubscriptionStatus.ACTIVE);
+        userSubscriptionStatuses.add(UserSubscriptionStatus.INACTIVE);
+        List<UserSubscription> userSubscriptions = userSubscriptionRepository.findByVehicleIdInAndStatusInAndParkingLotId(
                 vehicles.stream().map(Vehicle::getId).collect(Collectors.toList()),
-                UserSubscriptionStatus.ACTIVE,
+                userSubscriptionStatuses,
                 parkingLotId);
         List<Long> vehicleInSubscription = new ArrayList<>();
         userSubscriptions.forEach(userSubscription -> vehicleInSubscription.add(userSubscription.getVehicle().getId()));

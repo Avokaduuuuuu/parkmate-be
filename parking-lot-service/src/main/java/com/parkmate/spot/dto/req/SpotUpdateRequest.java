@@ -2,7 +2,6 @@ package com.parkmate.spot.dto.req;
 
 import com.parkmate.spot.enums.SpotStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotEmpty;
 
 public record SpotUpdateRequest(
         @Schema(
@@ -10,7 +9,6 @@ public record SpotUpdateRequest(
                 example = "A-01",
                 maxLength = 20
         )
-        @NotEmpty(message = "Lot name must not be empty")
         String name,
         @Schema(
                 description = "Status of this Spot",

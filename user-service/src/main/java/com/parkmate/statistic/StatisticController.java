@@ -61,4 +61,29 @@ public class StatisticController {
                 )
         );
     }
+
+    @GetMapping("/platform/partner")
+    public ResponseEntity<?> getPlatformPartner() {
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success(
+                        "Fetch Partner Statistic successfully",
+                        statisticService.getPartnerStatistic()
+                )
+        );
+    }
+
+    @GetMapping("/platform/user")
+    public ResponseEntity<?> getPlatformUser(
+            @RequestParam("from")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam("to")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success(
+                        "Fetch User Statistic successfully",
+                        statisticService.getUserStatistic(from, to)
+                )
+        );
+    }
 }

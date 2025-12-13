@@ -163,10 +163,6 @@ public record ParkingLotCreateRequest(
                             "value": 10
                           },
                           {
-                            "policyType": "LATE_CHECK_OUT_BUFFER",
-                            "value": 15
-                          },
-                          {
                             "policyType": "LATE_CHECK_IN_CANCEL_AFTER",
                             "value": 30
                           },

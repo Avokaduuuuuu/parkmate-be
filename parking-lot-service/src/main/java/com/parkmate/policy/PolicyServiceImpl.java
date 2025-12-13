@@ -4,6 +4,7 @@ import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
 import com.parkmate.policy.dto.req.PolicyUpdateRequest;
 import com.parkmate.policy.dto.resp.PolicyResponse;
+import com.parkmate.policy.enums.PolicyType;
 import com.parkmate.session.enums.SyncStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -39,5 +40,12 @@ public class PolicyServiceImpl implements PolicyService {
         policyEntity.setValue(policyUpdateRequest.value());
         policyEntity.setSyncStatus(SyncStatus.PENDING);
         return PolicyMapper.INSTANCE.toResponse(policyRepository.save(policyEntity));
+    }
+
+    @Override
+    public PolicyResponse getPolicyByLotIdAndType(Long lotId, PolicyType policyType) {
+        return policyRepository.findByParkingLotIdAndPolicyType(lotId, policyType)
+                .map(PolicyMapper.INSTANCE::toResponse)
+                .orElse(null);
     }
 }

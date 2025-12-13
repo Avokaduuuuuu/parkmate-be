@@ -1,6 +1,8 @@
 package com.parkmate.parking_lot;
 
 import com.parkmate.common.ApiResponse;
+import com.parkmate.exception.AppException;
+import com.parkmate.exception.ErrorCode;
 import com.parkmate.parking_lot.dto.resp.ParkingLotBasicInfo;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import java.util.List;
 public class ParkingLotInternalController {
 
     private final ParkingLotService parkingLotService;
+    private final ParkingLotRepository parkingLotRepository;
 
     /**
      * Activates a parking lot after operational fee payment is confirmed
@@ -74,4 +77,23 @@ public class ParkingLotInternalController {
         log.info("Found {} parking lots for partner {}", parkingLots.size(), partnerId);
         return ApiResponse.success(parkingLots);
     }
+
+    /**
+     * Get parking lot name by ID
+     * Used by payment-service for notification messages
+     *
+     * @param lotId The parking lot ID
+     * @return Parking lot name info
+     */
+    @GetMapping("/{lotId}/name")
+    public ApiResponse<ParkingLotNameDto> getParkingLotName(@PathVariable Long lotId) {
+        log.info("Getting name for parking lot: {}", lotId);
+
+        ParkingLotEntity parkingLot = parkingLotRepository.findById(lotId)
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND));
+
+        return ApiResponse.success(new ParkingLotNameDto(parkingLot.getId(), parkingLot.getName()));
+    }
+
+    public record ParkingLotNameDto(Long id, String name) {}
 }

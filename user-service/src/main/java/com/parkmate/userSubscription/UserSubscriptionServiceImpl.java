@@ -88,11 +88,11 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
 
         UserSubscription userSubscription = userSubscriptionMapper.toEntity(request);
 
-        LocalDateTime endDate = request.getStartDate().plusDays(durationValue * 30L);
+        LocalDateTime endDate = request.getStartDate().plusDays(durationValue);
 
         userSubscription.setUser(user);
         userSubscription.setVehicle(vehicle);
-        userSubscription.setStatus(UserSubscriptionStatus.ACTIVE);
+        userSubscription.setStatus(UserSubscriptionStatus.INACTIVE);
         userSubscription.setEndDate(endDate);
         userSubscription.setSyncStatus(SyncStatus.PENDING);
         userSubscription.setPaidAmount(amount);
@@ -306,7 +306,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
             durationValue = subscriptionDto.durationValue();
         }
 
-        LocalDateTime endDate = startDate.plusDays(durationValue * 30L);
+        LocalDateTime endDate = startDate.plusDays(durationValue);
 
         // Call parking-lot-service internal API
         ApiResponse<List<ParkingLotClient.FloorSubscriptionAvailabilityDto>> response =
@@ -341,7 +341,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
             durationValue = subscriptionDto.durationValue();
         }
 
-        LocalDateTime endDate = startDate.plusDays(durationValue * 30L);
+        LocalDateTime endDate = startDate.plusDays(durationValue);
 
         // Call parking-lot-service internal API
         ApiResponse<List<ParkingLotClient.AreaSubscriptionAvailabilityDto>> response =
@@ -372,7 +372,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
             durationValue = subscriptionDto.durationValue();
         }
 
-        LocalDateTime endDate = startDate.plusDays(durationValue * 30L);
+        LocalDateTime endDate = startDate.plusDays(durationValue);
 
         // Call parking-lot-service internal API
         ApiResponse<List<ParkingLotClient.SpotSubscriptionAvailabilityDto>> response =
@@ -430,6 +430,32 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     @Override
     public Long getTotalCount(Long lotId, LocalDateTime fromDate, LocalDateTime toDate) {
         return userSubscriptionRepository.getTotalCount(lotId, fromDate, toDate);
+    }
+
+    @Override
+    @Transactional
+    public UserSubscriptionResponse setRenewalDecision(Long subscriptionId, Boolean continueRenewal) {
+        log.info("Setting renewal decision for subscription {}: continueRenewal={}", subscriptionId, continueRenewal);
+
+        UserSubscription subscription = userSubscriptionRepository.findById(subscriptionId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_SUBSCRIPTION_NOT_FOUND));
+
+        // Check if subscription is already expired
+        if (subscription.getStatus() == UserSubscriptionStatus.EXPIRED) {
+            throw new AppException(ErrorCode.USER_SUBSCRIPTION_EXPIRED,
+                    "Cannot modify renewal settings for expired subscription");
+        }
+
+        // Update autoRenew flag
+        subscription.setAutoRenew(continueRenewal);
+        subscription.setUpdatedAt(LocalDateTime.now());
+
+        UserSubscription updated = userSubscriptionRepository.save(subscription);
+
+        log.info("✅ Renewal decision updated for subscription {}. autoRenew is now: {}",
+                subscriptionId, continueRenewal);
+
+        return userSubscriptionMapper.toDto(updated, parkingLotClient, vehicleService);
     }
 
     private void releaseSpotAfterSubscription(Long spotId, String userId) {

@@ -7,7 +7,6 @@ import com.parkmate.user.dto.UserResponse;
 import com.parkmate.user.dto.UserSearchCriteria;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -55,8 +53,7 @@ public class UserController {
             security = @SecurityRequirement(name = "Bearer Authentication")
     )
     public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser(
-            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
-            @Parameter(hidden = true) Authentication authentication) {
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
 
         UserResponse user = userService.getCurrentUser(userIdHeader);
         return ResponseEntity.ok(ApiResponse.success(user, "User profile retrieved successfully"));

@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -64,6 +65,7 @@ public class SecurityConfig {
             "/api/v1/parking-service/subscriptions/**",
             "/api/v1/parking-service/lots/*/vehicle-type/*",
             "/api/v1/parking-service/floors/*/vehicle-type/*",
+            "/api/v1/parking-service/ratings",
 
             // PayOS webhook endpoints (must be public for PayOS callbacks)
             "/api/v1/payment-service/payos/payos_transfer_handler",
@@ -84,6 +86,7 @@ public class SecurityConfig {
             "/api/v1/parking-service/policies/sync",
             "/api/v1/user-service/user-subscriptions/{id}/sync",
             "/api/v1/user-service/user-subscriptions/{lotId}/sync",
+            "/api/v1/payment-service/transactions/session-payment",
 
             // Test
             "/api/v1/fcm/test",
@@ -96,12 +99,20 @@ public class SecurityConfig {
     // Partner only endpoints
     public static final String[] PARTNER_ENDPOINTS = {
             "/api/v1/user-service/partners/**",
-            "/api/v1/parking-service/**",
+            "/api/v1/parking-service/lots/**",
+            "/api/v1/parking-service/floors/**",
+            "/api/v1/parking-service/areas/**",
+            "/api/v1/parking-service/spots/**",
+            "/api/v1/parking-service/sessions/**",
+            "/api/v1/parking-service/policies/**",
+            "/api/v1/parking-service/pricing-rules/**",
+            "/api/v1/parking-service/subscriptions/**",
+            "/api/v1/parking-service/devices/**",
     };
 
     public static final String[] MEMBER_PARKING_ENDPOINTS = {
             "/api/v1/parking-service/spots/*/session",
-            "/api/v1/parking-service/lots/*/available-spots"
+            "/api/v1/parking-service/lots/*/available-spots",
     };
 
     // Member endpoints (regular users)
@@ -113,6 +124,7 @@ public class SecurityConfig {
             "/api/v1/payment-service/**",
             "/api/v1/payment-service/wallets/**",
             "/api/v1/user-service/reservations/**",
+            "/api/v1/parking-service/ratings/**"
     };
 
     @Value("${jwt.secret}")
@@ -122,8 +134,11 @@ public class SecurityConfig {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Changed this line
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeExchange(ex -> ex
+                        // FIX 1: Allow OPTIONS for CORS preflight
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .pathMatchers(MEMBER_PARKING_ENDPOINTS).hasAnyRole("MEMBER", "ADMIN")
                         .pathMatchers(PARTNER_ENDPOINTS).hasAnyRole("PARTNER_OWNER", "PARTNER_STAFF", "ADMIN")
@@ -166,9 +181,20 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
+
+        // FIX 2: Add your frontend domains
+        config.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5173",           // Local dev
+                "http://localhost:3000",           // Local dev
+                "https://park-mate-sand.vercel.app", // Vercel deployment
+                "https://avokadu.com",             // Your custom domain (if frontend here)
+                "https://www.avokadu.com"          // www version
+        ));
+
+        // FIX 3: Ensure OPTIONS is in allowed methods
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(Arrays.asList("*"));
+        config.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
