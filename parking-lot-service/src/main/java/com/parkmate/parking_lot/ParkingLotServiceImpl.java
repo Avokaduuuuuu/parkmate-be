@@ -120,7 +120,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
 
         parkingLotResponse.setAvailableSpots(availableSpotResponses);
 
-        List<RatingEntity> top3Ratings = parkingLotRepository.getTop3RatingsByParkingLotId(parkingLotResponse.getId(), PageRequest.of(0 ,3));
+        List<RatingEntity> top3Ratings = parkingLotRepository.getTop3RatingsByParkingLotId(parkingLotResponse.getId(), PageRequest.of(0, 3));
         List<Long> userIds = top3Ratings.stream().map(RatingEntity::getUserId).toList();
         log.info("Top3 Ratings {}", userIds);
 
@@ -579,5 +579,22 @@ public class ParkingLotServiceImpl implements ParkingLotService {
 
 
         return lotBasicInfos;
+    }
+
+    @Override
+    public Map<Long, Long> getParkingLotCountByPartner(List<Long> partnerIds) {
+        List<ParkingLotCountProjection> results = parkingLotRepository.countByPartnerIds(partnerIds);
+        Map<Long, Long> dbCounts = results.stream()
+                .collect(Collectors.toMap(
+                        ParkingLotCountProjection::getPartnerId,
+                        ParkingLotCountProjection::getTotal
+                ));
+        Map<Long, Long> finalCountMap = new HashMap<>();
+
+        for (Long id : partnerIds) {
+            finalCountMap.put(id, dbCounts.getOrDefault(id, 0L));
+        }
+
+        return finalCountMap;
     }
 }

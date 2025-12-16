@@ -29,6 +29,9 @@ public enum NotificationEventType {
     OPERATIONAL_PAYMENT_REMINDER("OPERATIONAL_PAYMENT_REMINDER", "Operational fee payment reminder"),
     OPERATIONAL_PAYMENT_OVERDUE("OPERATIONAL_PAYMENT_OVERDUE", "Operational fee payment overdue"),
 
+    // Password reset events
+    PASSWORD_RESET("PASSWORD_RESET", "Password reset code sent"),
+
     // Approval/Rejection events
     PARTNER_APPROVED("PARTNER_APPROVED", "Partner registration approved"),
     PARTNER_REJECTED("PARTNER_REJECTED", "Partner registration rejected");

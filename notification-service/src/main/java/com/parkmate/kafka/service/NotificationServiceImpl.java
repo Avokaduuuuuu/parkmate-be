@@ -57,6 +57,8 @@ public class NotificationServiceImpl implements NotificationService {
                         emailService.sendMemberVerificationEmail(recipientEmail, token, recipientName);
                 case PARTNER_VERIFICATION ->
                         emailService.sendPartnerVerificationEmail(recipientEmail, token, recipientName);
+                case PASSWORD_RESET ->
+                        emailService.sendPasswordResetEmail(recipientEmail, token, recipientName);
                 default -> log.warn("Unknown event type: {}", notificationEvent.getEventType());
             }
 

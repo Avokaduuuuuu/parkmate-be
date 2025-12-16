@@ -1,8 +1,12 @@
 package com.parkmate.walletTransaction;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.parkmate.client.UserServiceClient;
 import com.parkmate.common.PaginationUtil;
 import com.parkmate.exception.AppException;
 import com.parkmate.exception.ErrorCode;
+import com.parkmate.kafka.KafkaTopics;
+import com.parkmate.kafka.event.NotificationEvent;
 import com.parkmate.wallet.Wallet;
 import com.parkmate.wallet.WalletOwner;
 import com.parkmate.wallet.WalletRepository;
@@ -16,9 +20,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +38,9 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
     private final WalletTransactionRepository walletTransactionRepository;
     private final WalletRepository walletRepository;
     private final WalletTransactionMapper walletTransactionMapper;
+    private final UserServiceClient userServiceClient;
+    private final KafkaTemplate<String, NotificationEvent> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
@@ -78,6 +91,7 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
                 .transactionType(transactionType)
                 .status(TransactionStatus.COMPLETED)
                 .description(request.getDescription())
+                .createdAt(LocalDateTime.now().plusHours(7))
                 .build();
 
         walletTransaction = walletTransactionRepository.save(walletTransaction);
@@ -149,6 +163,72 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
                 .status(TransactionStatus.COMPLETED)
                 .description("Session charge")
                 .build());
+
+        // Send notification when vehicle exits and payment is completed
+        sendSessionPaymentNotification(
+                sessionPaymentCreateRequest.getUserId(),
+                sessionPaymentCreateRequest.getSessionId(),
+                sessionPaymentCreateRequest.getTotalFee(),
+                newBalance
+        );
+    }
+
+    private void sendSessionPaymentNotification(Long userId, UUID sessionId, BigDecimal amount, BigDecimal newBalance) {
+        log.info("🔔 [SESSION-PAYMENT] Sending payment notification to user {} for session {}", userId, sessionId);
+
+        try {
+            var notificationInfoResponse = userServiceClient.getUserNotificationInfo(userId);
+            if (notificationInfoResponse == null || notificationInfoResponse.data() == null) {
+                log.warn("⚠️ [SESSION-PAYMENT] Could not fetch notification info for user {}", userId);
+                return;
+            }
+
+            UserServiceClient.UserNotificationInfo userInfo = notificationInfoResponse.data();
+            List<String> deviceTokens = userInfo.deviceTokens();
+
+            if (deviceTokens == null || deviceTokens.isEmpty()) {
+                log.warn("⚠️ [SESSION-PAYMENT] No device tokens found for user {}", userId);
+                return;
+            }
+
+            String message = String.format(
+                    "Xe của bạn đã ra khỏi bãi. Phí gửi xe: %,d VNĐ đã được trừ từ ví. Số dư hiện tại: %,d VNĐ",
+                    amount.longValue(),
+                    newBalance.longValue()
+            );
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("sessionId", sessionId.toString());
+            data.put("amount", amount.toString());
+            data.put("newBalance", newBalance.toString());
+            data.put("deepLink", "parkmate://wallet");
+
+            String dataJson = objectMapper.writeValueAsString(data);
+
+            NotificationEvent event = NotificationEvent.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType("SESSION_PAYMENT")
+                    .recipientId(userInfo.accountId())
+                    .recipientEmail(userInfo.email())
+                    .title("THANH TOÁN PHÍ GỬI XE")
+                    .message(message)
+                    .notificationType("PUSH")
+                    .deviceTokens(deviceTokens)
+                    .data(dataJson)
+                    .createdAt(LocalDateTime.now())
+                    .sourceService("payment-service")
+                    .build();
+
+            kafkaTemplate.send(
+                    KafkaTopics.NOTIFICATION.getTopicName(),
+                    event.getEventId(),
+                    event
+            );
+
+            log.info("✅ [SESSION-PAYMENT] Notification sent to user {} ({} devices)", userId, deviceTokens.size());
+        } catch (Exception e) {
+            log.error("❌ [SESSION-PAYMENT] Error sending notification to user {}", userId, e);
+        }
     }
 
     private WalletOwner determineWalletOwnerFromRole(String role) {

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public interface ParkingLotService {
     Page<ParkingLotResponse> fetchAllParkingLots(
@@ -67,4 +68,6 @@ public interface ParkingLotService {
      * @return List of parking lots for the partner
      */
     List<ParkingLotBasicInfo> getParkingLotsByPartner(Long partnerId);
+
+    Map<Long, Long> getParkingLotCountByPartner(List<Long> partnerIds);
 }

@@ -1,5 +1,6 @@
 package com.parkmate.client.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,20 +15,19 @@ import java.util.UUID;
 @AllArgsConstructor
 @Data
 public class WalletTransactionResponse {
-    Long userId;
+    UUID id;
     Long walletId;
-    UUID sessionId;
-    String transactionType; // Changed to String
+    String transactionType;
     BigDecimal amount;
-    BigDecimal fee;
-    BigDecimal netAmount;
     BigDecimal balanceBefore;
     BigDecimal balanceAfter;
     String externalTransactionId;
     String gatewayResponse;
-    String status; // Changed to String
+    String status;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime processedAt;
     String description;
     String metadata;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
 }

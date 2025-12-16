@@ -43,6 +43,18 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    @Override
+    public void sendPasswordResetEmail(String toEmail, String resetCode, String recipientName) {
+        try {
+            sendEmail(toEmail, "ParkMate Password Reset",
+                    buildPasswordResetEmailText(recipientName, resetCode));
+            log.info("Password reset email sent successfully to: {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send password reset email to: {}", toEmail, e);
+            throw new RuntimeException("Failed to send password reset email", e);
+        }
+    }
+
     private void sendEmail(String toEmail, String subject, String text) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -72,14 +84,31 @@ public class EmailServiceImpl implements EmailService {
     private String buildVerificationEmailText(String recipientName, String verificationToken) {
         return String.format("""
                 Hi %s,
-                
+
                 Thank you for being ParkMate Partner
-                
+
                 Here is your verification code:
                 %s
-                
+
                 ParkMate Team
                 """, recipientName, verificationToken);
+    }
+
+    private String buildPasswordResetEmailText(String recipientName, String resetCode) {
+        return String.format("""
+                Hi %s,
+
+                You have requested to reset your password.
+
+                Here is your password reset code:
+                %s
+
+                This code will expire in 15 minutes.
+
+                If you did not request this, please ignore this email.
+
+                ParkMate Team
+                """, recipientName, resetCode);
     }
 
 }

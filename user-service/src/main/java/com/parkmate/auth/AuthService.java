@@ -16,4 +16,8 @@ public interface AuthService {
 
     void resendVerificationEmail(String email);
 
+    void forgotPassword(ForgotPasswordRequest request);
+
+    void resetPassword(ResetPasswordRequest request);
+
 }

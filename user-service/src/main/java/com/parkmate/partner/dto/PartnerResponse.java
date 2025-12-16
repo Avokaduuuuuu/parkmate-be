@@ -19,7 +19,7 @@ public record PartnerResponse(
         String companyPhone,
         String companyEmail,
         String businessDescription,
-
+        Long numbersOfParkingLots,
         PartnerStatus status,
         String suspensionReason,
 

@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -35,4 +34,10 @@ public interface ParkingLotRepository extends JpaRepository<ParkingLotEntity, Lo
             "WHERE r.parkingLot.id = :parkingLotId " +
             "ORDER BY r.overallRating DESC ")
     List<RatingEntity> getTop3RatingsByParkingLotId(Long parkingLotId, Pageable pageable);
+
+    @Query("SELECT p.partnerId as partnerId, COUNT(p.id) as total " +
+            "FROM ParkingLotEntity p " +
+            "WHERE p.partnerId IN :partnerIds " +
+            "GROUP BY p.partnerId")
+    List<ParkingLotCountProjection> countByPartnerIds(@Param("partnerIds") List<Long> partnerIds);
 }
