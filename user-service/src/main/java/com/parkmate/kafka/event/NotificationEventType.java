@@ -27,6 +27,13 @@ public enum NotificationEventType {
 
     // Wallet/Payment events
     LOW_WALLET_BALANCE("LOW_WALLET_BALANCE", "Wallet balance insufficient"),
+    SESSION_PAYMENT("SESSION_PAYMENT", "Session payment completed when vehicle exits"),
+
+    // Subscription status events
+    SUBSCRIPTION_STATUS_CHANGED("SUBSCRIPTION_STATUS_CHANGED", "Subscription status changed"),
+
+    // Password reset events
+    PASSWORD_RESET("PASSWORD_RESET", "Password reset code sent"),
 
     // Approval/Rejection events
     PARTNER_APPROVED("PARTNER_APPROVED", "Partner registration approved"),

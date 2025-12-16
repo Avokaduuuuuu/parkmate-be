@@ -71,4 +71,29 @@ public class AccountEventPublisher {
             log.error("Failed to publish partner verification event", e);
         }
     }
+
+    public void publishPasswordResetEvent(String email, String name, String resetCode) {
+        try {
+            NotificationEvent event = NotificationEvent.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType("PASSWORD_RESET")
+                    .recipientId(null)
+                    .recipientEmail(email)
+                    .title(name)
+                    .message("Password reset code")
+                    .notificationType("EMAIL")
+                    .data(resetCode)
+                    .createdAt(LocalDateTime.now())
+                    .sourceService("user-service")
+                    .build();
+
+            kafkaTemplate.send(
+                    KafkaTopics.NOTIFICATION.getTopicName(),
+                    event.getEventId(),
+                    event);
+            log.info("Password reset event published for email: {}", email);
+        } catch (Exception e) {
+            log.error("Failed to publish password reset event", e);
+        }
+    }
 }

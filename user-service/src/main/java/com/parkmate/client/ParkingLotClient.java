@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Feign client for inter-service communication with parking-lot-service.
@@ -80,6 +81,8 @@ public interface ParkingLotClient {
             @RequestParam String policyType
     );
 
+    @GetMapping("/internal/parking-lots/count")
+    ApiResponse<Map<Long, Long>> getParkingLotCountByPartner(@RequestParam List<Long> partnerIds);
 
     record ParkingLotSimpleDto(Long id, String name, Integer horizonTime) {
     }

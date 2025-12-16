@@ -12,6 +12,10 @@ import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.common.util.PaginationUtil;
 import com.parkmate.common.util.QRCodeGenerator;
+import com.parkmate.kafka.KafkaTopics;
+import com.parkmate.kafka.event.NotificationEvent;
+import com.parkmate.kafka.event.NotificationEventType;
+import com.parkmate.mobileDevice.MobileDeviceRepository;
 import com.parkmate.user.User;
 import com.parkmate.user.UserRepository;
 import com.parkmate.userSubscription.dto.*;
@@ -23,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +36,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -45,6 +51,8 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     private final VehicleService vehicleService;
     private final ObjectMapper objectMapper;
     private final PaymentClient paymentClient;
+    private final MobileDeviceRepository mobileDeviceRepository;
+    private final KafkaTemplate<String, NotificationEvent> kafkaTemplate;
 
     @Override
     public UserSubscriptionResponse create(CreateUserSubscriptionRequest request, String userIdHeader) {
@@ -66,9 +74,22 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
             throw new AppException(ErrorCode.OTHER_CLIENT_ERROR, ParkingLotServiceErrorCode.PARKING_NOT_FOUND);
         }
 
-        if (parkingLotClient.getSpotName(request.getAssignedSpotId()) == null) {
-            throw new AppException(ErrorCode.OTHER_CLIENT_ERROR, ParkingLotServiceErrorCode.SPOT_NOT_FOUND);
+        // Check if vehicle requires spot assignment (only CAR requires spot)
+        boolean requiresSpot = isCarVehicle(vehicle.getVehicleType());
+
+        if (requiresSpot) {
+            // For cars: spot is required
+            if (request.getAssignedSpotId() == null) {
+                throw new AppException(ErrorCode.INVALID_REQUEST, "Xe ô tô bắt buộc phải chọn chỗ đậu xe");
+            }
+            if (parkingLotClient.getSpotName(request.getAssignedSpotId()) == null) {
+                throw new AppException(ErrorCode.OTHER_CLIENT_ERROR, ParkingLotServiceErrorCode.SPOT_NOT_FOUND);
+            }
+        } else {
+            // For motorcycles/bikes: spot is not needed, set to null
+            request.setAssignedSpotId(null);
         }
+
         int durationValue = 0;
         String subscriptionPackageName = null;
         BigDecimal amount = null;
@@ -101,12 +122,25 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         try {
             deductSubscriptionFee(userSubscription, subscriptionPackageName, amount);
             UserSubscription savedSubscription = userSubscriptionRepository.save(userSubscription);
-            releaseSpotAfterSubscription(request.getAssignedSpotId(), String.valueOf(request.getUserId()));
+            // Only release spot if it was assigned (for cars)
+            if (request.getAssignedSpotId() != null) {
+                releaseSpotAfterSubscription(request.getAssignedSpotId(), String.valueOf(request.getUserId()));
+            }
             return getUserSubscriptionResponse(savedSubscription);
         } catch (Exception e) {
-            releaseSpotAfterSubscription(request.getAssignedSpotId(), String.valueOf(request.getUserId()));
+            // Only release spot if it was assigned (for cars)
+            if (request.getAssignedSpotId() != null) {
+                releaseSpotAfterSubscription(request.getAssignedSpotId(), String.valueOf(request.getUserId()));
+            }
             throw e;
         }
+    }
+
+    /**
+     * Check if the vehicle type is a car (requires spot assignment)
+     */
+    private boolean isCarVehicle(com.parkmate.vehicle.VehicleType vehicleType) {
+        return vehicleType == com.parkmate.vehicle.VehicleType.CAR_UP_TO_9_SEATS;
     }
 
     @Override
@@ -171,12 +205,96 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
             userSubscription.setSyncStatus(SyncStatus.SYNCED);
         }
 
+        UserSubscriptionStatus oldStatus = userSubscription.getStatus();
+        UserSubscriptionStatus newStatus = oldStatus;
+
         if (userSubscription.getStatus() == UserSubscriptionStatus.ACTIVE) {
             userSubscription.setStatus(UserSubscriptionStatus.INACTIVE);
+            newStatus = UserSubscriptionStatus.INACTIVE;
         } else if (userSubscription.getStatus() == UserSubscriptionStatus.INACTIVE) {
             userSubscription.setStatus(UserSubscriptionStatus.ACTIVE);
+            newStatus = UserSubscriptionStatus.ACTIVE;
         }
         userSubscriptionRepository.save(userSubscription);
+
+        // Send notification when subscription status changes
+        if (oldStatus != newStatus) {
+            sendSubscriptionStatusChangedNotification(userSubscription, oldStatus, newStatus);
+        }
+    }
+
+    private void sendSubscriptionStatusChangedNotification(UserSubscription subscription, UserSubscriptionStatus oldStatus, UserSubscriptionStatus newStatus) {
+        log.info("🔔 [SUBSCRIPTION-STATUS] Sending status change notification for subscription {} ({} -> {})",
+                subscription.getId(), oldStatus, newStatus);
+
+        try {
+            User user = subscription.getUser();
+            List<String> deviceTokens = mobileDeviceRepository.findActivePushTokensByUserId(user.getId());
+
+            if (deviceTokens.isEmpty()) {
+                log.warn("⚠️ [SUBSCRIPTION-STATUS] No device tokens found for user {}", user.getId());
+                return;
+            }
+
+            String parkingLotName = null;
+            try {
+                parkingLotName = String.valueOf(parkingLotClient.getParkingLotName(subscription.getParkingLotId()));
+            } catch (Exception e) {
+                log.warn("⚠️ [SUBSCRIPTION-STATUS] Failed to fetch parking lot name for lot {}", subscription.getParkingLotId());
+            }
+            String lotName = (parkingLotName != null) ? parkingLotName : "bãi xe";
+
+            String title;
+            String message;
+
+            if (newStatus == UserSubscriptionStatus.ACTIVE) {
+                title = "VÉ THÁNG ĐÃ ĐƯỢC KÍCH HOẠT";
+                message = String.format(
+                        "Vé tháng của bạn tại %s đã được kích hoạt. Xe biển số %s có thể vào/ra bãi xe.",
+                        lotName,
+                        subscription.getVehicle().getLicensePlate()
+                );
+            } else {
+                title = "VÉ THÁNG ĐÃ TẠM NGƯNG";
+                message = String.format(
+                        "Vé tháng của bạn tại %s đã tạm ngưng. Vui lòng liên hệ hỗ trợ nếu cần thiết.",
+                        lotName
+                );
+            }
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("subscriptionId", subscription.getId());
+            data.put("parkingLotId", subscription.getParkingLotId());
+            data.put("oldStatus", oldStatus.name());
+            data.put("newStatus", newStatus.name());
+            data.put("deepLink", "parkmate://subscription/" + subscription.getId());
+
+            String dataJson = objectMapper.writeValueAsString(data);
+
+            NotificationEvent event = NotificationEvent.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType(NotificationEventType.SUBSCRIPTION_STATUS_CHANGED.getValue())
+                    .recipientId(user.getAccount().getId())
+                    .recipientEmail(user.getAccount().getEmail())
+                    .title(title)
+                    .message(message)
+                    .notificationType("PUSH")
+                    .deviceTokens(deviceTokens)
+                    .data(dataJson)
+                    .createdAt(LocalDateTime.now())
+                    .sourceService("user-service")
+                    .build();
+
+            kafkaTemplate.send(
+                    KafkaTopics.NOTIFICATION.getTopicName(),
+                    event.getEventId(),
+                    event
+            );
+
+            log.info("✅ [SUBSCRIPTION-STATUS] Notification sent for subscription {} ({} devices)", subscription.getId(), deviceTokens.size());
+        } catch (Exception e) {
+            log.error("❌ [SUBSCRIPTION-STATUS] Error sending notification for subscription {}", subscription.getId(), e);
+        }
     }
 
     @Override
@@ -253,7 +371,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
 
             log.info("Payment successful for user subscription ID: {}, transaction ID: {}",
                     userSubscription.getId(),
-                    paymentResponse.data() != null ? paymentResponse.data().getSessionId() : "N/A");
+                    paymentResponse.data() != null ? paymentResponse.data().getId() : "N/A");
 
             userSubscription.setStatus(UserSubscriptionStatus.ACTIVE);
             userSubscription.setPaidAt(LocalDateTime.now());

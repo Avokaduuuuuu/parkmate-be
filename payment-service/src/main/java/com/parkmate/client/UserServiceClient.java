@@ -34,4 +34,18 @@ public interface UserServiceClient {
             @RequestParam("to") String to
     );
 
+    @GetMapping("/internal/users/{userId}/device-tokens")
+    ApiResponse<java.util.List<String>> getDeviceTokens(@PathVariable("userId") Long userId);
+
+    @GetMapping("/internal/users/{userId}/notification-info")
+    ApiResponse<UserNotificationInfo> getUserNotificationInfo(@PathVariable("userId") Long userId);
+
+    record UserNotificationInfo(
+            Long userId,
+            Long accountId,
+            String email,
+            String fullName,
+            java.util.List<String> deviceTokens
+    ) {}
+
 }

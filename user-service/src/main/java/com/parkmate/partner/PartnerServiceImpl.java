@@ -1,5 +1,7 @@
 package com.parkmate.partner;
 
+import com.parkmate.client.ParkingLotClient;
+import com.parkmate.common.dto.ApiResponse;
 import com.parkmate.common.exception.AppException;
 import com.parkmate.common.exception.ErrorCode;
 import com.parkmate.common.util.PaginationUtil;
@@ -22,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @RequiredArgsConstructor
@@ -33,6 +36,7 @@ public class PartnerServiceImpl implements PartnerService {
     private final PartnerRepository partnerRepository;
     private final PartnerMapper partnerMapper;
     private final S3Service s3Service;
+    private final ParkingLotClient parkingLotClient;
 
     private final Validator validator;
 
@@ -44,7 +48,19 @@ public class PartnerServiceImpl implements PartnerService {
     public Page<PartnerResponse> search(PartnerSearchCriteria criteria, int page, int size, String sortBy, String sortOrder) {
         Predicate predicate = PartnerSpecification.buildPredicate(criteria);
         Pageable pageable = PaginationUtil.parsePageable(page, size, sortBy, sortOrder);
-        return partnerRepository.findAll(predicate, pageable).map(partnerMapper::toDto);
+        Page<Partner> partnerPage = partnerRepository.findAll(predicate, pageable);
+
+        List<Long> partnerIds = partnerPage.getContent().stream()
+                .map(Partner::getId)
+                .toList();
+
+        Map<Long, Long> parkingLotCountMap = getParkingLotCountMap(partnerIds);
+
+        return partnerPage.map(partner -> {
+            PartnerResponse response = partnerMapper.toDto(partner);
+            Long count = parkingLotCountMap.getOrDefault(partner.getId(), 0L);
+            return withParkingLotCount(response, count);
+        });
     }
 
     @Override
@@ -53,7 +69,20 @@ public class PartnerServiceImpl implements PartnerService {
         Iterable<Partner> partners = partnerRepository.findAll(predicate);
         List<Partner> partnerList = new ArrayList<>();
         partners.forEach(partnerList::add);
-        return partnerList.stream().map(partnerMapper::toDto).toList();
+
+        List<Long> partnerIds = partnerList.stream()
+                .map(Partner::getId)
+                .toList();
+
+        Map<Long, Long> parkingLotCountMap = getParkingLotCountMap(partnerIds);
+
+        return partnerList.stream()
+                .map(partner -> {
+                    PartnerResponse response = partnerMapper.toDto(partner);
+                    Long count = parkingLotCountMap.getOrDefault(partner.getId(), 0L);
+                    return withParkingLotCount(response, count);
+                })
+                .toList();
     }
 
     @Override
@@ -79,6 +108,10 @@ public class PartnerServiceImpl implements PartnerService {
         Partner partner = partnerRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.PARTNER_NOT_FOUND, "Partner not found"));
         String presignedUrl = s3Service.generatePresignedUrl(partner.getBusinessLicenseFileUrl());
         PartnerResponse response = partnerMapper.toDto(partner);
+
+        Map<Long, Long> parkingLotCountMap = getParkingLotCountMap(List.of(id));
+        Long count = parkingLotCountMap.getOrDefault(id, 0L);
+
         return new PartnerResponse(
                 response.id(),
                 response.companyName(),
@@ -89,6 +122,7 @@ public class PartnerServiceImpl implements PartnerService {
                 response.companyPhone(),
                 response.companyEmail(),
                 response.businessDescription(),
+                count,
                 response.status(),
                 response.suspensionReason(),
                 response.createdAt(),
@@ -361,5 +395,38 @@ public class PartnerServiceImpl implements PartnerService {
         workbook.close();
     }
 
+    private Map<Long, Long> getParkingLotCountMap(List<Long> partnerIds) {
+        if (partnerIds == null || partnerIds.isEmpty()) {
+            return Map.of();
+        }
+        try {
+            ApiResponse<Map<Long, Long>> response = parkingLotClient.getParkingLotCountByPartner(partnerIds);
+            if (response != null && response.data() != null) {
+                return response.data();
+            }
+        } catch (Exception e) {
+            log.warn("Failed to fetch parking lot count from parking-lot-service: {}", e.getMessage());
+        }
+        return Map.of();
+    }
 
+    private PartnerResponse withParkingLotCount(PartnerResponse response, Long count) {
+        return new PartnerResponse(
+                response.id(),
+                response.companyName(),
+                response.taxNumber(),
+                response.businessLicenseNumber(),
+                response.businessLicenseFileUrl(),
+                response.companyAddress(),
+                response.companyPhone(),
+                response.companyEmail(),
+                response.businessDescription(),
+                count,
+                response.status(),
+                response.suspensionReason(),
+                response.createdAt(),
+                response.updatedAt(),
+                response.accounts()
+        );
+    }
 }

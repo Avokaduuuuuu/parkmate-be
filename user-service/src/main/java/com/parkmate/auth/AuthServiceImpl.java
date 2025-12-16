@@ -51,6 +51,8 @@ public class AuthServiceImpl implements AuthService {
     private final PartnerMapper partnerMapper;
     private final AccountEventPublisher accountEventPublisher;
     private final PartnerRegistrationRepository partnerRegistrationRepository;
+    private final LoginAttemptService loginAttemptService;
+    private final PasswordResetService passwordResetService;
 
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -59,13 +61,30 @@ public class AuthServiceImpl implements AuthService {
                 request.email()
         ).orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Account not found"));
 
+        // Check if account is locked due to failed login attempts
+        if (loginAttemptService.isAccountLocked(account.getId())) {
+            long remainingMinutes = loginAttemptService.getRemainingLockTimeMinutes(account.getId());
+            throw new AppException(ErrorCode.ACCOUNT_TEMPORARILY_LOCKED, remainingMinutes);
+        }
+
         if (account.getStatus() == AccountStatus.DELETED) {
             throw new AppException(ErrorCode.ACCOUNT_INACTIVE, "Account is not active");
         }
 
+        // Check password and handle failed attempts
         if (!passwordEncoder.matches(request.password(), account.getPassword())) {
-            throw new AppException(ErrorCode.PASSWORD_MISMATCH, "Invalid password");
+            boolean isNowLocked = loginAttemptService.recordFailedAttempt(account.getId());
+
+            if (isNowLocked) {
+                throw new AppException(ErrorCode.ACCOUNT_TEMPORARILY_LOCKED, loginAttemptService.getLockDurationMinutes());
+            }
+
+            int remainingAttempts = loginAttemptService.getRemainingAttempts(account.getId());
+            throw new AppException(ErrorCode.PASSWORD_MISMATCH_WITH_ATTEMPTS, remainingAttempts);
         }
+
+        // Clear failed attempts on successful login
+        loginAttemptService.clearFailedAttempts(account.getId());
 
         if (account.getStatus() == AccountStatus.PENDING_VERIFICATION) {
             throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED, "Account is not verified");
@@ -116,6 +135,7 @@ public class AuthServiceImpl implements AuthService {
                         partnerResponse.companyPhone(),
                         partnerResponse.companyEmail(),
                         partnerResponse.businessDescription(),
+                        partnerResponse.numbersOfParkingLots(),
                         partnerResponse.status(),
                         partnerResponse.suspensionReason(),
                         partnerResponse.createdAt(),
@@ -362,5 +382,55 @@ public class AuthServiceImpl implements AuthService {
                 response.updatedAt(),
                 response.qrCode()
         );
+    }
+
+    @Override
+    public void forgotPassword(ForgotPasswordRequest request) {
+        Account account = accountRepository.findAccountByEmail(request.email())
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Account not found"));
+
+        if (account.getStatus() == AccountStatus.DELETED) {
+            throw new AppException(ErrorCode.ACCOUNT_INACTIVE, "Account is not active");
+        }
+
+        String resetCode = generateNumericVerificationToken();
+        passwordResetService.storeResetToken(request.email(), resetCode);
+
+        String recipientName = getRecipientName(account);
+        accountEventPublisher.publishPasswordResetEvent(account.getEmail(), recipientName, resetCode);
+
+        log.info("Password reset code sent to: {}", request.email());
+    }
+
+    @Override
+    public void resetPassword(ResetPasswordRequest request) {
+        Account account = accountRepository.findAccountByEmail(request.email())
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Account not found"));
+
+        if (account.getStatus() == AccountStatus.DELETED) {
+            throw new AppException(ErrorCode.ACCOUNT_INACTIVE, "Account is not active");
+        }
+
+        if (!passwordResetService.isValidToken(request.email(), request.resetCode())) {
+            throw new AppException(ErrorCode.INVALID_PASSWORD_RESET_CODE);
+        }
+
+        account.setPassword(passwordEncoder.encode(request.newPassword()));
+        accountRepository.save(account);
+
+        passwordResetService.deleteResetToken(request.email());
+        loginAttemptService.clearFailedAttempts(account.getId());
+
+        log.info("Password reset successfully for: {}", request.email());
+    }
+
+    private String getRecipientName(Account account) {
+        if (account.getRole() == AccountRole.MEMBER && account.getUser() != null) {
+            User user = account.getUser();
+            return user.getFirstName() + " " + user.getLastName();
+        } else if (account.getRole() == AccountRole.PARTNER_OWNER && account.getPartner() != null) {
+            return account.getPartner().getCompanyName();
+        }
+        return account.getEmail();
     }
 }

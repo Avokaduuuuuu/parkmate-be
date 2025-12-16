@@ -46,6 +46,7 @@ public enum ErrorCode {
     EMAIL_ALREADY_VERIFIED(2504, "Email has been verified before on this account", HttpStatus.CONFLICT),
     EMAIL_RESEND_FAILED(2505, "Failed to resend verification email", HttpStatus.UNAUTHORIZED),
     ACCOUNT_NOT_VERIFIED(2506, "Please verify email before logging in", HttpStatus.UNAUTHORIZED),
+    ACCOUNT_TEMPORARILY_LOCKED(2507, "Tài khoản tạm thời bị khóa. Vui lòng thử lại sau {0} phút", HttpStatus.TOO_MANY_REQUESTS),
 
     // Partner Registration errors 27
     TAX_NUMBER_ALREADY_EXISTS(2701, "A partner with the same tax number '{0}' already exists.", HttpStatus.CONFLICT),
@@ -58,6 +59,9 @@ public enum ErrorCode {
     STORE_REFRESH_TOKEN_FAILED(2603, "Failed to store refresh token", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_REFRESH_TOKEN(2604, "Invalid refresh token", HttpStatus.UNAUTHORIZED),
     INVALID_VALIDATION_CODE(2605, "Verify code not match", HttpStatus.BAD_REQUEST),
+    INVALID_PASSWORD_RESET_CODE(2606, "Mã đặt lại mật khẩu không hợp lệ", HttpStatus.BAD_REQUEST),
+    PASSWORD_RESET_CODE_EXPIRED(2607, "Mã đặt lại mật khẩu đã hết hạn", HttpStatus.BAD_REQUEST),
+    PASSWORD_MISMATCH_WITH_ATTEMPTS(2608, "Sai mật khẩu. Còn {0} lần thử", HttpStatus.UNAUTHORIZED),
 
     // File Upload Error 28
     FILE_EMPTY(2801, "Uploaded file is empty", HttpStatus.BAD_REQUEST),
@@ -85,6 +89,7 @@ public enum ErrorCode {
     RESERVATION_ALREADY_CANCELLED(2915, "Reservation has already been cancelled", HttpStatus.BAD_REQUEST),
     RESERVATION_CANNOT_BE_CANCELLED(2916, "Reservation cannot be cancelled in its current status", HttpStatus.BAD_REQUEST),
     RESERVATION_NOT_BELONG_TO_USER(2917, "Reservation does not belong to the user", HttpStatus.FORBIDDEN),
+    MAX_ACTIVE_RESERVATIONS_EXCEEDED(2918, "Đã đạt giới hạn đặt chỗ ({0}). Vui lòng hoàn thành hoặc hủy đặt chỗ hiện tại trước khi tạo mới", HttpStatus.BAD_REQUEST),
 
     INVALID_USER_SUBSCRIPTION_TIME(21000, "Invalid _USER SUBSCRIPTION time", HttpStatus.BAD_REQUEST),
     USER_SUBSCRIPTION_NOT_FOUND(21001, "_USER SUBSCRIPTION not found", HttpStatus.NOT_FOUND),

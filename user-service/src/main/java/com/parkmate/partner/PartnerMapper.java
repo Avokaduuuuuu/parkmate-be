@@ -10,6 +10,7 @@ import org.mapstruct.*;
 public interface PartnerMapper {
 
     @Mapping(target = "accounts", source = "accounts")
+    @Mapping(target = "numbersOfParkingLots", ignore = true)
     PartnerResponse toDto(Partner partner);
 
     @Mapping(target = "id", ignore = true)

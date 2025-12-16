@@ -50,6 +50,8 @@ import java.util.UUID;
 @Slf4j
 public class ReservationServiceImpl implements ReservationService {
 
+    private static final int MAX_ACTIVE_RESERVATIONS = 3;
+
     private final ReservationRepository reservationRepository;
     private final MobileDeviceRepository mobileDeviceRepository;
     private final PaymentClient paymentClient;
@@ -71,6 +73,9 @@ public class ReservationServiceImpl implements ReservationService {
             long userIdLong = Long.parseLong(userId);
             request.setUserId(userIdLong);
         }
+
+        // Validate active reservation limit
+        validateActiveReservationLimit(request.getUserId());
 
         Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
                 .orElseThrow(() -> new AppException(ErrorCode.VEHICLE_NOT_FOUND));
@@ -465,7 +470,7 @@ public class ReservationServiceImpl implements ReservationService {
                     log.info("Feign call to get parking lot name took: {}ms", (feignEndTime - feignStartTime));
 
                     String lotName = (parkingLotName != null) ? parkingLotName : "bãi xe";
-                    String time = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'lúc' HH:mm"));
+                    String time = LocalDateTime.now().plusHours(7).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'lúc' HH:mm"));
 
                     long totalTime = System.currentTimeMillis() - startTime;
                     log.info("ACTIVE notification completed for reservation: {} in {}ms", reservationId, totalTime);
@@ -622,6 +627,26 @@ public class ReservationServiceImpl implements ReservationService {
         data.put("status", reservation.getStatus().name());
 
         return data;
+    }
+
+    /**
+     * Validate that user does not exceed maximum active reservations limit.
+     * Counts only PENDING and ACTIVE reservations.
+     */
+    private void validateActiveReservationLimit(Long userId) {
+        List<ReservationStatus> activeStatuses = List.of(
+                ReservationStatus.PENDING,
+                ReservationStatus.ACTIVE
+        );
+
+        long activeCount = reservationRepository.countByUserIdAndStatusIn(userId, activeStatuses);
+
+        if (activeCount >= MAX_ACTIVE_RESERVATIONS) {
+            log.warn("User {} has reached maximum active reservations limit ({})", userId, MAX_ACTIVE_RESERVATIONS);
+            throw new AppException(ErrorCode.MAX_ACTIVE_RESERVATIONS_EXCEEDED, MAX_ACTIVE_RESERVATIONS);
+        }
+
+        log.debug("User {} has {}/{} active reservations", userId, activeCount, MAX_ACTIVE_RESERVATIONS);
     }
 
     /**

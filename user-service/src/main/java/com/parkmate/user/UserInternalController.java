@@ -218,4 +218,44 @@ public class UserInternalController {
                         ApiResponse.success("Fetch data successfully", userService.userRatings(userIds))
                 );
     }
+
+    @GetMapping("/{userId}/device-tokens")
+    public ApiResponse<List<String>> getDeviceTokens(@PathVariable Long userId) {
+        log.info("📱 [DEVICE-TOKENS] Fetching device tokens for user {}", userId);
+        List<String> deviceTokens = mobileDeviceRepository.findActivePushTokensByUserId(userId);
+        log.info("📱 [DEVICE-TOKENS] Found {} device tokens for user {}", deviceTokens.size(), userId);
+        return ApiResponse.success(deviceTokens);
+    }
+
+    @GetMapping("/{userId}/notification-info")
+    public ApiResponse<UserNotificationInfo> getUserNotificationInfo(@PathVariable Long userId) {
+        log.info("🔔 [NOTIFICATION-INFO] Fetching notification info for user {}", userId);
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            log.warn("⚠️ [NOTIFICATION-INFO] User {} not found", userId);
+            return ApiResponse.success(null);
+        }
+
+        List<String> deviceTokens = mobileDeviceRepository.findActivePushTokensByUserId(userId);
+
+        UserNotificationInfo info = new UserNotificationInfo(
+                userId,
+                user.getAccount().getId(),
+                user.getAccount().getEmail(),
+                user.getFullName(),
+                deviceTokens
+        );
+
+        log.info("🔔 [NOTIFICATION-INFO] Found notification info for user {}: {} devices", userId, deviceTokens.size());
+        return ApiResponse.success(info);
+    }
+
+    public record UserNotificationInfo(
+            Long userId,
+            Long accountId,
+            String email,
+            String fullName,
+            List<String> deviceTokens
+    ) {}
 }

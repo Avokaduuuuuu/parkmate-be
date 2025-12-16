@@ -5,7 +5,6 @@ import com.parkmate.wallet.Wallet;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -32,6 +31,9 @@ public class WalletTransaction {
     public void prePersist() {
         if (id == null) {
             id = UuidCreator.getTimeOrderedEpoch();
+        }
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now().plusHours(7);
         }
     }
 
@@ -75,6 +77,5 @@ public class WalletTransaction {
     String metadata;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    @CreationTimestamp
     LocalDateTime createdAt;
 }

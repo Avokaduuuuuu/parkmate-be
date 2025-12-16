@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Internal API controller for parking lot operations
@@ -95,5 +96,11 @@ public class ParkingLotInternalController {
         return ApiResponse.success(new ParkingLotNameDto(parkingLot.getId(), parkingLot.getName()));
     }
 
-    public record ParkingLotNameDto(Long id, String name) {}
+    @GetMapping("/count")
+    public ApiResponse<Map<Long, Long>> getParkingLotCount(@RequestParam List<Long> partnerIds) {
+        return ApiResponse.success(parkingLotService.getParkingLotCountByPartner(partnerIds));
+    }
+
+    public record ParkingLotNameDto(Long id, String name) {
+    }
 }

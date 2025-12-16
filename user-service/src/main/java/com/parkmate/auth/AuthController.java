@@ -89,4 +89,28 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Email resend successfully"));
     }
 
+    @PostMapping("/forgot-password")
+    @Operation(
+            summary = "Request password reset",
+            description = "Send a password reset code to the user's email address. The code expires after 15 minutes."
+    )
+    public ResponseEntity<ApiResponse<?>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request
+    ) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("Password reset code sent to your email"));
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(
+            summary = "Reset password",
+            description = "Reset password using the code sent to email"
+    )
+    public ResponseEntity<ApiResponse<?>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request
+    ) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("Password reset successfully"));
+    }
+
 }
