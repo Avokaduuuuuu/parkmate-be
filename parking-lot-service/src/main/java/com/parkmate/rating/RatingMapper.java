@@ -13,5 +13,6 @@ import org.mapstruct.factory.Mappers;
 public interface RatingMapper {
     RatingMapper INSTANCE = Mappers.getMapper(RatingMapper.class);
 
+    @Mapping(target = "lotName", source = "parkingLot.name")
     RatingResponse toResponse(RatingEntity entity);
 }

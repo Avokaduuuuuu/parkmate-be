@@ -12,13 +12,7 @@ import java.util.Optional;
 public interface DeviceFeeConfigRepository extends JpaRepository<DeviceFeeConfigEntity, Long>, JpaSpecificationExecutor<DeviceFeeConfigEntity> {
     Optional<DeviceFeeConfigEntity> findByDeviceType(DeviceType deviceType);
 
+    @Query("UPDATE DeviceFeeConfigEntity dfc SET dfc.isActive = false WHERE dfc.isActive = true AND dfc.deviceType = :deviceType")
     @Modifying
-    @Query(value = """
-    UPDATE device_fee_config
-    SET is_active = CASE 
-        WHEN id = :id THEN true 
-        ELSE false 
-    END
-""", nativeQuery = true)
-    void activateOnlyNative(@Param("id") Long id);
+    void deactivateDeviceFeeConfig(@Param("deviceType") DeviceType deviceType);
 }

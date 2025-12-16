@@ -91,7 +91,7 @@ public class RatingServiceImpl implements RatingService {
         }
         Long userId = Long.parseLong(userHeaderId);
         ParkingLotEntity lotEntity = parkingLotRepository.findById(lotId)
-                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND, "Device with id " + lotId + " not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND, "Parking Lot with id " + lotId + " not found"));
         RatingEntity ratingEntity = new RatingEntity();
         ratingEntity.setUserId(userId);
         ratingEntity.setParkingLot(lotEntity);

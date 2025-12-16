@@ -62,7 +62,8 @@ public class DeviceFeeConfigServiceImpl implements DeviceFeeConfigService {
         }
         if (request.isActive() != null) {
             if (request.isActive()) {
-                deviceFeeConfigRepository.activateOnlyNative(id);
+                deviceFeeConfigRepository.deactivateDeviceFeeConfig(deviceFeeConfigEntity.getDeviceType());
+                deviceFeeConfigEntity.setIsActive(true);
             } else deviceFeeConfigEntity.setIsActive(false);
         }
         return DeviceFeeConfigMapper.INSTANCE.toResponse(deviceFeeConfigRepository.save(deviceFeeConfigEntity));

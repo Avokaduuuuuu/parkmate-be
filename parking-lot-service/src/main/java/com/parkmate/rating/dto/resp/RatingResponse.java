@@ -21,6 +21,7 @@ public class RatingResponse {
     String title;
     String comment;
     Boolean isVisible;
+    String lotName;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
