@@ -24,7 +24,7 @@ public class LoginAttemptService {
      */
     public boolean isAccountLocked(Long accountId) {
         String lockKey = ACCOUNT_LOCKED_PREFIX + accountId;
-        return Boolean.TRUE.equals(redisTemplate.hasKey(lockKey));
+        return redisTemplate.hasKey(lockKey);
     }
 
     /**
@@ -32,8 +32,8 @@ public class LoginAttemptService {
      */
     public long getRemainingLockTimeMinutes(Long accountId) {
         String lockKey = ACCOUNT_LOCKED_PREFIX + accountId;
-        Long remainingSeconds = redisTemplate.getExpire(lockKey, TimeUnit.SECONDS);
-        if (remainingSeconds == null || remainingSeconds < 0) {
+        long remainingSeconds = redisTemplate.getExpire(lockKey, TimeUnit.SECONDS);
+        if (remainingSeconds < 0) {
             return 0;
         }
         return (remainingSeconds / 60) + 1; // Round up to next minute
