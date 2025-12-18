@@ -238,7 +238,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
 
             String parkingLotName = null;
             try {
-                parkingLotName = String.valueOf(parkingLotClient.getParkingLotName(subscription.getParkingLotId()));
+                parkingLotName = parkingLotClient.getParkingLotName(subscription.getParkingLotId()).data().name();
             } catch (Exception e) {
                 log.warn("⚠️ [SUBSCRIPTION-STATUS] Failed to fetch parking lot name for lot {}", subscription.getParkingLotId());
             }
@@ -248,18 +248,34 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
             String message;
 
             if (newStatus == UserSubscriptionStatus.ACTIVE) {
-                title = "VÉ THÁNG ĐÃ ĐƯỢC KÍCH HOẠT";
+                title = "XE CỦA BẠN ĐÃ VÀO BÃI";
                 message = String.format(
-                        "Vé tháng của bạn tại %s đã được kích hoạt. Xe biển số %s có thể vào/ra bãi xe.",
-                        lotName,
-                        subscription.getVehicle().getLicensePlate()
-                );
-            } else {
-                title = "VÉ THÁNG ĐÃ TẠM NGƯNG";
-                message = String.format(
-                        "Vé tháng của bạn tại %s đã tạm ngưng. Vui lòng liên hệ hỗ trợ nếu cần thiết.",
+                        "Xe biển số %s đã vào bãi %s bằng vé tháng.",
+                        subscription.getVehicle().getLicensePlate(),
                         lotName
                 );
+            } else if (newStatus == UserSubscriptionStatus.INACTIVE) {
+                title = "XE CỦA BẠN ĐÃ RA KHỎI BÃI";
+                message = String.format(
+                        "Xe biển số %s đã ra khỏi bãi %s. Vé tháng sẵn sàng cho lần vào tiếp theo.",
+                        subscription.getVehicle().getLicensePlate(),
+                        lotName
+                );
+            } else if (newStatus == UserSubscriptionStatus.EXPIRED) {
+                title = "VÉ THÁNG ĐÃ HẾT HẠN";
+                message = String.format(
+                        "Vé tháng của bạn tại %s đã hết hạn.",
+                        lotName
+                );
+            } else if (newStatus == UserSubscriptionStatus.CANCELLED) {
+                title = "VÉ THÁNG ĐÃ BỊ HỦY";
+                message = String.format(
+                        "Vé tháng của bạn tại %s đã bị hủy. Liên hệ hỗ trợ nếu cần thiết.",
+                        lotName
+                );
+            } else {
+                log.warn("⚠️ [SUBSCRIPTION-STATUS] Unknown status {}, skipping notification", newStatus);
+                return;
             }
 
             Map<String, Object> data = new HashMap<>();

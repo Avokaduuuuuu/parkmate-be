@@ -61,7 +61,7 @@ public class SessionBalanceScheduler {
                     try {
                         userClient.checkWalletBalance(
                                 session.getUserId(),
-                                session.getId().toString(),
+                                session.getId(),
                                 projectedCost
                         );
                         checkedCount++;

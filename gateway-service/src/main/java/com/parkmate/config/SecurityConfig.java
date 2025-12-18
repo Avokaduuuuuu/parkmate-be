@@ -193,7 +193,7 @@ public class SecurityConfig {
 
         // FIX 3: Ensure OPTIONS is in allowed methods
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        config.setAllowedHeaders(Arrays.asList("*"));
+        config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         config.setMaxAge(3600L);
 
