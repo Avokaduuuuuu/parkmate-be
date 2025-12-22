@@ -110,4 +110,6 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
             LocalDateTime start,
             LocalDateTime end
     );
+
+    boolean existsByVehicleIdAndStatusIn(Long vehicleId, Collection<UserSubscriptionStatus> statuses);
 }

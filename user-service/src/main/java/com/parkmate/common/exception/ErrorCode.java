@@ -33,6 +33,10 @@ public enum ErrorCode {
     VEHICLE_ALREADY_EXISTS(2302, "Vehicle with license plate '{0}' already exists", HttpStatus.CONFLICT),
     INVALID_VEHICLE_TYPE(2303, "Invalid vehicle type '{0}'", HttpStatus.BAD_REQUEST),
     VEHICLE_NOT_BELONG_TO_USER(2304, "Vehicle does not belong to the user", HttpStatus.BAD_REQUEST),
+    VEHICLE_HAS_ACTIVE_RESERVATION(2305, "Cannot delete vehicle with active or pending reservations", HttpStatus.BAD_REQUEST),
+    VEHICLE_HAS_ACTIVE_SUBSCRIPTION(2306, "Cannot delete vehicle with active subscriptions", HttpStatus.BAD_REQUEST),
+    VEHICLE_HAS_ACTIVE_SESSION(2307, "Cannot delete vehicle with an active parking session", HttpStatus.BAD_REQUEST),
+    VEHICLE_RECENTLY_DELETED(2308, "Vehicle with license plate '{0}' was recently deleted. Please wait before creating again", HttpStatus.BAD_REQUEST),
 
     // Partner errors 24
     PARTNER_NOT_FOUND(2401, "Partner not found", HttpStatus.NOT_FOUND),

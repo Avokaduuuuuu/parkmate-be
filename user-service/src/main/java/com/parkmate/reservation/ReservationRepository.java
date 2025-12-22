@@ -93,4 +93,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
 
     @Query("SELECT COUNT(r) FROM Reservation r WHERE r.user.id = :userId AND r.status IN :statuses")
     long countByUserIdAndStatusIn(@Param("userId") Long userId, @Param("statuses") List<ReservationStatus> statuses);
+
+    boolean existsByVehicleIdAndStatusIn(Long vehicleId, List<ReservationStatus> statuses);
+
+    boolean existsByVehicleIdAndSessionIdIsNotNullAndStatusIn(Long vehicleId, List<ReservationStatus> statuses);
 }

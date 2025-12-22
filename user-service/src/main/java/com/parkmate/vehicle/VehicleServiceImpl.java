@@ -42,6 +42,7 @@ public class VehicleServiceImpl implements VehicleService {
     private final UserSubscriptionRepository userSubscriptionRepository;
     private final Validator validator;
     private final com.parkmate.client.ParkingLotClient parkingLotClient;
+    private final DeletedVehicleRedisService deletedVehicleRedisService;
 
     private static final List<String> ALLOWED_EXTENSIONS = List.of("xlsx", "xls");
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -61,19 +62,19 @@ public class VehicleServiceImpl implements VehicleService {
     @Override
     public VehicleResponse createVehicle(CreateVehicleRequest request, String userId) {
 
-        if (vehicleRepository.existsByLicensePlate(request.getLicensePlate())) {
-            throw new AppException(ErrorCode.VEHICLE_ALREADY_EXISTS, request.getLicensePlate());
-        }
-
         if (userId != null && !userId.isEmpty()) {
             request.setUserId(Long.parseLong(userId));
+        }
+
+        // Check if license plate is blocked (recently deleted, within 2-hour cooldown)
+        if (deletedVehicleRedisService.isLicensePlateBlocked(request.getLicensePlate())) {
+            throw new AppException(ErrorCode.VEHICLE_RECENTLY_DELETED, request.getLicensePlate());
         }
 
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, request.getUserId()));
 
         Vehicle vehicle = vehicleMapper.toEntity(request);
-
         vehicle.setUser(user);
 
         Vehicle savedVehicle = vehicleRepository.save(vehicle);
@@ -192,6 +193,28 @@ public class VehicleServiceImpl implements VehicleService {
     public void deleteVehicle(Long id) {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.VEHICLE_NOT_FOUND, id));
+
+        // Check if vehicle has active or pending reservations
+        List<ReservationStatus> activeReservationStatuses = List.of(ReservationStatus.ACTIVE, ReservationStatus.PENDING);
+        if (reservationRepository.existsByVehicleIdAndStatusIn(id, activeReservationStatuses)) {
+            throw new AppException(ErrorCode.VEHICLE_HAS_ACTIVE_RESERVATION);
+        }
+
+        // Check if vehicle has an active parking session (reservation with sessionId)
+        if (reservationRepository.existsByVehicleIdAndSessionIdIsNotNullAndStatusIn(id, activeReservationStatuses)) {
+            throw new AppException(ErrorCode.VEHICLE_HAS_ACTIVE_SESSION);
+        }
+
+        // Check if vehicle has active subscriptions
+        List<UserSubscriptionStatus> activeSubscriptionStatuses = List.of(UserSubscriptionStatus.ACTIVE, UserSubscriptionStatus.PENDING_PAYMENT);
+        if (userSubscriptionRepository.existsByVehicleIdAndStatusIn(id, activeSubscriptionStatuses)) {
+            throw new AppException(ErrorCode.VEHICLE_HAS_ACTIVE_SUBSCRIPTION);
+        }
+
+        // Store deleted vehicle info in Redis before soft delete
+        // - Block key (2 hours): prevents creating same license plate
+        // - Sync key (1 day): for parking lot local database sync
+        deletedVehicleRedisService.storeDeletedVehicle(vehicle);
 
         vehicle.setActive(false);
         vehicleRepository.save(vehicle);
