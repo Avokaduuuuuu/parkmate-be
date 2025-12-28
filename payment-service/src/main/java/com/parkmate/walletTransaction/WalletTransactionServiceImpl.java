@@ -215,7 +215,7 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
                     .notificationType("PUSH")
                     .deviceTokens(deviceTokens)
                     .data(dataJson)
-                    .createdAt(LocalDateTime.now())
+                    .createdAt(LocalDateTime.now().plusHours(7))
                     .sourceService("payment-service")
                     .build();
 

@@ -7,10 +7,7 @@ import com.parkmate.session.enums.SessionType;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -117,5 +114,20 @@ public class SessionInternalController {
                     .count(0L)
                     .build());
         }
+    }
+
+    /**
+     * Check if a subscription has been used (has any parking session)
+     * Used by user-service to determine refund eligibility when cancelling subscription
+     *
+     * @param subscriptionId The user subscription ID
+     * @return true if the subscription has been used at least once
+     */
+    @GetMapping("/subscription/{subscriptionId}/has-usage")
+    public ApiResponse<Boolean> checkSubscriptionUsage(@PathVariable Long subscriptionId) {
+        log.info("Checking if subscription {} has been used", subscriptionId);
+        boolean hasUsage = sessionRepository.existsBySubscriptionId(subscriptionId);
+        log.debug("Subscription {} has usage: {}", subscriptionId, hasUsage);
+        return ApiResponse.success(hasUsage);
     }
 }

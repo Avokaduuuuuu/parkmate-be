@@ -201,25 +201,40 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         UserSubscription userSubscription = userSubscriptionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_SUBSCRIPTION_NOT_FOUND, id));
 
+//        // Don't allow sync for EXPIRED or CANCELLED subscriptions
+//        if (userSubscription.getStatus() == UserSubscriptionStatus.EXPIRED ||
+//            userSubscription.getStatus() == UserSubscriptionStatus.CANCELLED) {
+//            log.warn("⚠️ [SYNC] Cannot sync subscription {} with status {}",
+//                    id, userSubscription.getStatus());
+//            return;
+//        }
+
         if (userSubscription.getSyncStatus() == SyncStatus.PENDING) {
+            // First sync - just mark as synced (subscription stays INACTIVE until vehicle enters)
             userSubscription.setSyncStatus(SyncStatus.SYNCED);
-        }
+            userSubscriptionRepository.save(userSubscription);
+            log.info("✅ [SYNC] Subscription {} marked as SYNCED", id);
+        } else {
+            // Toggle status: INACTIVE ↔ ACTIVE (vehicle entry/exit)
+            UserSubscriptionStatus oldStatus = userSubscription.getStatus();
+            UserSubscriptionStatus newStatus = oldStatus;
 
-        UserSubscriptionStatus oldStatus = userSubscription.getStatus();
-        UserSubscriptionStatus newStatus = oldStatus;
+            if (userSubscription.getStatus() == UserSubscriptionStatus.ACTIVE) {
+                // Vehicle exiting
+                userSubscription.setStatus(UserSubscriptionStatus.INACTIVE);
+                newStatus = UserSubscriptionStatus.INACTIVE;
+            } else if (userSubscription.getStatus() == UserSubscriptionStatus.INACTIVE) {
+                // Vehicle entering
+                userSubscription.setStatus(UserSubscriptionStatus.ACTIVE);
+                newStatus = UserSubscriptionStatus.ACTIVE;
+            }
+            userSubscriptionRepository.save(userSubscription);
 
-        if (userSubscription.getStatus() == UserSubscriptionStatus.ACTIVE) {
-            userSubscription.setStatus(UserSubscriptionStatus.INACTIVE);
-            newStatus = UserSubscriptionStatus.INACTIVE;
-        } else if (userSubscription.getStatus() == UserSubscriptionStatus.INACTIVE) {
-            userSubscription.setStatus(UserSubscriptionStatus.ACTIVE);
-            newStatus = UserSubscriptionStatus.ACTIVE;
-        }
-        userSubscriptionRepository.save(userSubscription);
-
-        // Send notification when subscription status changes
-        if (oldStatus != newStatus) {
-            sendSubscriptionStatusChangedNotification(userSubscription, oldStatus, newStatus);
+            // Send notification when subscription status changes
+            if (oldStatus != newStatus) {
+                log.info("✅ [SYNC] Subscription {} status changed: {} -> {}", id, oldStatus, newStatus);
+                sendSubscriptionStatusChangedNotification(userSubscription, oldStatus, newStatus);
+            }
         }
     }
 
@@ -389,7 +404,8 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
                     userSubscription.getId(),
                     paymentResponse.data() != null ? paymentResponse.data().getId() : "N/A");
 
-            userSubscription.setStatus(UserSubscriptionStatus.ACTIVE);
+            // Keep status as INACTIVE (vehicle is outside the lot)
+            // Status will change to ACTIVE when vehicle enters via syncUserSubscription
             userSubscription.setPaidAt(LocalDateTime.now());
             userSubscriptionRepository.save(userSubscription);
 
@@ -605,6 +621,155 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
             }
         } catch (Exception e) {
             log.error("Error releasing spot hold for spotId: {}. Hold will auto-expire after timeout.", spotId, e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public UserSubscriptionResponse cancelSubscription(Long subscriptionId, CancelSubscriptionRequest request, String userIdHeader) {
+        log.info("🔔 [SUBSCRIPTION-CANCEL] Processing cancellation for subscription {}", subscriptionId);
+
+        UserSubscription subscription = userSubscriptionRepository.findById(subscriptionId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_SUBSCRIPTION_NOT_FOUND, subscriptionId));
+
+        if (userIdHeader != null) {
+            Long userId = Long.parseLong(userIdHeader);
+            if (!subscription.getUser().getId().equals(userId)) {
+                throw new AppException(ErrorCode.USER_SUBSCRIPTION_NOT_BELONG_TO_USER);
+            }
+        }
+
+        if (subscription.getStatus() == UserSubscriptionStatus.CANCELLED) {
+            throw new AppException(ErrorCode.USER_SUBSCRIPTION_ALREADY_CANCELLED);
+        }
+
+        // Check if subscription is expired
+        if (subscription.getStatus() == UserSubscriptionStatus.EXPIRED) {
+            throw new AppException(ErrorCode.USER_SUBSCRIPTION_EXPIRED);
+        }
+
+        // Determine refund eligibility (still allow cancellation, just no refund if not eligible)
+        boolean isEligibleForRefund = checkRefundEligibility(subscription);
+        BigDecimal refundAmount = BigDecimal.ZERO;
+
+        if (isEligibleForRefund) {
+            refundAmount = subscription.getPaidAmount();
+            log.info("✅ [SUBSCRIPTION-CANCEL] Subscription {} is eligible for refund: {}", subscriptionId, refundAmount);
+
+            // Process refund
+            processRefund(subscription, refundAmount);
+        } else {
+            log.info("⚠️ [SUBSCRIPTION-CANCEL] Subscription {} is NOT eligible for refund (used or passed 1/2 period)", subscriptionId);
+        }
+
+        LocalDateTime vietnamNow = LocalDateTime.now().plusHours(7);
+        UserSubscriptionStatus oldStatus = subscription.getStatus();
+        subscription.setStatus(UserSubscriptionStatus.CANCELLED);
+        subscription.setCancelledAt(vietnamNow);
+        subscription.setCancellationReason(request.getReason());
+        subscription.setRefundAmount(refundAmount);
+        subscription.setSyncStatus(SyncStatus.PENDING);
+
+        UserSubscription savedSubscription = userSubscriptionRepository.save(subscription);
+
+        sendSubscriptionStatusChangedNotification(savedSubscription, oldStatus, UserSubscriptionStatus.CANCELLED);
+
+        log.info("✅ [SUBSCRIPTION-CANCEL] Subscription {} cancelled successfully. Refund amount: {}",
+                subscriptionId, refundAmount);
+
+        return getUserSubscriptionResponse(savedSubscription);
+    }
+
+    /**
+     * Check if subscription is eligible for refund
+     * Not eligible if:
+     * 1. Subscription has been used (has parking session)
+     * 2. More than 1/2 of the subscription period has passed
+     */
+    private boolean checkRefundEligibility(UserSubscription subscription) {
+        // Check 1: Has subscription been used?
+        try {
+            ApiResponse<Boolean> usageResponse = parkingLotClient.checkSubscriptionUsage(subscription.getId());
+            if (usageResponse != null && usageResponse.success() && Boolean.TRUE.equals(usageResponse.data())) {
+                log.info("❌ [REFUND-CHECK] Subscription {} has been used", subscription.getId());
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("⚠️ [REFUND-CHECK] Failed to check subscription usage for {}, assuming used for safety",
+                    subscription.getId(), e);
+            return false;
+        }
+
+        // Check 2: Has more than 1/2 of the period passed? (use Vietnam timezone UTC+7)
+        LocalDateTime vietnamNow = LocalDateTime.now().plusHours(7);
+        LocalDateTime startDate = subscription.getStartDate();
+        LocalDateTime endDate = subscription.getEndDate();
+
+        // If subscription hasn't started yet, eligible for refund
+        if (vietnamNow.isBefore(startDate)) {
+            log.info("✅ [REFUND-CHECK] Subscription {} hasn't started yet, eligible for refund", subscription.getId());
+            return true;
+        }
+
+        // Calculate half point of subscription period
+        long totalDays = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate);
+        long halfDays = totalDays / 2;
+        LocalDateTime halfPoint = startDate.plusDays(halfDays);
+
+        if (vietnamNow.isAfter(halfPoint)) {
+            log.info("❌ [REFUND-CHECK] Subscription {} has passed half point ({} days of {} days)",
+                    subscription.getId(), java.time.temporal.ChronoUnit.DAYS.between(startDate, vietnamNow), totalDays);
+            return false;
+        }
+
+        log.info("✅ [REFUND-CHECK] Subscription {} is within first half of period, eligible for refund",
+                subscription.getId());
+        return true;
+    }
+
+    /**
+     * Process refund for cancelled subscription
+     */
+    private void processRefund(UserSubscription subscription, BigDecimal refundAmount) {
+        // Get partner ID for the parking lot
+        Long partnerId = null;
+        try {
+            ApiResponse<ParkingLotClient.PartnerIdDto> partnerResponse =
+                    parkingLotClient.getPartnerIdByParkingLotId(subscription.getParkingLotId());
+            if (partnerResponse != null && partnerResponse.data() != null) {
+                partnerId = partnerResponse.data().partnerId();
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ [REFUND] Failed to get partner ID for parking lot {}", subscription.getParkingLotId());
+        }
+
+        try {
+            // Use Vietnam timezone (UTC+7)
+            LocalDateTime vietnamNow = LocalDateTime.now().plusHours(7);
+            ResponseEntity<ApiResponse<WalletTransactionResponse>> refundResult = paymentClient.refundWallet(
+                    CreateTransactionRequest.builder()
+                            .userId(subscription.getUser().getId())
+                            .partnerId(partnerId)
+                            .amount(refundAmount)
+                            .transactionType(TransactionConstants.TYPE_REFUND)
+                            .processedAt(vietnamNow)
+                            .description("Hoàn tiền hủy vé tháng - Subscription ID: " + subscription.getId())
+                            .build()
+            );
+
+            if (refundResult.hasBody() && refundResult.getBody() != null && refundResult.getBody().success()) {
+                log.info("✅ [REFUND] Successfully refunded {} for subscription {}",
+                        refundAmount, subscription.getId());
+            } else {
+                log.error("❌ [REFUND] Failed to refund for subscription {}",
+                        subscription.getId());
+                throw new AppException(ErrorCode.USER_SUBSCRIPTION_CANCEL_FAILED, "Refund processing failed");
+            }
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("❌ [REFUND] Error processing refund for subscription {}", subscription.getId(), e);
+            throw new AppException(ErrorCode.USER_SUBSCRIPTION_CANCEL_FAILED, "Refund processing error: " + e.getMessage());
         }
     }
 

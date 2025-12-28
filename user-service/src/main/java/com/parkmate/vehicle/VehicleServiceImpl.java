@@ -43,6 +43,7 @@ public class VehicleServiceImpl implements VehicleService {
     private final Validator validator;
     private final com.parkmate.client.ParkingLotClient parkingLotClient;
     private final DeletedVehicleRedisService deletedVehicleRedisService;
+    private final AddedVehicleRedisService addedVehicleRedisService;
 
     private static final List<String> ALLOWED_EXTENSIONS = List.of("xlsx", "xls");
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -78,6 +79,9 @@ public class VehicleServiceImpl implements VehicleService {
         vehicle.setUser(user);
 
         Vehicle savedVehicle = vehicleRepository.save(vehicle);
+
+        // Store added vehicle info in Redis for parking lot sync
+        addedVehicleRedisService.storeAddedVehicle(savedVehicle);
 
         return vehicleMapper.toDTO(savedVehicle);
     }
@@ -210,6 +214,9 @@ public class VehicleServiceImpl implements VehicleService {
         if (userSubscriptionRepository.existsByVehicleIdAndStatusIn(id, activeSubscriptionStatuses)) {
             throw new AppException(ErrorCode.VEHICLE_HAS_ACTIVE_SUBSCRIPTION);
         }
+
+        // Remove from added sync Redis if exists (vehicle was added but not yet synced)
+        addedVehicleRedisService.removeSyncKey(vehicle.getLicensePlate());
 
         // Store deleted vehicle info in Redis before soft delete
         // - Block key (2 hours): prevents creating same license plate

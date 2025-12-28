@@ -1,7 +1,6 @@
 package com.parkmate.rating.dto.resp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.NotEmpty;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

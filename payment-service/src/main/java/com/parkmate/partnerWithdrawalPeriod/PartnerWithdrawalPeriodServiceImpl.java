@@ -193,8 +193,8 @@ public class PartnerWithdrawalPeriodServiceImpl implements PartnerWithdrawalPeri
         period.setReservationSessions(Math.toIntExact(reservationCount));
         period.setSubscriptionSessions(Math.toIntExact(subscriptionCount));
         period.setWalkInSessions(Math.toIntExact(walkInCount));
-        period.setCreatedAt(LocalDateTime.now());
-        period.setUpdatedAt(LocalDateTime.now());
+        period.setCreatedAt(LocalDateTime.now().plusHours(7));
+        period.setUpdatedAt(LocalDateTime.now().plusHours(7));
 
         PartnerWithdrawalPeriod saved = partnerWithdrawalPeriodRepository.save(period);
 
@@ -288,7 +288,7 @@ public class PartnerWithdrawalPeriodServiceImpl implements PartnerWithdrawalPeri
             period.setSubscriptionSessions(request.getSubscriptionSessions());
         }
 
-        period.setUpdatedAt(LocalDateTime.now());
+        period.setUpdatedAt(LocalDateTime.now().plusHours(7));
         PartnerWithdrawalPeriod updated = partnerWithdrawalPeriodRepository.save(period);
 
         return partnerWithdrawalPeriodMapper.toResponse(updated);

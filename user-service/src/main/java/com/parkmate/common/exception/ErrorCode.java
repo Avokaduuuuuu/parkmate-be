@@ -100,6 +100,10 @@ public enum ErrorCode {
     USER_SUBSCRIPTION_ALREADY_USED(21002, "This USER SUBSCRIPTION has already been used", HttpStatus.BAD_REQUEST),
     USER_SUBSCRIPTION_EXPIRED(21003, "USER SUBSCRIPTION has expired", HttpStatus.BAD_REQUEST),
     INVALID_USER_SUBSCRIPTION_DATA(21004, "Invalid USER SUBSCRIPTION", HttpStatus.BAD_REQUEST),
+    USER_SUBSCRIPTION_ALREADY_CANCELLED(21005, "Vé tháng đã bị hủy trước đó", HttpStatus.BAD_REQUEST),
+    USER_SUBSCRIPTION_NOT_ELIGIBLE_FOR_REFUND(21006, "Vé tháng không đủ điều kiện hoàn tiền vì đã sử dụng hoặc đã quá 1/2 thời hạn", HttpStatus.BAD_REQUEST),
+    USER_SUBSCRIPTION_CANCEL_FAILED(21007, "Hủy vé tháng thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    USER_SUBSCRIPTION_NOT_BELONG_TO_USER(21008, "Vé tháng không thuộc về người dùng này", HttpStatus.FORBIDDEN),
     ;
 
 

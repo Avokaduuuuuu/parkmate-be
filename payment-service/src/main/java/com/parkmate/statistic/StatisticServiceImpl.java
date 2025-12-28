@@ -54,8 +54,17 @@ public class StatisticServiceImpl implements StatisticService {
         BigDecimal previousTotalReservationPlatformFee = previousPlatformrevenueProjection.getTotalReservationPlatformFee();
         BigDecimal previousTotalSessionPlatformFee = previousPlatformrevenueProjection.getTotalSessionPlatformFee();
 
-        BigDecimal totalPlatformRevenue = totalReservationPlatformFee.add(totalSessionPlatformFee).add(totalSubscriptionPlatformFee);
-        BigDecimal totalPreviousPlatformRevenue = previousTotalReservationPlatformFee.add(previousTotalSubscriptionPlatformFee).add(previousTotalSessionPlatformFee);
+        BigDecimal totalOperationalFee = platformOperationalFeeProjection.getTotalOperationalFee();
+        BigDecimal previousTotalOperationalFee = previousPlatformOperationalFeeProjection.getTotalOperationalFee();
+
+        // All values are guaranteed non-null by COALESCE in queries, but add safety checks for consistency
+        BigDecimal totalPlatformRevenue = safeAdd(totalReservationPlatformFee,
+                safeAdd(totalSessionPlatformFee,
+                        safeAdd(totalSubscriptionPlatformFee, totalOperationalFee)));
+
+        BigDecimal totalPreviousPlatformRevenue = safeAdd(previousTotalReservationPlatformFee,
+                safeAdd(previousTotalSubscriptionPlatformFee,
+                        safeAdd(previousTotalSessionPlatformFee, previousTotalOperationalFee)));
 
         return PlatformRevenueStatistic.builder()
                 .totalOperationalFee(platformOperationalFeeProjection.getTotalOperationalFee())
@@ -85,5 +94,11 @@ public class StatisticServiceImpl implements StatisticService {
         BigDecimal rate = difference.divide(previous, 4, RoundingMode.HALF_UP);
         BigDecimal percentageRate = rate.multiply(BigDecimal.valueOf(100));
         return percentageRate.setScale(2, RoundingMode.HALF_UP).doubleValue();
+    }
+
+    private BigDecimal safeAdd(BigDecimal a, BigDecimal b) {
+        BigDecimal safeA = a != null ? a : BigDecimal.ZERO;
+        BigDecimal safeB = b != null ? b : BigDecimal.ZERO;
+        return safeA.add(safeB);
     }
 }

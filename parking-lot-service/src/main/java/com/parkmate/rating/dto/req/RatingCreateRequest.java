@@ -1,7 +1,10 @@
 package com.parkmate.rating.dto.req;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 @Schema(
         description = "Request body for creating a new parking lot rating",

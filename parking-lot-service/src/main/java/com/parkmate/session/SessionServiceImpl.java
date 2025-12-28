@@ -30,7 +30,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -82,7 +81,7 @@ public class SessionServiceImpl implements SessionService {
 
         return sessionEntities.map(sessionEntity -> {
             SessionResponse sessionResponse = SessionMapper.INSTANCE.toResponse(sessionEntity);
-            if (sessionEntity.getStatus().equals(SessionStatus.ACTIVE)) {
+            if (sessionEntity.getStatus().equals(SessionStatus.ACTIVE) && sessionEntity.getPricingRule() != null) {
                 BigDecimal currentAmount = calculateCurrentTotalAmount(sessionEntity);
                 sessionResponse.setTotalAmount(currentAmount);
             }
@@ -170,31 +169,52 @@ public class SessionServiceImpl implements SessionService {
         ParkingLotEntity parkingLot = parkingLotRepository.findById(lotId)
                 .orElseThrow(() -> new AppException(ErrorCode.PARKING_NOT_FOUND));
 
-        // Group sessions by pricingRuleId (skip nulls)
-        Map<Long, List<SessionSyncRequest>> groupedByRule = requests.stream()
+        // Separate sessions with and without pricingRuleId
+        List<SessionSyncRequest> sessionsWithRule = requests.stream()
                 .filter(req -> req.pricingRuleId() != null)
-                .collect(Collectors.groupingBy(SessionSyncRequest::pricingRuleId));
-
-        if (groupedByRule.isEmpty()) return 0;
-
-        // Load all pricing rules at once
-        Map<Long, PricingRuleEntity> pricingRules = pricingRuleRepository.findAllById(groupedByRule.keySet())
-                .stream()
-                .collect(Collectors.toMap(PricingRuleEntity::getId, r -> r));
-
-        // Flatten a grouped map -> list of SessionEntity
-        List<SessionEntity> sessions = groupedByRule.entrySet().stream()
-                .flatMap(entry -> {
-                    Long ruleId = entry.getKey();
-                    PricingRuleEntity rule = Optional.ofNullable(pricingRules.get(ruleId))
-                            .orElseThrow(() -> new AppException(ErrorCode.PRICING_RULE_NOT_FOUND));
-                    return entry.getValue().stream()
-                            .map(req -> getSessionEntity(req, parkingLot, rule));
-                })
                 .toList();
 
-        sessionRepository.saveAll(sessions);
-        return sessions.size();
+        List<SessionSyncRequest> sessionsWithoutRule = requests.stream()
+                .filter(req -> req.pricingRuleId() == null)
+                .toList();
+
+        List<SessionEntity> allSessions = new java.util.ArrayList<>();
+
+        // Process sessions WITH pricing rule
+        if (!sessionsWithRule.isEmpty()) {
+            Map<Long, List<SessionSyncRequest>> groupedByRule = sessionsWithRule.stream()
+                    .collect(Collectors.groupingBy(SessionSyncRequest::pricingRuleId));
+
+            Map<Long, PricingRuleEntity> pricingRules = pricingRuleRepository.findAllById(groupedByRule.keySet())
+                    .stream()
+                    .collect(Collectors.toMap(PricingRuleEntity::getId, r -> r));
+
+            List<SessionEntity> sessionsWithPricingRule = groupedByRule.entrySet().stream()
+                    .flatMap(entry -> {
+                        Long ruleId = entry.getKey();
+                        PricingRuleEntity rule = Optional.ofNullable(pricingRules.get(ruleId))
+                                .orElseThrow(() -> new AppException(ErrorCode.PRICING_RULE_NOT_FOUND));
+                        return entry.getValue().stream()
+                                .map(req -> getSessionEntity(req, parkingLot, rule));
+                    })
+                    .toList();
+
+            allSessions.addAll(sessionsWithPricingRule);
+        }
+
+        // Process sessions WITHOUT pricing rule (e.g., subscription sessions)
+        if (!sessionsWithoutRule.isEmpty()) {
+            List<SessionEntity> sessionsNoPricingRule = sessionsWithoutRule.stream()
+                    .map(req -> getSessionEntity(req, parkingLot, null))
+                    .toList();
+
+            allSessions.addAll(sessionsNoPricingRule);
+        }
+
+        if (allSessions.isEmpty()) return 0;
+
+        sessionRepository.saveAll(allSessions);
+        return allSessions.size();
     }
 
 
