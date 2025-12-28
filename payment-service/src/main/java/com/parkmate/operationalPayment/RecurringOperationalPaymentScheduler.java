@@ -66,7 +66,7 @@ public class RecurringOperationalPaymentScheduler {
 
             // Fetch active operational fee config
             OperationalFeeConfigEntity config = operationalFeeConfigRepository
-                    .findActiveConfig(LocalDateTime.now())
+                    .findActiveConfig(LocalDateTime.now().plusHours(7))
                     .orElse(null);
 
             if (config == null) {

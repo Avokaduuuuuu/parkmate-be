@@ -84,6 +84,16 @@ public interface ParkingLotClient {
     @GetMapping("/internal/parking-lots/count")
     ApiResponse<Map<Long, Long>> getParkingLotCountByPartner(@RequestParam List<Long> partnerIds);
 
+    /**
+     * Check if a subscription has been used (has any parking session)
+     * Used to determine refund eligibility when cancelling subscription
+     *
+     * @param subscriptionId The user subscription ID
+     * @return true if the subscription has been used at least once
+     */
+    @GetMapping("/internal/sessions/subscription/{subscriptionId}/has-usage")
+    ApiResponse<Boolean> checkSubscriptionUsage(@PathVariable Long subscriptionId);
+
     record ParkingLotSimpleDto(Long id, String name, Integer horizonTime) {
     }
 

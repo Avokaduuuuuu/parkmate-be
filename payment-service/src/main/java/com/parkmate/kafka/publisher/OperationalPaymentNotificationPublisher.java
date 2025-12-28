@@ -62,7 +62,7 @@ public class OperationalPaymentNotificationPublisher {
                     .message(message)
                     .notificationType("EMAIL")
                     .data(dataJson)
-                    .createdAt(LocalDateTime.now())
+                    .createdAt(LocalDateTime.now().plusHours(7))
                     .sourceService("payment-service")
                     .build();
 
@@ -117,7 +117,7 @@ public class OperationalPaymentNotificationPublisher {
                     .message(message)
                     .notificationType("EMAIL")
                     .data(dataJson)
-                    .createdAt(LocalDateTime.now())
+                    .createdAt(LocalDateTime.now().plusHours(7))
                     .sourceService("payment-service")
                     .build();
 

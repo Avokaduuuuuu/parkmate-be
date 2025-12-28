@@ -26,6 +26,8 @@ public abstract class UserSubscriptionMapper {
     @Mapping(target = "vehicleType", ignore = true)
     @Mapping(target = "subscriptionPackageName", ignore = true)
     @Mapping(target = "needRenewalDecision", ignore = true)
+    @Mapping(target = "passedHalfPeriod", ignore = true)
+    @Mapping(target = "hasBeenUsed", ignore = true)
     public abstract UserSubscriptionResponse toDto(UserSubscription userSubscription,
                                                    @Context ParkingLotClient parkingLotClient,
                                                    @Context VehicleService vehicleService);
@@ -41,6 +43,9 @@ public abstract class UserSubscriptionMapper {
             if (daysRemaining <= 7 && entity.getAutoRenew() != null && !entity.getAutoRenew()) {
                 response.setNeedRenewalDecision(true);
             }
+
+            // Calculate passedHalfPeriod (use Vietnam timezone UTC+7)
+            response.setPassedHalfPeriod(checkPassedHalfPeriod(entity.getStartDate(), entity.getEndDate()));
         }
 
         if (entity.getParkingLotId() != null && parkingLotClient != null) {
@@ -57,6 +62,11 @@ public abstract class UserSubscriptionMapper {
 
         if (entity.getVehicle() != null && entity.getVehicle().getId() != null && vehicleService != null) {
             enrichVehicleInfo(response, entity.getVehicle().getId(), vehicleService);
+        }
+
+        // Check hasBeenUsed via parking-lot-service
+        if (entity.getId() != null && parkingLotClient != null) {
+            response.setHasBeenUsed(checkHasBeenUsed(parkingLotClient, entity.getId()));
         }
 
     }
@@ -186,6 +196,54 @@ public abstract class UserSubscriptionMapper {
             }
         } catch (Exception e) {
             // Log error and continue
+        }
+    }
+
+    /**
+     * Check if more than 1/2 of subscription period has passed
+     * Uses Vietnam timezone (UTC+7)
+     */
+    protected Boolean checkPassedHalfPeriod(LocalDateTime startDate, LocalDateTime endDate) {
+        try {
+            if (startDate == null || endDate == null) {
+                return null;
+            }
+
+            LocalDateTime vietnamNow = LocalDateTime.now().plusHours(7);
+
+            // If subscription hasn't started yet
+            if (vietnamNow.isBefore(startDate)) {
+                return false;
+            }
+
+            long totalDays = ChronoUnit.DAYS.between(startDate, endDate);
+            long halfDays = totalDays / 2;
+            LocalDateTime halfPoint = startDate.plusDays(halfDays);
+
+            return vietnamNow.isAfter(halfPoint);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Check if subscription has been used (has any parking session)
+     * Calls parking-lot-service via Feign
+     */
+    protected Boolean checkHasBeenUsed(ParkingLotClient parkingLotClient, Long subscriptionId) {
+        try {
+            if (subscriptionId == null || parkingLotClient == null) {
+                return null;
+            }
+
+            var response = parkingLotClient.checkSubscriptionUsage(subscriptionId);
+            if (response != null && response.success()) {
+                return response.data();
+            }
+            return null;
+        } catch (Exception e) {
+            // Log error and return null (unknown)
+            return null;
         }
     }
 

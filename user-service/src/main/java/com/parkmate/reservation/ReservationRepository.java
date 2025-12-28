@@ -32,12 +32,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
     List<Reservation> findAllByVehicleIdInAndStatusIn(List<Long> vehicleIds, List<ReservationStatus> status);
 
     @Query(value = """
-            SELECT COUNT(*) FROM reservation r  INNER JOIN vehicle v ON r.vehicle_id = v.id
+            SELECT COUNT(*) FROM reservation r INNER JOIN vehicle v ON r.vehicle_id = v.id
             WHERE r.parking_lot_id = :parkingLotId
-            AND (r.reserved_from - (r.assumed_stay_minute * INTERVAL '1 minute')) < :to 
-            AND (r.reserved_from + (r.assumed_stay_minute * INTERVAL '1 minute')) > :from 
+            AND r.reserved_from < :to
+            AND (r.reserved_from + (r.assumed_stay_minute * INTERVAL '1 minute')) > :from
             AND r.status IN ('ACTIVE', 'PENDING')
-            AND v.vehicle_type =  CAST(:vehicleType AS vehicle_type)
+            AND v.vehicle_type = CAST(:vehicleType AS vehicle_type)
             """,
             nativeQuery = true)
     Long findOverlapReservations(
@@ -93,4 +93,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
 
     @Query("SELECT COUNT(r) FROM Reservation r WHERE r.user.id = :userId AND r.status IN :statuses")
     long countByUserIdAndStatusIn(@Param("userId") Long userId, @Param("statuses") List<ReservationStatus> statuses);
+
+    boolean existsByVehicleIdAndStatusIn(Long vehicleId, List<ReservationStatus> statuses);
+
+    boolean existsByVehicleIdAndSessionIdIsNotNullAndStatusIn(Long vehicleId, List<ReservationStatus> statuses);
 }

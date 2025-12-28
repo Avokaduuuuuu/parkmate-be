@@ -87,11 +87,18 @@ public class SecurityConfig {
             "/api/v1/user-service/user-subscriptions/{id}/sync",
             "/api/v1/user-service/user-subscriptions/{lotId}/sync",
             "/api/v1/payment-service/transactions/session-payment",
+            "/api/v1/user-service/vehicle/deleted/sync",
+            "/api/v1/user-service/vehicle/deleted/sync/confirm",
+            "/api/v1/user-service/vehicle/added/sync",
+            "/api/v1/user-service/vehicle/added/sync/confirm",
 
             // Test
             "/api/v1/fcm/test",
             "/api/v1/payment-service/wallets/sync",
 
+            // Scheduler test endpoints
+            "/api/v1/user-service/internal/scheduler/**",
+            "/api/v1/payment-service/internal/scheduler/**",
 
     };
 

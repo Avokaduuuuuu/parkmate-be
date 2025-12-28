@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/user-service/vehicle")
@@ -22,6 +23,8 @@ import java.util.List;
 public class VehicleController {
 
     private final VehicleServiceImpl vehicleService;
+    private final DeletedVehicleRedisService deletedVehicleRedisService;
+    private final AddedVehicleRedisService addedVehicleRedisService;
 
     @GetMapping("/{id}")
     @Operation(
@@ -169,6 +172,54 @@ public class VehicleController {
     public ResponseEntity<ApiResponse<List<VehicleSimpleResponse>>> getVehiclesByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(ApiResponse.success(vehicleService.getVehiclesByUserId(userId)
                 , "Vehicles fetched successfully"));
+    }
+
+    @GetMapping("/deleted/sync")
+    @Operation(
+            summary = "Get Deleted Vehicles for Sync",
+            description = """
+                    Get all recently deleted vehicles pending synchronization.
+                    Returns Map<licensePlate, userId> for parking lot local database sync.
+                    Keys expire after 24 hours.
+                    """
+    )
+    public ResponseEntity<ApiResponse<Map<String, Long>>> getDeletedVehiclesForSync() {
+        Map<String, Long> deletedVehicles = deletedVehicleRedisService.getDeletedVehiclesForSync();
+        return ResponseEntity.ok(ApiResponse.success("Deleted vehicles fetched successfully", deletedVehicles));
+    }
+
+    @PostMapping("/deleted/sync/confirm")
+    @Operation(
+            summary = "Confirm Sync Completed",
+            description = "Remove sync keys after parking lot has successfully synced the deleted vehicles."
+    )
+    public ResponseEntity<ApiResponse<Void>> confirmSyncCompleted(@RequestBody List<String> licensePlates) {
+        deletedVehicleRedisService.removeSyncKeys(licensePlates);
+        return ResponseEntity.ok(ApiResponse.success("Sync confirmed, keys removed"));
+    }
+
+    @GetMapping("/added/sync")
+    @Operation(
+            summary = "Get Added Vehicles for Sync",
+            description = """
+                    Get all recently added vehicles pending synchronization.
+                    Returns array of {userId, licensePlate, vehicleType} for parking lot local database sync.
+                    Keys expire after 24 hours.
+                    """
+    )
+    public ResponseEntity<ApiResponse<List<com.parkmate.vehicle.dto.AddedVehicleInfo.SyncResponse>>> getAddedVehiclesForSync() {
+        List<com.parkmate.vehicle.dto.AddedVehicleInfo.SyncResponse> addedVehicles = addedVehicleRedisService.getAddedVehiclesForSync();
+        return ResponseEntity.ok(ApiResponse.success("Added vehicles fetched successfully", addedVehicles));
+    }
+
+    @PostMapping("/added/sync/confirm")
+    @Operation(
+            summary = "Confirm Added Vehicles Sync Completed",
+            description = "Remove sync keys after parking lot has successfully synced the added vehicles."
+    )
+    public ResponseEntity<ApiResponse<Void>> confirmAddedSyncCompleted(@RequestBody List<String> licensePlates) {
+        addedVehicleRedisService.removeSyncKeys(licensePlates);
+        return ResponseEntity.ok(ApiResponse.success("Added vehicles sync confirmed, keys removed"));
     }
 
 }

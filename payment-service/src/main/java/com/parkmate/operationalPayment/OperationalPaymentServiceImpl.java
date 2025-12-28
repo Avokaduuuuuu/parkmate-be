@@ -44,7 +44,7 @@ public class OperationalPaymentServiceImpl implements OperationalPaymentService 
 
         // 1. Fetch active operational fee config
         OperationalFeeConfigEntity config = operationalFeeConfigRepository
-                .findActiveConfig(LocalDateTime.now())
+                .findActiveConfig(LocalDateTime.now().plusHours(7))
                 .orElseThrow(() -> new AppException(ErrorCode.OPERATIONAL_FEE_CONFIG_NOT_FOUND));
 
         log.debug("Using operational fee config: {} VND/sqm, {} months",
@@ -194,7 +194,7 @@ public class OperationalPaymentServiceImpl implements OperationalPaymentService 
             throw new AppException(ErrorCode.INVALID_PAYMENT_DETAILS);
         }
         payment.setPaymentStatus(PaymentStatus.PAID);
-        payment.setPaidAt(LocalDateTime.now());
+        payment.setPaidAt(LocalDateTime.now().plusHours(7));
         payment.setNotes("Payment confirmed via PayOS webhook");
         operationalPaymentRepository.save(payment);
 
@@ -230,15 +230,15 @@ public class OperationalPaymentServiceImpl implements OperationalPaymentService 
             } catch (NumberFormatException e) {
                 log.error("Invalid payment transaction ID format: {}", payment.getPaymentTransactionId());
                 throw new AppException(ErrorCode.INVALID_PAYMENT_DETAILS,
-                    "Invalid payment transaction ID format");
+                        "Invalid payment transaction ID format");
             } catch (Exception e) {
                 log.error("Failed to cancel PayOS payment: {}", e.getMessage(), e);
                 throw new AppException(ErrorCode.CANCEL_FAILED,
-                    "Failed to cancel payment with PayOS: " + e.getMessage());
+                        "Failed to cancel payment with PayOS: " + e.getMessage());
             }
         } else {
             log.warn("No payment transaction ID found for payment {}, skipping PayOS cancellation",
-                payment.getId());
+                    payment.getId());
         }
 
         // Update database status

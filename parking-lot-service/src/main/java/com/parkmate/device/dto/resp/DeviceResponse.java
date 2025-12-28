@@ -3,13 +3,8 @@ package com.parkmate.device.dto.resp;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.parkmate.device.enums.DeviceStatus;
 import com.parkmate.device.enums.DeviceType;
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.JdbcType;
-import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.LocalDateTime;
 

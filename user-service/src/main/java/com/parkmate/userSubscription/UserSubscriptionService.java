@@ -44,4 +44,17 @@ public interface UserSubscriptionService {
                       LocalDateTime toDate);
 
     UserSubscriptionResponse setRenewalDecision(Long subscriptionId, Boolean continueRenewal);
+
+    /**
+     * Cancel a user subscription with refund eligibility check
+     * Refund is not given if:
+     * - Subscription has been used (has parking session)
+     * - More than half of the subscription period has passed
+     *
+     * @param subscriptionId The subscription ID to cancel
+     * @param request        The cancellation request with reason
+     * @param userIdHeader   The user ID from header for authorization
+     * @return The cancelled subscription response
+     */
+    UserSubscriptionResponse cancelSubscription(Long subscriptionId, CancelSubscriptionRequest request, String userIdHeader);
 }

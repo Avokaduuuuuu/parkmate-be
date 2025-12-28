@@ -13,19 +13,23 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 public interface SessionRepository extends JpaRepository<SessionEntity, String>, JpaSpecificationExecutor<SessionEntity> {
     Optional<SessionEntity> findByCardUUIDAndStatus(String cardUUID, SessionStatus status);
 
     Optional<SessionEntity> findByCardUUID(String cardUUID);
 
+    /**
+     * Count all ACTIVE WALK_IN sessions for a parking lot.
+     * Note: entryTime filter removed - we count ALL active walk-in sessions regardless of entry time.
+     * SUBSCRIPTION uses separate area (SUBSCRIPTION_ONLY), so not counted here.
+     * RESERVATION is counted separately via reservation records (overLapReservations).
+     */
     @Query("SELECT COUNT(s) FROM SessionEntity s " +
             "WHERE s.parkingLot.id = :parkingLotId " +
             "AND s.vehicleType = :vehicleType " +
             "AND s.status = 'ACTIVE' " +
-            "AND s.referenceType = 'WALK_IN' " +
-            "AND s.entryTime >= :entryTimeFrom")
+            "AND s.referenceType = 'WALK_IN'")
     Integer countActiveWalkInsSince(
             @Param("parkingLotId") Long parkingLotId,
             @Param("entryTimeFrom") LocalDateTime entryTimeFrom,
@@ -105,4 +109,15 @@ public interface SessionRepository extends JpaRepository<SessionEntity, String>,
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to
     );
+
+    /**
+     * Check if a subscription has been used (has any session with referenceType=SUBSCRIPTION and referenceId=subscriptionId)
+     *
+     * @param subscriptionId The user subscription ID
+     * @return true if there's at least one session using this subscription
+     */
+    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM SessionEntity s " +
+           "WHERE s.referenceId = :subscriptionId " +
+           "AND s.referenceType = 'SUBSCRIPTION'")
+    boolean existsBySubscriptionId(@Param("subscriptionId") Long subscriptionId);
 }

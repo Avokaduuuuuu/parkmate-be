@@ -93,7 +93,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         parkingLotResponse.getImages().forEach(image -> image.setPath(s3Service.getPresignedUrl(image.getPath())));
         List<ParkingLotAvailableReservationSpotResponse> availableSpotResponses = new ArrayList<>();
         for (VehicleType vehicleType : VehicleType.values()) {
-            ParkingLotAvailableReservationSpotResponse countAvailableSpot = countAvailableSpot(id, LocalDateTime.now(), 0, vehicleType);
+            ParkingLotAvailableReservationSpotResponse countAvailableSpot = countAvailableSpot(id, LocalDateTime.now().plusHours(7), 0, vehicleType);
             countAvailableSpot.setPricing(null);
             availableSpotResponses.add(countAvailableSpot);
         }
@@ -392,6 +392,7 @@ public class ParkingLotServiceImpl implements ParkingLotService {
 
             // Nếu không tìm thấy pricing rule (vehicleType không được support), trả về 0/0
             if (pricingRule == null) {
+                log.warn("No active pricing rule found for parkingLot: {}, vehicleType: {} - returning 0/0", id, vehicleType);
                 return ParkingLotAvailableReservationSpotResponse.builder()
                         .vehicleType(vehicleType)
                         .pricing(null)
@@ -406,9 +407,21 @@ public class ParkingLotServiceImpl implements ParkingLotService {
                 assumedStayMinute = Math.toIntExact(Math.round(parkingLot.getHorizonTime()));
             }
             log.info("Assumed Stay Minute: {}", assumedStayMinute);
+
+            // Debug: Log all lot capacities
+            log.info("All Lot Capacities for parkingLot {}: {}", id,
+                    parkingLot.getLotCapacity().stream()
+                            .map(c -> String.format("[type=%s, capacity=%d, isActive=%s]",
+                                    c.getVehicleType(), c.getCapacity(), c.getIsActive()))
+                            .toList());
+
             long totalCapacity = parkingLot.getLotCapacity()
                     .stream().filter(capacity -> (capacity.getVehicleType() == vehicleType && capacity.getIsActive())).mapToLong(LotCapacityEntity::getCapacity).sum();
-            log.info("Total Capacity: {}", totalCapacity);
+            log.info("Total Capacity for vehicleType {}: {}", vehicleType, totalCapacity);
+
+            if (totalCapacity == 0) {
+                log.warn("Total capacity is 0 for parkingLot: {}, vehicleType: {} - no active capacity configured!", id, vehicleType);
+            }
             Long overLapReservations = userClient.countReservation(id, reservedFrom, assumedStayMinute, vehicleType).getData();
             if (overLapReservations == null) overLapReservations = 0L;
             log.info("OverLap Reservations: {}", overLapReservations);
@@ -475,10 +488,10 @@ public class ParkingLotServiceImpl implements ParkingLotService {
         try {
             List<CreateDeviceItemPaymentRequest> createDeviceItemPaymentRequests =
                     parkingLot.getDevices().stream().collect(Collectors.groupingBy(
-                            DeviceEntity::getDeviceType,
-                            Collectors.counting()
-                    )).entrySet().stream().map(entry ->
-                            new CreateDeviceItemPaymentRequest(entry.getKey(), Math.toIntExact(entry.getValue())))
+                                    DeviceEntity::getDeviceType,
+                                    Collectors.counting()
+                            )).entrySet().stream().map(entry ->
+                                    new CreateDeviceItemPaymentRequest(entry.getKey(), Math.toIntExact(entry.getValue())))
                             .toList();
             com.parkmate.client.request.CreateOperationalPaymentRequest request =
                     com.parkmate.client.request.CreateOperationalPaymentRequest.builder()

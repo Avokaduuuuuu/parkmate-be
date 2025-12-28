@@ -26,5 +26,11 @@ public interface PricingRuleRepository extends JpaRepository<PricingRuleEntity, 
 
     List<PricingRuleEntity> findAllByVehicleTypeAndIsActive(VehicleType vehicleType, Boolean isActive);
 
+    /**
+     * Find all pricing rules by parking lot ID, vehicle type, and active status.
+     * Used to deactivate other rules of the same type within the SAME parking lot only.
+     */
+    List<PricingRuleEntity> findAllByParkingLot_IdAndVehicleTypeAndIsActive(Long parkingLotId, VehicleType vehicleType, Boolean isActive);
+
     Optional<PricingRuleEntity> findByParkingLot_IdAndIsActiveAndVehicleType(Long parkingLotId, Boolean isActive, VehicleType vehicleType);
 }

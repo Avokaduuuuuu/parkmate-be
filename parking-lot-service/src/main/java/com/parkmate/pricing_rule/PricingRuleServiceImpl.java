@@ -83,14 +83,22 @@ public class PricingRuleServiceImpl implements PricingRuleService {
         if (request.validTo() != null) pricingRuleEntity.setValidFrom(request.validTo());
         if (request.isActive() != null) {
             if (request.isActive()) {
-                log.info("Pricing Rule true");
-                List<PricingRuleEntity> pricingRuleEntities = pricingRuleRepository.findAllByVehicleTypeAndIsActive(pricingRuleEntity.getVehicleType(), true);
+                log.info("Activating pricing rule {} for parkingLot {}", id, pricingRuleEntity.getParkingLot().getId());
+                // Only deactivate pricing rules within the SAME parking lot, not all parking lots!
+                Long parkingLotId = pricingRuleEntity.getParkingLot().getId();
+                List<PricingRuleEntity> pricingRuleEntities = pricingRuleRepository
+                        .findAllByParkingLot_IdAndVehicleTypeAndIsActive(parkingLotId, pricingRuleEntity.getVehicleType(), true);
                 for (PricingRuleEntity pr : pricingRuleEntities) {
-                    pr.setIsActive(false);
-                    pricingRuleRepository.save(pr);
+                    if (!pr.getId().equals(id)) { // Don't deactivate the one we're activating
+                        pr.setIsActive(false);
+                        pricingRuleRepository.save(pr);
+                        log.info("Deactivated pricing rule {} in same parking lot", pr.getId());
+                    }
                 }
                 pricingRuleEntity.setIsActive(true);
-            } else pricingRuleEntity.setIsActive(false);
+            } else {
+                pricingRuleEntity.setIsActive(false);
+            }
         }
         return PricingRuleMapper.INSTANCE.toResponse(pricingRuleRepository.save(pricingRuleEntity));
     }

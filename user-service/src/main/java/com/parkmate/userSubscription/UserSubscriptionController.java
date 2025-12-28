@@ -1,10 +1,7 @@
 package com.parkmate.userSubscription;
 
 import com.parkmate.common.dto.ApiResponse;
-import com.parkmate.userSubscription.dto.CreateUserSubscriptionRequest;
-import com.parkmate.userSubscription.dto.UpdateUserSubscriptionRequest;
-import com.parkmate.userSubscription.dto.UserSubscriptionResponse;
-import com.parkmate.userSubscription.dto.UserSubscriptionSearchCriteria;
+import com.parkmate.userSubscription.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -530,6 +527,67 @@ public class UserSubscriptionController {
     ) {
         UserSubscriptionResponse response = userSubscriptionService.setRenewalDecision(id, request.getContinueRenewal());
         return ResponseEntity.ok(ApiResponse.success("Renewal decision updated successfully", response));
+    }
+
+    @PostMapping("/{id}/cancel")
+    @Operation(
+            summary = "Cancel subscription",
+            description = """
+                    Cancel a user subscription with conditional refund.
+
+                    **Path Parameters:**
+                    - `id` (required): User subscription ID to cancel
+
+                    **Request Body (CancelSubscriptionRequest):**
+                    - `reason` (optional): Reason for cancellation
+
+                    **Returns (UserSubscriptionResponse):** Cancelled subscription with refund details
+
+                    **Refund Eligibility Rules:**
+                    - **NO REFUND** if subscription has been used (has any parking session)
+                    - **NO REFUND** if more than 1/2 of the subscription period has passed
+                    - **FULL REFUND** if subscription hasn't been used AND within first half of period
+                    - **FULL REFUND** if subscription hasn't started yet
+
+                    **Business Process:**
+                    1. Validates subscription exists and belongs to user
+                    2. Checks if subscription is already cancelled or expired
+                    3. Calls parking-lot-service to check if subscription has been used
+                    4. Calculates if current date is within first half of subscription period
+                    5. If eligible: processes full refund to user wallet
+                    6. Updates subscription status to CANCELLED
+                    7. Sends cancellation notification
+
+                    **Access Control:**
+                    - USER: Can only cancel own subscriptions
+                    - ADMIN: Can cancel any subscription
+
+                    **Error Cases:**
+                    - USER_SUBSCRIPTION_NOT_FOUND: Invalid subscription ID
+                    - USER_SUBSCRIPTION_NOT_BELONG_TO_USER: Subscription belongs to another user
+                    - USER_SUBSCRIPTION_ALREADY_CANCELLED: Subscription already cancelled
+                    - USER_SUBSCRIPTION_EXPIRED: Cannot cancel expired subscription
+                    - USER_SUBSCRIPTION_CANCEL_FAILED: Refund processing failed
+
+                    **Important Notes:**
+                    - Cancellation is immediate and irreversible
+                    - If refund is processed, amount is credited to user wallet
+                    - User will receive push notification about cancellation
+                    - Cancelled subscription cannot be reactivated
+                    """
+    )
+    public ResponseEntity<ApiResponse<UserSubscriptionResponse>> cancelSubscription(
+            @Parameter(description = "User subscription ID to cancel", required = true, example = "1")
+            @PathVariable Long id,
+            @RequestBody CancelSubscriptionRequest request,
+            @Parameter(hidden = true)
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader
+    ) {
+        UserSubscriptionResponse response = userSubscriptionService.cancelSubscription(id, request, userIdHeader);
+        String message = response.getRefundAmount() != null && response.getRefundAmount().compareTo(java.math.BigDecimal.ZERO) > 0
+                ? "Đã hủy vé tháng và hoàn tiền " + response.getRefundAmount() + " VND"
+                : "Đã hủy vé tháng (không hoàn tiền do đã sử dụng hoặc quá 1/2 thời hạn)";
+        return ResponseEntity.ok(ApiResponse.success(message, response));
     }
 
 }

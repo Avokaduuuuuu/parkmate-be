@@ -5,8 +5,6 @@ import com.parkmate.device_fee_config.dto.req.DeviceFeeConfigUpdateRequest;
 import com.parkmate.device_fee_config.dto.resp.DeviceFeeConfigResponse;
 import org.springframework.data.domain.Page;
 
-import java.util.List;
-
 public interface DeviceFeeConfigService {
     Page<DeviceFeeConfigResponse> fetchDeviceFeeConfigs(int page,
                                                         int size,

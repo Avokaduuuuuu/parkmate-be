@@ -227,7 +227,7 @@ public class PayOSServiceImpl implements PayOSService {
 
             // Update with webhook data
             transaction.setGatewayResponse(webhookBody);
-            transaction.setProcessedAt(LocalDateTime.now());
+            transaction.setProcessedAt(LocalDateTime.now().plusHours(7));
 
             // Check if payment is successful
             // PayOS webhook code: "00" = success
@@ -285,11 +285,11 @@ public class PayOSServiceImpl implements PayOSService {
         String jsonResponse = String.format(
                 "{\"status\":\"cancelled\",\"reason\":\"%s\",\"cancelledBy\":\"user\",\"timestamp\":\"%s\"}",
                 reason.replace("\"", "\\\""), // Escape quotes
-                LocalDateTime.now()
+                LocalDateTime.now().plusHours(7)
         );
         walletTransaction.setStatus(TransactionStatus.CANCELLED);
         walletTransaction.setMetadata(jsonResponse);
-        walletTransaction.setProcessedAt(LocalDateTime.now());
+        walletTransaction.setProcessedAt(LocalDateTime.now().plusHours(7));
         walletTransactionRepository.save(walletTransaction);
 
         return PaymentCancelResponse.builder()
@@ -377,7 +377,7 @@ public class PayOSServiceImpl implements PayOSService {
 
             // Update with webhook data
             transaction.setGatewayResponse(webhookBody);
-            transaction.setProcessedAt(LocalDateTime.now());
+            transaction.setProcessedAt(LocalDateTime.now().plusHours(7));
 
             String status = webhookData.getCode();
 
@@ -472,7 +472,7 @@ public class PayOSServiceImpl implements PayOSService {
             log.info("Payout status check - referenceId: {}, approvalState: {}, transactionState: {}",
                     payoutId, approvalState, transactionState);
 
-            transaction.setProcessedAt(LocalDateTime.now());
+            transaction.setProcessedAt(LocalDateTime.now().plusHours(7));
 
             // Check transaction state first (more accurate), fallback to approval state
             String status = transactionState != null ? transactionState : approvalState;
@@ -518,12 +518,12 @@ public class PayOSServiceImpl implements PayOSService {
 
         // If transaction has been processing for more than 1 hour, likely succeeded
         if (transaction.getCreatedAt() != null) {
-            long minutesElapsed = java.time.Duration.between(transaction.getCreatedAt(), LocalDateTime.now()).toMinutes();
+            long minutesElapsed = java.time.Duration.between(transaction.getCreatedAt(), LocalDateTime.now().plusHours(7)).toMinutes();
 
             if (minutesElapsed >= 60) {
                 // Assume success after 1 hour
                 transaction.setStatus(TransactionStatus.COMPLETED);
-                transaction.setProcessedAt(LocalDateTime.now());
+                transaction.setProcessedAt(LocalDateTime.now().plusHours(7));
 
                 String note = String.format(
                         "{\"note\":\"Auto-completed old transaction after %d minutes (no batch ID for status check)\"}",
@@ -633,7 +633,7 @@ public class PayOSServiceImpl implements PayOSService {
 
             // Update payment status to PAID directly (avoid circular dependency)
             payment.setPaymentStatus(PaymentStatus.PAID);
-            payment.setPaidAt(LocalDateTime.now());
+            payment.setPaidAt(LocalDateTime.now().plusHours(7));
             payment.setNotes("Payment confirmed via PayOS webhook");
             operationalPaymentRepository.save(payment);
 

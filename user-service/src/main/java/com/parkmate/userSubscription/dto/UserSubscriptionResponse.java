@@ -54,4 +54,8 @@ public class UserSubscriptionResponse {
     private Long daysRemaining;
     private boolean needRenewalDecision;
 
+    // Refund eligibility flags
+    private Boolean passedHalfPeriod;  // true if more than 1/2 of subscription period has passed
+    private Boolean hasBeenUsed;       // true if subscription has any parking session
+
 }
